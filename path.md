@@ -1,17 +1,3 @@
-# Intro
-
-The [Floyd-Warshall algorithm][fw-wiki] for computing all pairwise shortest
-path lenghs in a graph has a computational pattern much like the
-one for Gaussian elimination. There is a closely related algorithm
-which is slightly more expensive – $O(n^3 \log n)$ time in general
-rather than the $O(n^3)$ time required by Floyd-Warshall – but
-which looks very much like matrix multiplication. In this
-assignment, you will analyze the performance of a reference OpenMP
-implementation of this method, and then implement and analyze your
-own version using MPI.
-
-[fw-wiki]: https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
-
 # The basic recurrence
 
 At the heart of the method is the following basic recurrence.

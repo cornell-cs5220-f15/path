@@ -38,7 +38,7 @@ path-mpi.o: path-mpi.c
 
 # === Documentation
 
-main.pdf: path.md
+main.pdf: README.md path.md
 	pandoc $^ -o $@
 
 path.md: path.c
