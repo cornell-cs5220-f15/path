@@ -1,0 +1,8 @@
+CC=gcc
+CXXFLAGS=-std=c99 -g 
+
+# If you're using icc, these are good flags to try
+OPTFLAGS=-O3 -march=native -fopenmp
+
+CFLAGS+=$(OPTFLAGS)
+PYTHON=python
