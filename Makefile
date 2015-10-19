@@ -21,19 +21,19 @@ include Makefile.in.$(PLATFORM)
 exe: path.x
 
 path.x: path.o mt19937p.o
-	$(CC) -fopenmp $(CFLAGS) $^ -o $@
+	$(CC) $(OMP_CFLAGS) $^ -o $@
 
 path.o: path.c
-	$(CC) -c -fopenmp $(CFLAGS) $< 
+	$(CC) -c $(OMP_CFLAGS) $<
 
 path-mpi.x: path-mpi.o mt19937p.o
-	$(MPICC) $(CFLAGS) $^ -o $@
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
 path-mpi.o: path-mpi.c
-	$(MPICC) -c $(CFLAGS) $< 
+	$(MPICC) -c $(MPI_CFLAGS) $<
 
 %.o: %.c
-	$(CC) -c $(CFLAGS) $< 
+	$(CC) -c $(CFLAGS) $<
 
 
 # === Documentation
@@ -48,8 +48,7 @@ path.md: path.c
 # === Cleanup and tarball
 
 clean:
-	rm -f *.o 
-	rm -f main.aux main.log main.out
+	rm -f *.o
 
 realclean: clean
 	rm -f path.x path-mpi.x path.md main.pdf
