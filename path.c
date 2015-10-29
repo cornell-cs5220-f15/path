@@ -4,7 +4,22 @@
 #include <math.h>
 #include <unistd.h>
 #include <omp.h>
+#include <immintrin.h>
 #include "mt19937p.h"
+
+// based off: http://stackoverflow.com/questions/6352206/aligned-calloc-visual-studio
+void* _mm_calloc(size_t nelem, size_t elsize, size_t alignment)
+{
+    // Watch out for overflow
+    if(elsize == 0)
+        return NULL;
+
+    size_t size = nelem * elsize;
+    void* memory = _mm_malloc(size, alignment);
+    if(memory != NULL)
+        memset(memory, 0, size);
+    return memory;
+}
 
 //ldoc on
 /**
@@ -44,9 +59,12 @@ int square(int n,               // Number of nodes
 {
     int done = 1;
     #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    #pragma vector aligned
     for (int j = 0; j < n; ++j) {
+        #pragma vector aligned
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
+            #pragma vector aligned
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
                 int lkj = l[j*n+k];
@@ -77,6 +95,7 @@ int square(int n,               // Number of nodes
 
 static inline void infinitize(int n, int* l)
 {
+    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
@@ -84,6 +103,7 @@ static inline void infinitize(int n, int* l)
 
 static inline void deinfinitize(int n, int* l)
 {
+    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
             l[i] = 0;
@@ -107,17 +127,19 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
+    #pragma vector aligned
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = (int*) _mm_calloc(n*n, sizeof(int), 64);
     memcpy(lnew, l, n*n * sizeof(int));
+    #pragma vector aligned
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    free(lnew);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -134,10 +156,12 @@ void shortest_paths(int n, int* restrict l)
 
 int* gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    int* l = _mm_calloc(n*n, sizeof(int), 64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
+    #pragma vector aligned
     for (int j = 0; j < n; ++j) {
+        #pragma vector aligned
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
         l[j*n+j] = 0;
@@ -244,6 +268,6 @@ int main(int argc, char** argv)
         write_matrix(ofname, n, l);
 
     // Clean up
-    free(l);
+    _mm_free(l);
     return 0;
 }
