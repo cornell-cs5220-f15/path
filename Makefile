@@ -20,6 +20,8 @@ include Makefile.in.$(PLATFORM)
 
 exe: path.x
 
+exe-mpi: path-mpi.x
+
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 

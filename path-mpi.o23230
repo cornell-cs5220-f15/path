@@ -1,0 +1,10 @@
+./path-mpi.x: invalid option -- 't'
+0
+0
+0
+1
+== MPI with 1 threads
+n:     100
+p:     0.05
+Time:  1.44618e+09
+Check: D30F

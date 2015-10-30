@@ -1,0 +1,72 @@
+== MPI with 2 threads
+n:     100
+p:     0.05
+Time:  1.44618e+09
+Check: 9EA2
+*** glibc detected *** ./path-mpi.x: double free or corruption (out): 0x0000000000c35980 ***
+======= Backtrace: =========
+/lib64/libc.so.6[0x379c475e66]
+== MPI with 2 threads
+n:     100
+/lib64/libc.so.6[0x379c4789ba]
+./path-mpi.x[0x401e05]
+p:     0.05
+Time:  1.44618e+09
+/lib64/libc.so.6(__libc_start_main+0xfd)[0x379c41ed5d]
+./path-mpi.x[0x400fc9]
+======= Memory map: ========
+00400000-0040a000 r-xp 00000000 00:17 21435881                           /home/bgs53/path/path-mpi.x
+0060a000-0060c000 rw-p 0000a000 00:17 21435881                           /home/bgs53/path/path-mpi.x
+00c1e000-00c48000 rw-p 00000000 00:00 0                                  [heap]
+379c000000-379c020000 r-xp 00000000 fd:00 1572866                        /lib64/ld-2.12.so
+379c21f000-379c220000 r--p 0001f000 fd:00 1572866                        /lib64/ld-2.12.so
+379c220000-379c221000 rw-p 00020000 fd:00 1572866                        /lib64/ld-2.12.so
+379c221000-379c222000 rw-p 00000000 00:00 0 
+379c400000-379c58a000 r-xp 00000000 fd:00 1572870                        /lib64/libc-2.12.so
+379c58a000-379c78a000 ---p 0018a000 fd:00 1572870                        /lib64/libc-2.12.so
+379c78a000-379c78e000 r--p 0018a000 fd:00 1572870                        /lib64/libc-2.12.so
+379c78e000-379c78f000 rw-p 0018e000 fd:00 1572870                        /lib64/libc-2.12.so
+379c78f000-379c794000 rw-p 00000000 00:00 0 
+379c800000-379c817000 r-xp 00000000 fd:00 1572873                        /lib64/libpthread-2.12.so
+379c817000-379ca17000 ---p 00017000 fd:00 1572873                        /lib64/libpthread-2.12.so
+379ca17000-379ca18000 r--p 00017000 fd:00 1572873                        /lib64/libpthread-2.12.so
+379ca18000-379ca19000 rw-p 00018000 fd:00 1572873                        /lib64/libpthread-2.12.so
+379ca19000-379ca1d000 rw-p 00000000 00:00 0 
+379cc00000-379cc02000 r-xp 00000000 fd:00 1572904                        /lib64/libdl-2.12.so
+379cc02000-379ce02000 ---p 00002000 fd:00 1572904                        /lib64/libdl-2.12.so
+379ce02000-379ce03000 r--p 00002000 fd:00 1572904                        /lib64/libdl-2.12.so
+379ce03000-379ce04000 rw-p 00003000 fd:00 1572904                        /lib64/libdl-2.12.so
+379d000000-379d007000 r-xp 00000000 fd:00 1572888                        /lib64/librt-2.12.so
+379d007000-379d206000 ---p 00007000 fd:00 1572888                        /lib64/librt-2.12.so
+379d206000-379d207000 r--pCheck: 9EA2
+ 00006000 fd:00 1572888                        /lib64/librt-2.12.so
+379d207000-379d208000 rw-p 00007000 fd:00 1572888                        /lib64/librt-2.12.so
+379d400000-379d483000 r-xp 00000000 fd:00 1572884                        /lib64/libm-2.12.so
+379d483000-379d682000 ---p 00083000 fd:00 1572884                        /lib64/libm-2.12.so
+379d682000-379d683000 r--p 00082000 fd:00 1572884                        /lib64/libm-2.12.so
+379d683000-379d684000 rw-p 00083000 fd:00 1572884                        /lib64/libm-2.12.so
+379e400000-379e416000 r-xp 00000000 fd:00 1572886                        /lib64/libgcc_s-4.4.7-20120601.so.1
+379e416000-379e615000 ---p 00016000 fd:00 1572886                        /lib64/libgcc_s-4.4.7-20120601.so.1
+379e615000-379e616000 rw-p 00015000 fd:00 1572886                        /lib64/libgcc_s-4.4.7-20120601.so.1
+7fd58e91e000-7fd58e923000 rw-p 00000000 00:00 0 
+7fd58e933000-7fd58e934000 rw-p 00000000 00:00 0 
+7fd58e934000-7fd58ee3a000 r-xp 00000000 fd:00 794288                     /usr/local/intel/impi/5.0.3.048/intel64/lib/release_mt/libmpi.so.12.0
+7fd58ee3a000-7fd58f039000 ---p 00506000 fd:00 794288                     /usr/local/intel/impi/5.0.3.048/intel64/lib/release_mt/libmpi.so.12.0
+7fd58f039000-7fd58f06d000 rw-p 00505000 fd:00 794288                     /usr/local/intel/impi/5.0.3.048/intel64/lib/release_mt/libmpi.so.12.0
+7fd58f06d000-7fd58f0bf000 rw-p 00000000 00:00 0 
+7fd58f0bf000-7fd58f144000 r-xp 00000000 fd:00 794258                     /usr/local/intel/impi/5.0.3.048/intel64/lib/libmpifort.so.12.0
+7fd58f144000-7fd58f343000 ---p 00085000 fd:00 794258                     /usr/local/intel/impi/5.0.3.048/intel64/lib/libmpifort.so.12.0
+7fd58f343000-7fd58f347000 rw-p 00084000 fd:00 794258                     /usr/local/intel/impi/5.0.3.048/intel64/lib/libmpifort.so.12.0
+7fd58f347000-7fd58f34a000 rw-p 00000000 00:00 0 
+7ffebff2d000-7ffebff44000 rw-p 00000000 00:00 0                          [stack]
+7ffebfff9000-7ffebfffa000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 126989 RUNNING AT en-cs-totient-02.coecis.cornell.edu
+=   EXIT CODE: 134
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)

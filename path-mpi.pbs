@@ -2,9 +2,9 @@
 
 #PBS -l nodes=1:ppn=24
 #PBS -l walltime=0:30:00
-#PBS -N path
+#PBS -N path-mpi
 #PBS -j oe
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./path.x -n 100
+mpirun -n 2 ./path-mpi.x -n 100 -t 2
