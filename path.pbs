@@ -7,4 +7,4 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./path.x -n 2000
+./path.x -n 2400
