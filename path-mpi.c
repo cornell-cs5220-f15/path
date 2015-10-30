@@ -128,30 +128,38 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-// void shortest_paths(int n, int* restrict l)
-// {
-//     int num_p, rank, per_p;
+void shortest_paths(int n, int* restrict l)
+{
+    int num_p, rank, n_sub;
 
-//     // Generate l_{ij}^0 from adjacency matrix representation
-//     infinitize(n, l);
-//     #pragma vector aligned
-//     for (int i = 0; i < n*n; i += n+1)
-//         l[i] = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &num_p);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-//     per_p = rank == num_p - 1 ? n / num_p + n % num_p : n / num_p;
+    // NOTE: We assume that problem size is divisible by number of processors.
+    assert (n % num_p == 0);
+    n_sub = n / num_p;
 
-//     // Repeated squaring until nothing changes
-//     int* restrict lnew = (int*) _mm_calloc(n*n, sizeof(int), 64);
-//     memcpy(lnew, l, n*n * sizeof(int));
-//     #pragma vector aligned
-//     for (int done = 0; !done; ) {
-//         done = square(n, l, lnew);
-//         memcpy(l, lnew, n*n * sizeof(int));
-//     }
+    // Generate l_{ij}^0 from adjacency matrix representation
+    infinitize(n, l);
+    #pragma vector aligned
+    for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;
 
-//     _mm_free(lnew);
-//     deinfinitize(n, l);
-// }
+
+    int* restrict lnew = (int*) _mm_calloc(n*n/num_p, sizeof(int), 64);
+    memcpy(lnew, l+n*rank*n_sub, n*n_sub * sizeof(int));
+    // Repeated squaring until nothing changes
+    // Everyone calculate one step of their local nodes (idx based off rank)
+    #pragma vector aligned
+    for (int done = 0; !done;) {
+        int local_done = square(n, l, lnew, rank, n_sub);
+        MPI_Allreduce(&local_done, &done, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+        MPI_Allgather(lnew, n*n_sub, MPI_INT, l, n*n_sub, MPI_INT, MPI_COMM_WORLD);
+    }
+
+    _mm_free(lnew);
+    deinfinitize(n, l);
+}
 
 /**
  * # The random graph model
@@ -236,10 +244,8 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
-
+    int rank, num_p;
     MPI_Init(&argc, &argv);
-    int num_p, rank, n_sub;
-
     MPI_Comm_size(MPI_COMM_WORLD, &num_p);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -273,32 +279,9 @@ int main(int argc, char** argv)
 
     // Time the shortest paths code
     double t0 = MPI_Wtime();
-
-    // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    #pragma vector aligned
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
-
-
-    // NOTE: We assume that problem size is divisible by number of processors.
-    assert (n % num_p == 0);
-    n_sub = n / num_p;
-
-    int* restrict lnew = (int*) _mm_calloc(n*n/num_p, sizeof(int), 64);
-    memcpy(lnew, l+n*rank*n_sub, n*n_sub * sizeof(int));
-    // Repeated squaring until nothing changes
-    // Everyone calculate one step of their local nodes (idx based off rank)
-    #pragma vector aligned
-    for (int done = 0; !done;) {
-        int local_done = square(n, l, lnew, rank, n_sub);
-        MPI_Allreduce(&local_done, &done, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
-        MPI_Allgather(lnew, n*n_sub, MPI_INT, l, n*n_sub, MPI_INT, MPI_COMM_WORLD);
-    }
-
-    deinfinitize(n, l);
-
+    shortest_paths(n, l);
     double t1 = MPI_Wtime();
+
     if (rank == 0) {
         printf("== MPI with %d threads\n", num_p);
         printf("n:     %d\n", n);
@@ -312,7 +295,6 @@ int main(int argc, char** argv)
     }
 
     // Clean up
-    _mm_free(lnew);
     _mm_free(l);
     MPI_Finalize();
 
