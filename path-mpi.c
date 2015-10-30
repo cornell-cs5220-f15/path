@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +68,7 @@ int square(int n,               // Number of nodes
     for (int j = rank*n_sub; j < rank*n_sub + n_sub; ++j) {
         #pragma vector aligned
         for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
+            int lij = lnew[(j-rank*n_sub)*n+i];
             #pragma vector aligned
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
@@ -77,7 +78,7 @@ int square(int n,               // Number of nodes
                     done = 0;
                 }
             }
-            lnew[j*n+i] = lij;
+            lnew[(j-rank*n_sub)*n+i] = lij;
         }
     }
     return done;
@@ -206,16 +207,16 @@ int fletcher16(int* data, int count)
     return (sum2 << 8) | sum1;
 }
 
-void write_matrix(const char* fname, int n, int* a)
+void write_matrix(const char* fname, int rows, int cols, int* a)
 {
     FILE* fp = fopen(fname, "w+");
     if (fp == NULL) {
         fprintf(stderr, "Could not open output file: %s\n", fname);
         exit(-1);
     }
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j)
-            fprintf(fp, "%d ", a[j*n+i]);
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j)
+            fprintf(fp, "%d ", a[j*rows+i]);
         fprintf(fp, "\n");
     }
     fclose(fp);
@@ -235,6 +236,13 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
+
+    MPI_Init(&argc, &argv);
+    int num_p, rank, n_sub;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &num_p);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     int n    = 200;            // Number of nodes
     int t    = 1;
     double p = 0.05;           // Edge probability
@@ -251,7 +259,6 @@ int main(int argc, char** argv)
             fprintf(stderr, "%s", usage);
             return -1;
         case 'n': n = atoi(optarg); break;
-        case 't': t = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
@@ -260,63 +267,55 @@ int main(int argc, char** argv)
 
     // Graph generation + output
     // Initialize graph, distribute to all processors
-    int* restrict lnew = (int*) _mm_calloc(n*(n/t), sizeof(int), 64);
     int* restrict l = gen_graph(n, p);
+    if (ifname && rank == 0)
+        write_matrix(ifname,  n, n, l);
+
+    // Time the shortest paths code
+    double t0 = MPI_Wtime();
+
+    // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
     #pragma vector aligned
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
-    if (ifname)
-        write_matrix(ifname,  n, l);
-
-    double t0 = MPI_Wtime();
-
-
-    // Time the shortest paths code
-    //Plan:
-    // nodes use Allgather to get new dists
-    // if no convergence, repeat
-    int num_p, rank, n_sub;
-
-    // Generate l_{ij}^0 from adjacency matrix representation
-
-    MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_p);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // NOTE: We assume that problem size is divisible by number of processors.
+    assert (n % num_p == 0);
     n_sub = n / num_p;
 
-    memcpy(lnew, l+n*rank, n*n_sub * sizeof(int));
+    int* restrict lnew = (int*) _mm_calloc(n*n/num_p, sizeof(int), 64);
+    memcpy(lnew, l+n*rank*n_sub, n*n_sub * sizeof(int));
     // Repeated squaring until nothing changes
     // Everyone calculate one step of their local nodes (idx based off rank)
     #pragma vector aligned
     for (int done = 0; !done;) {
         int local_done = square(n, l, lnew, rank, n_sub);
         MPI_Allreduce(&local_done, &done, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
-        printf("%d\n", done);
         MPI_Allgather(lnew, n*n_sub, MPI_INT, l, n*n_sub, MPI_INT, MPI_COMM_WORLD);
     }
-
-    MPI_Finalize();
 
     deinfinitize(n, l);
 
     double t1 = MPI_Wtime();
+    if (rank == 0) {
+        printf("== MPI with %d threads\n", num_p);
+        printf("n:     %d\n", n);
+        printf("p:     %g\n", p);
+        printf("Time:  %g\n", t1-t0);
+        printf("Check: %X\n", fletcher16(l, n*n));
 
-    printf("== MPI with %d threads\n", num_p);
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
-
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
+        // Generate output file
+        if (ofname)
+            write_matrix(ofname, n, n, l);
+    }
 
     // Clean up
     _mm_free(lnew);
     _mm_free(l);
+    MPI_Finalize();
+
     return 0;
+
 }

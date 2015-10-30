@@ -7,4 +7,5 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-mpirun -n 2 ./path-mpi.x -n 100 -t 2
+# mpirun -n 1 ./path-mpi.x -n 2000 -o oref -i iref
+mpirun -n 20 ./path-mpi.x -n 2000 -o oref2 -i iref2
