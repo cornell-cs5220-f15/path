@@ -288,7 +288,7 @@ int main(int argc, char** argv)
     double t1 = MPI_Wtime();
 
     if (rank == 0) {
-        printf("== MPI with %d threads\n", num_p);
+        printf("== Hybrid: %d MPI threads, %d OMP threads\n", num_p, omp_get_max_threads());
         printf("n:     %d\n", n);
         printf("p:     %g\n", p);
         printf("Time:  %g\n", t1-t0);
