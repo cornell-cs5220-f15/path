@@ -7,6 +7,6 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-scp path-mpi.x mic0:/tmp
+scp phi.MIC mic0:/tmp
 export I_MPI_MIC=1
-mpirun -host mic0 -n 24 /tmp/path-mpi.x -n 2400
+mpirun -host mic0 -n 100 /tmp/phi.MIC -n 1000

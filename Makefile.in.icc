@@ -6,6 +6,8 @@ CFLAGS=-std=c99 -g
 OPTFLAGS=-O3 -no-prec-div -xcore-avx2 -ipo \
 	-qopt-report=5 -qopt-report-phase=vec
 
+PHI_FLAGS=-std=c99 -g -O3 -no-prec-div -ipo \
+    -qopt-report=5 -qopt-report-phase=vec -openmp
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS)
 OMP_CFLAGS=$(CFLAGS) -openmp

@@ -7,4 +7,4 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-mpirun -n 6 ./path-mpi-omp.x -n 2400
+mpirun -n 1 ./hybrid.x -n 100

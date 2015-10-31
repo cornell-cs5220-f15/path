@@ -18,30 +18,47 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-omp: path.x
+# phi compiling (of hybrid)
+phi: phi.MIC
 
-mpi: path-mpi.x
+phi.MIC: path-mic.o mtp.o
+	$(MPICC) -mmic $(PHI_FLAGS) $^ -o $@
 
-hybrid: path-mpi-omp.x
+path-mic.o: path-mpi-omp.c
+	$(MPICC) -mmic -c $(PHI_FLAGS) $< -o $@
 
-path-mpi-omp.x: path-mpi-omp.o mt19937p.o
+mtp.o: mt19937p.c
+	$(CC) -mmic -c $(PHI_FLAGS) $< -o $@
+
+#hybrid MPI-OMP compiling
+hybrid: hybrid.x
+
+hybrid.x: path-mpi-omp.o mt19937p.o
 	$(MPICC) $(OMP_CFLAGS) $^ -o $@
 
 path-mpi-omp.o: path-mpi-omp.c
 	$(MPICC) -c $(OMP_CFLAGS) $<
 
-path.x: path.o mt19937p.o
+#OMP Compiling
+omp: omp.x
+
+omp.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
 path.o: path.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
-path-mpi.x: path-mpi.o mt19937p.o
+#MPI Compiling
+mpi: mpi.x
+
+mpi.x: path-mpi.o mt19937p.o
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
 path-mpi.o: path-mpi.c
 	$(MPICC) -c $(MPI_CFLAGS) $<
 
+
+# General .o compiling
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 
