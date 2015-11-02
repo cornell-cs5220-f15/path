@@ -7,8 +7,6 @@
 #include <omp.h>
 #include "mt19937p.h"
 
-#define BLOCK_SIZE 64
-
 //ldoc on
 /**
  * # The basic recurrence
@@ -41,116 +39,26 @@
  * identical, and false otherwise.
  */
 
-int basic_square(const int * restrict A, const int * restrict B, int * restrict C) {
-    __assume_aligned(A, 64);
-    __assume_aligned(B, 64);
-    __assume_aligned(C, 64);
-    
-    int oi, oj, ok;
-    int ta, tb, tc;
-    int done = 1;
-    
-    for (int j = 0; j < BLOCK_SIZE; ++j) {
-        oj = j * BLOCK_SIZE;
-        for (int k = 0; k < BLOCK_SIZE; ++k) {
-            ok = k * BLOCK_SIZE;
-            tb = B[oj+k];
-            for (int i = 0; i < BLOCK_SIZE; ++i) {
-                if (A[ok+i] + tb < C[oj+i]) {
-                    C[oj+i] = A[ok+i] + tb;
-                    done = 0;
-                }
-            }
-        }
-    }
-    
-    return done;
-}
-
 int square(int n,               // Number of nodes
-           int * restrict l,     // Partial distance at step s
-           int * restrict lnew)  // Partial distance at step s+1
+           int* restrict l,     // Partial distance at step s
+           int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    int blocks = n / BLOCK_SIZE + (n % BLOCK_SIZE ? 1 : 0);
-    int totalblocks = blocks * blocks;
-    int totalblocksize = BLOCK_SIZE * BLOCK_SIZE;
-    
-    // Copied l matrix
-    int * CL __attribute__((aligned(64))) =
-        (int *) malloc(totalblocks * totalblocksize * sizeof(int));
-    // Copied lnew matrix
-    int * CN __attribute__((aligned(64))) =
-        (int *) malloc(totalblocks * totalblocksize * sizeof(int));
-    
-    // Copy over
-    int copyoffset = 0;
-    for (int bi = 0; bi < blocks; ++bi) {
-        for (int bj = 0; bj < blocks; ++bj) {
-            int oi = bi * BLOCK_SIZE;
-            int oj = bj * BLOCK_SIZE;
-            copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
-            for (int j = 0; j < BLOCK_SIZE; ++j) {
-                for (int i = 0; i < BLOCK_SIZE; ++i) {
-                    int offset = (oi + i) + (oj + j) * n;
-                    // Check bounds
-                    if (oi + i < n && oj + j < n) {
-                        CL[copyoffset] = l[offset];
-                    }
-                    else {
-                        CL[copyoffset] = n + 1;
-                    }
-                    copyoffset++;
-                }
-            }
-        }
-    }
-    
-    memcpy(CN, CL, totalblocks * totalblocksize * sizeof(int));
-    
-    // Perform square
-    #pragma omp parallel shared(CL, CN, done)
-    {
-        #pragma omp for
-        for (int bc = 0; bc < blocks * blocks; ++bc) {
-            // Compute block position
-            int bi = bc / blocks;
-            int bj = bc % blocks;
-            
-            for (int bk = 0; bk < blocks; ++bk) {
-                int td = basic_square(
-                    CL + (bi + bk * blocks) * BLOCK_SIZE * BLOCK_SIZE,
-                    CL + (bk + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE,
-                    CN + (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE
-                );
-                
-                if (done == 1 && td == 0) {
-                    #pragma omp critical
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i < n; ++i) {
+            int lij = lnew[j*n+i];
+            for (int k = 0; k < n; ++k) {
+                int lik = l[k*n+i];
+                int lkj = l[j*n+k];
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
                     done = 0;
                 }
             }
+            lnew[j*n+i] = lij;
         }
     }
-    
-    // Copy back
-    copyoffset = 0;
-    for (int bi = 0; bi < blocks; ++bi) {
-        for (int bj = 0; bj < blocks; ++bj) {
-            int oi = bi * BLOCK_SIZE;
-            int oj = bj * BLOCK_SIZE;
-            copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
-            for (int j = 0; j < BLOCK_SIZE; ++j) {
-                for (int i = 0; i < BLOCK_SIZE; ++i) {
-                    int offset = (oi + i) + (oj + j) * n;
-                    if (oi + i < n && oj + j < n) {
-                        lnew[offset] = CN[copyoffset];
-                    }
-                    copyoffset++;
-                }
-            }
-        }
-    }
-    
     return done;
 }
 
@@ -204,7 +112,7 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int * restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
@@ -336,9 +244,8 @@ int main(int argc, char** argv)
     printf("Check: %X\n", fletcher16(l, n*n));
 
     // Generate output file
-    if (ofname) {
+    if (ofname)
         write_matrix(ofname, n, l);
-    }
 
 
     // Clean up

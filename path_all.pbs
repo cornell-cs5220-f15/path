@@ -1,0 +1,29 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+
+./path.x -n 127
+./path.x -n 128
+./path.x -n 129
+
+./path.x -n 255
+./path.x -n 256
+./path.x -n 257
+
+./path.x -n 511
+./path.x -n 512
+./path.x -n 513
+
+./path.x -n 1023
+./path.x -n 1024
+./path.x -n 1025
+
+./path.x -n 2047
+./path.x -n 2048
+./path.x -n 2049
