@@ -4,6 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <omp.h>
+#include <getopt.h>
 #include "mt19937p.h"
 
 //ldoc on
@@ -70,7 +71,7 @@ int square(int n,               // Number of nodes
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back 
+ * The functions `infinitize` and `deinfinitize` convert back
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
@@ -181,7 +182,7 @@ void write_matrix(const char* fname, int n, int* a)
         exit(-1);
     }
     for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) 
+        for (int j = 0; j < n; ++j)
             fprintf(fp, "%d ", a[j*n+i]);
         fprintf(fp, "\n");
     }
