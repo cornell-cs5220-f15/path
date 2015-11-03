@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
 #include <unistd.h>
 #include <omp.h>
+#include "tropical_matmul.h"
 #include "mt19937p.h"
 
 //ldoc on
@@ -38,28 +40,6 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
-{
-    int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
-        }
-    }
-    return done;
-}
 
 /**
  *
@@ -75,19 +55,7 @@ int square(int n,               // Number of nodes
  * conventions.
  */
 
-static inline void infinitize(int n, int* l)
-{
-    for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0)
-            l[i] = n+1;
-}
 
-static inline void deinfinitize(int n, int* l)
-{
-    for (int i = 0; i < n*n; ++i)
-        if (l[i] == n+1)
-            l[i] = 0;
-}
 
 /**
  *
@@ -103,23 +71,7 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
-{
-    // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
 
-    // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    memcpy(lnew, l, n*n * sizeof(int));
-    for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        memcpy(l, lnew, n*n * sizeof(int));
-    }
-    free(lnew);
-    deinfinitize(n, l);
-}
 
 /**
  * # The random graph model
@@ -233,7 +185,6 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
