@@ -25,65 +25,6 @@ void* _mm_calloc(size_t nelem, size_t elsize, size_t alignment)
     return memory;
 }
 
-//ldoc on
-/**
- * # The basic recurrence
- *
- * At the heart of the method is the following basic recurrence.
- * If $l_{ij}^s$ represents the length of the shortest path from
- * $i$ to $j$ that can be attained in at most $2^s$ steps, then
- * $$
- *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^2 \}.
- * $$
- * That is, the shortest path of at most $2^{s+1}$ hops that connects
- * $i$ to $j$ consists of two segments of length at most $2^s$, one
- * from $i$ to $k$ and one from $k$ to $j$.  Compare this with the
- * following formula to compute the entries of the square of a
- * matrix $A$:
- * $$
- *   a_{ij}^2 = \sum_k a_{ik} a_{kj}.
- * $$
- * These two formulas are identical, save for the niggling detail that
- * the latter has addition and multiplication where the former has min
- * and addition.  But the basic pattern is the same, and all the
- * tricks we learned when discussing matrix multiplication apply -- or
- * at least, they apply in principle.  I'm actually going to be lazy
- * in the implementation of `square`, which computes one step of
- * this basic recurrence.  I'm not trying to do any clever blocking.
- * You may choose to be more clever in your assignment, but it is not
- * required.
- *
- * The return value for `square` is true if `l` and `lnew` are
- * identical, and false otherwise.
- */
-
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew,  // Partial distance at step s+1
-           int rank,
-           int n_sub)
-{
-    int done = 1;
-    #pragma vector aligned
-    for (int j = rank*n_sub; j < rank*n_sub + n_sub; ++j) {
-        #pragma vector aligned
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[(j-rank*n_sub)*n+i];
-            #pragma vector aligned
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[(j-rank*n_sub)*n+i] = lij;
-        }
-    }
-    return done;
-}
-
 /**
  *
  * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
@@ -93,14 +34,13 @@ int square(int n,               // Number of nodes
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back
+ * The functions `infinitize` and `deinfinitize` convert back 
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
 
 static inline void infinitize(int n, int* l)
 {
-    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
@@ -108,7 +48,6 @@ static inline void infinitize(int n, int* l)
 
 static inline void deinfinitize(int n, int* l)
 {
-    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
             l[i] = 0;
@@ -141,22 +80,31 @@ void shortest_paths(int n, int* restrict l)
 
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
-    #pragma vector aligned
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
-
     int* restrict lnew = (int*) _mm_calloc(n*n/num_p, sizeof(int), 64);
     memcpy(lnew, l+n*rank*n_sub, n*n_sub * sizeof(int));
-    // Repeated squaring until nothing changes
-    // Everyone calculate one step of their local nodes (idx based off rank)
+
     #pragma vector aligned
-    for (int done = 0; !done;) {
-        int local_done = square(n, l, lnew, rank, n_sub);
-        MPI_Allreduce(&local_done, &done, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+    for (int k = 0; k < n; ++k) {
+        #pragma omp parallel for
+        #pragma vector aligned
+        for (int i = 0; i < n; ++i) {
+            #pragma vector aligned
+            for (int j = rank*n_sub; j < rank*n_sub + n_sub; ++j) {
+                int lij = lnew[(j-rank*n_sub)*n+i];
+                int lik = l[k*n+i];
+                int lkj = l[j*n+k];
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
+                }
+                lnew[(j-rank*n_sub)*n+i] = lij;
+                l[j*n+i] = lij;
+            }
+        }
         MPI_Allgather(lnew, n*n_sub, MPI_INT, l, n*n_sub, MPI_INT, MPI_COMM_WORLD);
     }
-
     _mm_free(lnew);
     deinfinitize(n, l);
 }
@@ -177,9 +125,7 @@ int* gen_graph(int n, double p)
     int* l = _mm_calloc(n*n, sizeof(int), 64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
-    #pragma vector aligned
     for (int j = 0; j < n; ++j) {
-        #pragma vector aligned
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
         l[j*n+j] = 0;
@@ -244,13 +190,13 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
+
     int rank, num_p;
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &num_p);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     int n    = 200;            // Number of nodes
-    int t    = 1;
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
@@ -272,8 +218,7 @@ int main(int argc, char** argv)
     }
 
     // Graph generation + output
-    // Initialize graph, distribute to all processors
-    int* restrict l = gen_graph(n, p);
+    int* l = gen_graph(n, p);
     if (ifname && rank == 0)
         write_matrix(ifname,  n, n, l);
 
@@ -283,7 +228,7 @@ int main(int argc, char** argv)
     double t1 = MPI_Wtime();
 
     if (rank == 0) {
-        printf("== MPI: %d MPI threads\n", num_p);
+        printf("== FW-MPI: %d FW-MPI threads\n", num_p);
         printf("n:     %d\n", n);
         printf("p:     %g\n", p);
         printf("Time:  %g\n", t1-t0);
@@ -299,5 +244,4 @@ int main(int argc, char** argv)
     MPI_Finalize();
 
     return 0;
-
 }

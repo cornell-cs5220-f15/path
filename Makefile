@@ -18,6 +18,24 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
+# #### Floyd-Warshall Algorithm
+fw-omp: fw-omp.x
+
+fw-omp.x: fw-omp.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+fw-omp.o: fw-omp.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+fw-mpi: fw-mpi.x
+
+fw-mpi.x: fw-mpi.o mt19937p.o
+	$(MPICC) $(OMP_CFLAGS) $^ -o $@
+
+fw-mpi.o: fw-mpi.c
+	$(MPICC) -c $(OMP_CFLAGS) $<
+
+
 # phi compiling (of hybrid)
 phi: phi.MIC
 
@@ -56,7 +74,6 @@ mpi.x: path-mpi.o mt19937p.o
 
 path-mpi.o: path-mpi.c
 	$(MPICC) -c $(MPI_CFLAGS) $<
-
 
 # General .o compiling
 %.o: %.c
