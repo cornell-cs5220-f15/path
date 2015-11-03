@@ -4,7 +4,7 @@ At the heart of the method is the following basic recurrence.
 If $l_{ij}^s$ represents the length of the shortest path from
 $i$ to $j$ that can be attained in at most $2^s$ steps, then
 $$
-  l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^2 \}.
+  l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}.
 $$
 That is, the shortest path of at most $2^{s+1}$ hops that connects
 $i$ to $j$ consists of two segments of length at most $2^s$, one
