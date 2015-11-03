@@ -38,6 +38,14 @@
  * identical, and false otherwise.
  */
 
+
+
+
+
+// ========================================================================== 
+//          Justin: this should be done as matrix multiplication
+// ==========================================================================
+
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict l_T,   // Transposed l matrix
@@ -116,6 +124,12 @@ static inline void deinfinitize(int n, int* l)
  * by only repeatedly squaring until two successive matrices are the
  * same (as indicated by the return value of the `square` routine).
  */
+
+
+
+// ==================================================================================
+//      Justin: Since the totient is 2d torus, we need to use cannon's algorithm
+// ==================================================================================
 
 void shortest_paths(int n, int* restrict l)
 {
