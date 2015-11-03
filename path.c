@@ -48,6 +48,8 @@ int square(int n,               // Number of nodes
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) {
+              // Do better memory access here
+              // See if you can make an explicity copy before carrying out the computation
                 int lik = l[k*n+i];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
@@ -75,14 +77,14 @@ int square(int n,               // Number of nodes
  * conventions.
  */
 
-static inline void infinitize(int n, int* l)
+static inline void infinitize(int n, int* restrict l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
 }
 
-static inline void deinfinitize(int n, int* l)
+static inline void deinfinitize(int n, int* restrict l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
@@ -111,13 +113,15 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    //int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = (int*) _mm_malloc(n*n*sizeof(int),16);
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    free(lnew);
+    //free(lnew);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -132,9 +136,10 @@ void shortest_paths(int n, int* restrict l)
  * random number generator in lieu of coin flips.
  */
 
-int* gen_graph(int n, double p)
+int* restrict gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    //int* l = calloc(n*n, sizeof(int));
+    int* l = (int*) _mm_malloc(n*n*sizeof(int),16);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -224,7 +229,7 @@ int main(int argc, char** argv)
     }
 
     // Graph generation + output
-    int* l = gen_graph(n, p);
+    int* restrict l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
 
@@ -244,6 +249,7 @@ int main(int argc, char** argv)
         write_matrix(ofname, n, l);
 
     // Clean up
-    free(l);
+    //free(l);
+    _mm_free(l);
     return 0;
 }
