@@ -40,17 +40,31 @@
 
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
+           int* restrict l_T,   // Transposed l matrix
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
+
+    for (int i = 0; i < n; i++)
+        for(int j = 0; j < n; j++)
+        {
+            l_T[i*n + j] = l[j*n + i];
+        }
+
+    #pragma omp parallel for shared(l, l_T, lnew) reduction(&& : done)
+    for (int j = 0; j < n; ++j) 
+    {
+        for (int i = 0; i < n; ++i) 
+        {
             int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
+            for (int k = 0; k < n; ++k) 
+            {
+                // ===Justin: addition not vectorized here===
+                int lik = l_T[i*n+k];
+                // ==========================================
                 int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
+                if (lik + lkj < lij) 
+                {
                     lij = lik+lkj;
                     done = 0;
                 }
@@ -111,12 +125,15 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
+    int* restrict l_T  = (int*) calloc(n*n, sizeof(int)); 
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
-    for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
+    for (int done = 0; !done; ) 
+    {
+        done = square(n, l, l_T, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
+    free(l_T);
     free(lnew);
     deinfinitize(n, l);
 }
