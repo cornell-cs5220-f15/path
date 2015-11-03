@@ -59,9 +59,9 @@ int square(int n,               // Number of nodes
             int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) 
             {
-                // ===Justin: addition not vectorized here===
+                // ===== Justin: addition now vectorized =====
                 int lik = l_T[i*n+k];
-                // ==========================================
+                // ===========================================
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) 
                 {
