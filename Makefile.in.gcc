@@ -1,4 +1,4 @@
-CC=gcc
+CC=gcc-5
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
