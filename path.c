@@ -1,3 +1,4 @@
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +15,7 @@
  * If $l_{ij}^s$ represents the length of the shortest path from
  * $i$ to $j$ that can be attained in at most $2^s$ steps, then
  * $$
- *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^2 \}.
+ *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}.
  * $$
  * That is, the shortest path of at most $2^{s+1}$ hops that connects
  * $i$ to $j$ consists of two segments of length at most $2^s$, one
@@ -92,7 +93,7 @@ static inline void deinfinitize(int n, int* l)
 /**
  *
  * Of course, any loop-free path in a graph with $n$ nodes can
- * at most pass theough every node in the graph.  Therefore,
+ * at most pass through every node in the graph.  Therefore,
  * once $2^s \geq n$, the quantity $l_{ij}^s$ is actually
  * the length of the shortest path of any number of hops.  This means
  * we can compute the shortest path lengths for all pairs of nodes
@@ -153,7 +154,7 @@ int* gen_graph(int n, double p)
  * arithmetic, we should get bitwise identical results from run to
  * run, even if we do optimizations that change the associativity of
  * our computations.  The function `fletcher16` computes a simple
- * [simple checksum][wiki-fletcher].  over the output of the
+ * [simple checksum][wiki-fletcher] over the output of the
  * `shortest_paths` routine, which we can then use to quickly tell
  * whether something has gone wrong.  The `write_matrix` routine
  * actually writes out a text representation of the matrix, in case we
