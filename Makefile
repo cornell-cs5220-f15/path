@@ -19,7 +19,7 @@ include Makefile.in.$(PLATFORM)
 # === Executables
 
 # #### Floyd-Warshall Algorithm
-fw-omp: fw-omp.x
+fwomp: fw-omp.x
 
 fw-omp.x: fw-omp.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -27,7 +27,7 @@ fw-omp.x: fw-omp.o mt19937p.o
 fw-omp.o: fw-omp.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
-fw-mpi: fw-mpi.x
+fwmpi: fw-mpi.x
 
 fw-mpi.x: fw-mpi.o mt19937p.o
 	$(MPICC) $(OMP_CFLAGS) $^ -o $@

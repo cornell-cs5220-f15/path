@@ -2,9 +2,10 @@ import os
 import time
 
 n= range(500,5100,500)
-threads = range(2,25,2)
+threads_mpi = range(2,25,2) + [1]
+threads_omp = [1]
 
-def create_pbs(name, mpi=False):
+def create_pbs(name, threads, n, mpi=False):
     fname = "{}.pbs".format(name)
     out = open(fname,'w')
     s = '''#!/bin/sh -l
@@ -26,5 +27,6 @@ cd $PBS_O_WORKDIR
     out.close()
     os.system("qsub {}".format(fname))
 
-# create_pbs("hybrid", mpi=True)
-create_pbs("omp", mpi=False)
+create_pbs("hybrid", mpi=True, n=n, threads=threads_mpi)
+create_pbs("omp", mpi=False, n=n, threads=threads_mpi)
+create_pbs("mpi", mpi=True, threads=threads_omp, n=n)
