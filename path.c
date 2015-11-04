@@ -91,7 +91,7 @@ int* gen_graph(int n, double p)
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i)
-            l[j*n+i] = (genrand(&state) < p);
+            l[j*n+i] = 1; //(genrand(&state) < p);
         l[j*n+j] = 0;
     }
     return l;

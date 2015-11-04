@@ -48,7 +48,7 @@ path.md: path.c
 # === Cleanup and tarball
 
 clean:
-	rm -f *.o
+	rm -f *.o*
 	rm floyd-warshall
 
 
