@@ -229,7 +229,7 @@ int main(int argc, char** argv)
     double t1 = MPI_Wtime();
 
     if (rank == 0) {
-        printf("== FW-MPI: %d FW-MPI threads\n", num_p);
+        printf("== FW-MPI: %d MPI threads\n", num_p);
         printf("n:     %d\n", n);
         printf("p:     %g\n", p);
         printf("Time:  %g\n", t1-t0);
