@@ -36,6 +36,22 @@ path-mpi.o: path-mpi.c
 	$(CC) -c $(CFLAGS) $<
 
 
+# === Profiling
+
+.PHONY: maqao scan-build
+
+maqao: path.x
+	( module load maqao ; \
+	  maqao cqa ./path.x fct=shortest_paths uarch=HASWELL )
+
+scan-build:
+	( module load llvm-analyzer ; \
+	  scan-build -v --use-analyzer=/share/apps/llvm-3.7.0/bin/clang make )
+
+vtune-report:
+	amplxe-cl -R hotspots -report-output vtune-report.csv -format csv -csv-delimiter comma
+
+
 # === Documentation
 
 main.pdf: README.md path.md

@@ -168,8 +168,8 @@ int fletcher16(int* data, int count)
     int sum1 = 0;
     int sum2 = 0;
     for(int index = 0; index < count; ++index) {
-          sum1 = (sum1 + data[index]) % 255;
-          sum2 = (sum2 + sum1) % 255;
+      sum1 = (sum1 + data[index]) % 255;
+      sum2 = (sum2 + sum1) % 255;
     }
     return (sum2 << 8) | sum1;
 }
@@ -178,13 +178,14 @@ void write_matrix(const char* fname, int n, int* a)
 {
     FILE* fp = fopen(fname, "w+");
     if (fp == NULL) {
-        fprintf(stderr, "Could not open output file: %s\n", fname);
-        exit(-1);
+      fprintf(stderr, "Could not open output file: %s\n", fname);
+      exit(-1);
     }
+
     for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j)
-            fprintf(fp, "%d ", a[j*n+i]);
-        fprintf(fp, "\n");
+      for (int j = 0; j < n; ++j)
+        fprintf(fp, "%d ", a[j*n+i]);
+      fprintf(fp, "\n");
     }
     fclose(fp);
 }
