@@ -47,18 +47,15 @@ int square(int irank, int imin_, int jmin_, int imax_, int jmax_,
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    int lkj[n];
     for (int j = jmin_; j < jmax_; ++j) {
       int jn = j*n;
-      for (int k = 0; k < n; ++k) { //Copy for Cache locality
-        lkj[k] = l[jn+k];
-      }
       for (int i = imin_; i < imax_; ++i) {
         int lij = lnew[jn+i];
         for (int k = 0; k < n; ++k) {
+          int lkj = l[jn+k];
           int lik = l[k*n+i];
-          if (lik + lkj[k] < lij) {
-            lij = lik+lkj[k];
+          if (lik + lkj < lij) {
+            lij = lik+lkj;
             done = 0;
           }
         }
@@ -206,7 +203,9 @@ const char* usage =
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  - o -- file name where output matrix should be stored (none)\n"
+    "  - x -- number of processors in i-direction for MPI (none)\n"
+    "  - y -- number of processors in j-direction for MPI (none)\n";
 
 int main(int argc, char** argv)
 {
