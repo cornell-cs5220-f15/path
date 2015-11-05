@@ -150,16 +150,16 @@ void shortest_paths(int n, ddt* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    ddt* restrict l_T  = (ddt*) calloc(n*n, sizeof(ddt)); 
-    ddt* restrict lnew = (ddt*) calloc(n*n, sizeof(ddt));
+    ddt* restrict l_T  = (ddt*) _mm_malloc(n*n * sizeof(ddt), 32); 
+    ddt* restrict lnew = (ddt*) _mm_malloc(n*n * sizeof(ddt), 32);
     memcpy(lnew, l, n*n * sizeof(ddt));
     for (int done = 0; !done; ) 
     {
         done = square(n, l, l_T, lnew);
         memcpy(l, lnew, n*n * sizeof(ddt));
     }
-    free(l_T);
-    free(lnew);
+    _mm_free(l_T);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -176,7 +176,7 @@ void shortest_paths(int n, ddt* restrict l)
 
 ddt* gen_graph(int n, double p)
 {
-    ddt* l = calloc(n*n, sizeof(ddt));
+    ddt* l = _mm_malloc(n*n * sizeof(ddt), 32);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) 
@@ -291,6 +291,6 @@ int main(int argc, char** argv)
 
     printf("ddt_upper_range:%d\n", ddt_upper_range);
     // Clean up
-    free(l);
+    _mm_free(l);
     return 0;
 }

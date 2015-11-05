@@ -89,29 +89,23 @@ LOOP BEGIN at path.c(227,5) inlined into path.c(275,9)
 LOOP END
 
 LOOP BEGIN at path.c(113,5) inlined into path.c(279,5)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at path.c(113,5) inlined into path.c(279,5)
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(115,13) ]
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(115,13) ]
-   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(115,13) ]
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(115,13) ]
    remark #15300: LOOP WAS VECTORIZED
-   remark #15450: unmasked unaligned unit stride loads: 1 
-   remark #15451: unmasked unaligned unit stride stores: 1 
+   remark #15448: unmasked aligned unit stride loads: 1 
+   remark #15449: unmasked aligned unit stride stores: 1 
    remark #15475: --- begin vector loop cost summary ---
    remark #15476: scalar loop cost: 14 
    remark #15477: vector loop cost: 0.460 
-   remark #15478: estimated potential speedup: 5.630 
+   remark #15478: estimated potential speedup: 13.860 
    remark #15479: lightweight vector operations: 10 
    remark #15488: --- end vector loop cost summary ---
 LOOP END
 
 LOOP BEGIN at path.c(113,5) inlined into path.c(279,5)
 <Remainder>
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(115,13) ]
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(115,13) ]
-   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(115,13) ]
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(115,13) ]
    remark #15301: REMAINDER LOOP WAS VECTORIZED
 LOOP END
 
@@ -187,29 +181,23 @@ LOOP BEGIN at path.c(156,5) inlined into path.c(279,5)
 LOOP END
 
 LOOP BEGIN at path.c(120,5) inlined into path.c(279,5)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at path.c(120,5) inlined into path.c(279,5)
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(122,13) ]
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(122,13) ]
-   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(122,13) ]
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(122,13) ]
    remark #15300: LOOP WAS VECTORIZED
-   remark #15450: unmasked unaligned unit stride loads: 1 
-   remark #15451: unmasked unaligned unit stride stores: 1 
+   remark #15448: unmasked aligned unit stride loads: 1 
+   remark #15449: unmasked aligned unit stride stores: 1 
    remark #15475: --- begin vector loop cost summary ---
    remark #15476: scalar loop cost: 14 
    remark #15477: vector loop cost: 0.340 
-   remark #15478: estimated potential speedup: 5.880 
+   remark #15478: estimated potential speedup: 15.730 
    remark #15479: lightweight vector operations: 10 
    remark #15488: --- end vector loop cost summary ---
 LOOP END
 
 LOOP BEGIN at path.c(120,5) inlined into path.c(279,5)
 <Remainder>
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(122,13) ]
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(122,13) ]
-   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(122,13) ]
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(122,13) ]
    remark #15301: REMAINDER LOOP WAS VECTORIZED
 LOOP END
 
