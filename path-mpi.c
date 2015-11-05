@@ -47,14 +47,18 @@ int square(int irank, int imin_, int jmin_, int imax_, int jmax_,
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
+    int lkj[n];
     for (int j = jmin_; j < jmax_; ++j) {
+      int jn = j*n;
+      for (int k = 0; k < n; ++k) { //Copy for Cache locality
+        lkj[k] = l[jn+k];
+      }
       for (int i = imin_; i < imax_; ++i) {
-        int lij = lnew[j*n+i];
+        int lij = lnew[jn+i];
         for (int k = 0; k < n; ++k) {
           int lik = l[k*n+i];
-          int lkj = l[j*n+k];
-          if (lik + lkj < lij) {
-            lij = lik+lkj;
+          if (lik + lkj[k] < lij) {
+            lij = lik+lkj[k];
             done = 0;
           }
         }
@@ -236,7 +240,6 @@ int main(int argc, char** argv)
     int* l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
-
     // Time the shortest paths code
     double t0 = omp_get_wtime();
   
@@ -257,7 +260,7 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &irank);
     int iroot = 0; // Master processor
   
-    if(npx*npy > world_size && irank==iroot) {
+    if(npx*npy != world_size && irank==iroot) {
       printf("ERROR:  %d procs requested while only %d procs available \n",npx*npy,world_size);
       exit(-1);
     }
@@ -277,7 +280,6 @@ int main(int argc, char** argv)
     irank = irank + 1;
     iproc = iproc + 1;
     jproc = jproc + 1;
-    printf("Processor rank: %d  Iproc: %d   Jproc: %d   \n", irank, iproc, jproc);
   
     // Set up indexing for convenience and translation back to global l
     int nx = n;
@@ -326,14 +328,6 @@ int main(int argc, char** argv)
     jmax_ = jmin_ + ny_;
 //    jmino_ = jmin_ - nghost;
 //    jmaxo_ = jmax_ + nghost;
-
-    for(int i=1;i<=world_size; ++i){
-      if(i==irank){
-        printf("irank=%d  imin_=%d  imax_=%d jmin_=%d jmax_=%d\n ",irank,imin_,imax_,jmin_,jmax_);
-      }
-    MPI_Barrier(cart_comm);
-    }
-  if(irank==iroot) {printf("irank=%d  imin=%d  imax=%d jmin=%d jmax=%d",irank,imin,imax,jmin,jmax);}
   
     // Each proc computes on its smaller square
     shortest_paths(cart_comm,irank, imin_,imax_,jmin_,jmax_,n,l);
