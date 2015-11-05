@@ -38,33 +38,6 @@
  * identical, and false otherwise.
  */
 
-int rectangle(int n, int sub_size,               // Number of nodes
-           int* restrict myblock,     // Partial distance at step s+1
-           int* restrict mycol,		// row matrix
-		   int* restrict myrow)  // column matrix 
-{
-    int done = 1;
-	for (int b=0; b< n/sub_size; ++b){
-		int BA = b*sub_size*sub_size; // Sub Block address
-		for (int j = 0; j < sub_size; ++j) {
-			for (int i = 0; i < sub_size; ++i) {
-				int lij = myblock[j*sub_size+i];
-				for (int k = 0; k < n; ++k) {
-					int lik = myrow[BA+k*sub_size+i]; //needs to be modified according to how to array is arranged
-					int lkj = mycol[BA+j*sub_size+k];
-					if (lik + lkj < lij) {
-						lij = lik+lkj;
-						done = 0;
-					}
-				}
-				lnew[j*sub_size+i] = lij;
-			}
-		}
-	}
-    return done;
-}
-
- 
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
@@ -130,117 +103,23 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
- /*
- * Assumes the blocked is in this format: (column major with column major blocks)
- * ------ -------
- * | 1 3 |  9 10 |
- * | 2 4 | 11 12 |
- * ------  ------
- * | 5 7 | 13 15 |
- * | 7 8 | 14 16 | 
- * ------ -------
- */
 void shortest_paths(int n, int* restrict l)
-{	// original initialization 
-	// Generate l_{ij}^0 from adjacency matrix representation
+{
+    // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
-	
-	// Some serial setup
-	nproc = 16; // assume this is a square for now
-	n_sub = sqrt(nproc); // ratio of big to small, that is there is ratio^2 sub_grids
-	if (n%ratio != 0 ){  \\THROW ERROR}
-	int sub_size = n/ratio;
-	int* restrict bl = (int*) _mm_malloc(n*n*sizeof(int),64); // blocked version of l where blocks are n/4 * n/4 and
-	column_to_block(l,bl,n, sub_size); // implement this function later
-	
-
-	
-	//MPI Setup
-	
-	MPI_Init(); // probably wrong
-	MPI_Group* col_group= (MPI_Group*) _mm_malloc(n_sub*sizeof(MPI_Group));// group ID of column groups [0; n_sub-1] 
-	MPI_Group* row_group= (MPI_Group*) _mm_malloc(n_sub*sizeof(MPI_Group));// group IP of row groups
-	MPI_Group World_Group; // group handle of World (main group) 
-	
-	MPI_Comm* col_comm = (MPI_Group*) _mm_malloc(n_sub*sizeof(MPI_Comm));// communicator of column groups
-	MPI_Comm* row_comm = (MPI_Group*) _mm_malloc(n_sub*sizeof(MPI_Comm));// communicator  of row groups
-	
-	
-	int myrank, mycolrank, myrowrank; 
-	int ranks[nprocs]; // Ranks in main group
-	int* indices[nprocs]; // indices array used to include group
-	int* myblock = (int*) _mm_malloc(sub_size*sub_size*sizeof(int),64); // block owned by specific processor
-	int* col_buf = (int*) _mm_malloc(n*sub_size*sizeof(int),64); // buffer for the column (size n x sub_size
-	int* row_buf = (int*) _mm_malloc(n*sub_size*sizeof(int),64); // buffer for the row (size n x sub_size)
-
-	
-	
-	MPI_Comm_group(MPI_COMM_WORLD, &World_Group);
-	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-	
-	mycolrank = myrank/n_sub;
-	myrowrank = myrank%n_sub;
-	
-	// Include processes into their respective column group
-	for(int i=0; i < n_sub; ++i){ 
-		for(j=0; j < n*sub; ++j){
-			indices[j]= i*n_sub+j; // n_sub consecutive blocks
-		}
-		MPI_group_incl(World Group, n_sub, indices, col_group[i]); 
-		MPI_Comm_create(MPI_COMM_WORLD, col_group[i], col_comm[i]);
-	}
-
-	// Include processes into their respective row group
-	for(int i=0; i < n_sub; ++i){ 
-		for(int j=0; j < n_sub; ++j){
-			indices[j]= j*n_sub+i; // every n_sub blocks
-		}
-		MPI_group_incl(World Group, n_sub, indices, row_group[i]); 
-		MPI_Comm_create(MPI_COMM_WORLD, row_group[i], row_comm[i]);
-			
-	}	
-	
-
-	int BA = (mycolrank*n_sub+myrowrank)*sub_size*sub_size; // Block address
-	//Copies personal block from blocked matrix
-	for (int i=0; i<n_sub; ++i){
-		myblock[i]=bl[BA+i];
-	}
-	 // gather data from column group
-	MPI_Allgather( myblock, sub_size*sub_size, MPI_INT, col_buf, sub_size*sub_size*n, MPI_INT, col_comm(mycolrank));
-	 // gather data from row group
-	MPI_Allgather( myblock, sub_size*sub_size, MPI_INT, row_buf, sub_size*sub_size*n, MPI_INT, row_comm(myrowrank));
-	int local_done;
+    // Repeated squaring until nothing changes
+    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        local_done = rectangle(n, sub_size, myblock, col_buf, row_buf );
-		
-		// gather data from column group
-		MPI_Allgather( myblock, sub_size*sub_size, MPI_INT, col_buf, sub_size*sub_size*n, MPI_INT, col_comm(mycolrank));
-		// gather data from row group
-		MPI_Allgather( myblock, sub_size*sub_size, MPI_INT, row_buf, sub_size*sub_size*n, MPI_INT, row_comm(myrowrank));
-		
-		// need to get rid of this barrier: might not be needed
-        MPI_Barrier(MPI_COMM_WORLD); 
-		
-		// checks if anybody did work this iteration
-		MPI_Reduce( &local_done, &done, 1, MPI_INT, MPI_LAND,0, MPI_COMM_WORLD);
+        done = square(n, l, lnew);
+        memcpy(l, lnew, n*n * sizeof(int));
     }
-	
-	block_to_column(l,bl,n, sub_size); /// implement this function later
     free(lnew);
     deinfinitize(n, l);
 }
-
-/*
-*
-*
-*/
-
-
-
 
 /**
  * # The random graph model
