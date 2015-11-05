@@ -44,21 +44,27 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
+
     #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
+      for (int k = 0; k < n; ++k) {
+        int lkj = l[j*n+k];
+
+        #pragma vector aligned
         for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
+          int lij = lnew[j*n+i];
+          int lik = l[k*n+i];
+
+          if (lik + lkj < lij) {
+            lij = lik+lkj;
+            done = 0;
+          }
+
+          lnew[j*n+i] = lij;
         }
+      }
     }
+
     return done;
 }
 
@@ -108,16 +114,23 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
+
+    for (int i = 0; i < n * n; ++i) {
+      if (i % (n + 1) == 0) {
         l[i] = 0;
+      }
+    }
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
-    for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        memcpy(l, lnew, n*n * sizeof(int));
+
+    int done = 0;
+    while (!done) {
+      done = square(n, l, lnew);
+      memcpy(l, lnew, n*n * sizeof(int));
     }
+
     free(lnew);
     deinfinitize(n, l);
 }
@@ -133,16 +146,20 @@ void shortest_paths(int n, int* restrict l)
  * random number generator in lieu of coin flips.
  */
 
-int* gen_graph(int n, double p)
+int* gen_graph(const int n, const double p)
 {
     int* l = calloc(n*n, sizeof(int));
     struct mt19937p state;
     sgenrand(10302011UL, &state);
+
     for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i)
-            l[j*n+i] = (genrand(&state) < p);
-        l[j*n+j] = 0;
+      for (int i = 0; i < n; ++i) {
+        l[j*n+i] = (genrand(&state) < p);
+      }
+
+      l[j*n+j] = 0;
     }
+
     return l;
 }
 
