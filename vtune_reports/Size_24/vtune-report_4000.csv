@@ -1,0 +1,12 @@
+Function,Module,CPU Time,CPU Time:Idle,CPU Time:Poor,CPU Time:Ok,CPU Time:Ideal,CPU Time:Over,Wait Time,Spin Time,Spin Time:Imbalance or Serial Spinning (OpenMP),Spin Time:Lock Contention (OpenMP),Spin Time:Communication (MPI),Spin Time:Other,Overhead Time,Overhead Time:Creation (OpenMP),Overhead Time:Scheduling (OpenMP),Overhead Time:Reduction (OpenMP),Overhead Time:Other,Thread Oversubscription
+square,path.x,111.270677,0.0,3.104311,0.0,108.166366,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+__kmp_fork_barrier,libiomp5.so,0.419955,0.010000,0.409955,0.0,0.0,0.0,,0.419955,0.409947,0.0,,0.010008,0.0,0.0,0.0,0.0,0.0,0.0
+gen_graph,path.x,0.160276,0.0,0.160276,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+genrand,path.x,0.121067,0.010015,0.111052,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+__intel_ssse3_memcpy,path.x,0.099988,0.0,0.079988,0.0,0.020000,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+fletcher16,path.x,0.099982,0.0,0.099982,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+__svml_irem4_y8,path.x,0.078662,0.0,0.078662,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+__kmp_get_global_thread_id_reg,libiomp5.so,0.030000,0.030000,0.0,0.0,0.0,0.0,0.000136,0.0,0.0,0.0,,0.0,0.030000,0.0,0.0,0.0,0.030000,0.0
+shortest_paths,path.x,0.029995,0.0,0.029995,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+deinfinitize,path.x,0.010007,0.0,0.010007,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+printf,libc-2.12.so,,,,,,,0.000034,,,,,,,,,,,

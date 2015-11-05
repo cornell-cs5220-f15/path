@@ -1,0 +1,8 @@
+Function,Module,CPU Time,CPU Time:Idle,CPU Time:Poor,CPU Time:Ok,CPU Time:Ideal,CPU Time:Over,Wait Time,Spin Time,Spin Time:Imbalance or Serial Spinning (OpenMP),Spin Time:Lock Contention (OpenMP),Spin Time:Communication (MPI),Spin Time:Other,Overhead Time,Overhead Time:Creation (OpenMP),Overhead Time:Scheduling (OpenMP),Overhead Time:Reduction (OpenMP),Overhead Time:Other,Thread Oversubscription
+square,path.x,0.339905,0.0,0.019997,0.0,0.319908,0.0,,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+__kmp_get_global_thread_id_reg,libiomp5.so,0.030000,0.0,0.030000,0.0,0.0,0.0,0.000158,0.0,0.0,0.0,,0.0,0.030000,0.0,0.0,0.0,0.030000,0.0
+__kmp_fork_call,libiomp5.so,0.010098,0.0,0.010098,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.010098,0.0,0.0,0.0,0.010098,0.0
+__kmp_create_worker,libiomp5.so,0.010000,0.010000,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,,0.0,0.010000,0.010000,0.0,0.0,0.0,0.0
+__kmp_join_call,libiomp5.so,0.009999,0.0,0.009999,0.0,0.0,0.0,,0.009999,0.009999,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+__kmp_fork_barrier,libiomp5.so,0.009998,0.009998,0.0,0.0,0.0,0.0,,0.009998,0.009998,0.0,,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+printf,libc-2.12.so,,,,,,,0.000017,,,,,,,,,,,
