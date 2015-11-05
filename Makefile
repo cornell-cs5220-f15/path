@@ -13,17 +13,25 @@
 PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
-.PHONY: exe clean realclean
+.PHONY: exe exe-base clean realclean
 
 
 # === Executables
 
 exe: path.x
 
+exe-base: path-base.x
+
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
+path-base.x: path-base.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
 path.o: path.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+path-base.o: path-base.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
 path-mpi.x: path-mpi.o mt19937p.o
