@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include <omp.h>
+#include <mpi.h>
 #include "mt19937p.h"
 
 //ldoc on
@@ -64,29 +64,6 @@ int rectangle(int n, int sub_size,               // Number of nodes
     return done;
 }
 
- 
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
-{
-    int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
-        }
-    }
-    return done;
-}
 
 /**
  *
@@ -220,17 +197,15 @@ void shortest_paths(int n, int* restrict l)
 		// gather data from column group
 		MPI_Allgather( myblock, sub_size*sub_size, MPI_INT, col_buf, sub_size*sub_size*n, MPI_INT, col_comm(mycolrank));
 		// gather data from row group
-		MPI_Allgather( myblock, sub_size*sub_size, MPI_INT, row_buf, sub_size*sub_size*n, MPI_INT, row_comm(myrowrank));
-		
+		MPI_Allgather( myblock, sub_size*sub_size, MPI_INT, row_buf, sub_size*sub_size*n, MPI_INT, row_comm(myrowrank));	
 		// need to get rid of this barrier: might not be needed
         MPI_Barrier(MPI_COMM_WORLD); 
-		
 		// checks if anybody did work this iteration
 		MPI_Reduce( &local_done, &done, 1, MPI_INT, MPI_LAND,0, MPI_COMM_WORLD);
     }
 	
-	block_to_column(l,bl,n, sub_size); /// implement this function later
-    free(lnew);
+	block_to_column(l,bl,n, sub_size); // implement this function later
+    free(bl);
     deinfinitize(n, l);
 }
 
