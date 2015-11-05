@@ -1,0 +1,32 @@
+\section{Timing}\label{sec:timing}
+\subsection{Profiling}
+In order to find the bottlenecks of path, we first profiled our code
+using Intel's VTune Amplifier (It was broken in cluster, so we used
+it on local machie), as shown in Figure \ref{amplxe-command}.
+
+\begin{figure}[h]
+\footnotesize
+\begin{verbatim}
+amplxe-cl -collect advanced-hotspots ./path
+amplxe-cl -report hotspots -source-object function=<NAME>
+\end{verbatim}
+\caption{VTune Amplifier Command}
+\label{amplxe-command}
+\end{figure}
+
+\subsection{Initial Profile Result}
+Include result here
+
+\begin{figure}[h]
+\footnotesize
+\begin{verbatim}
+Function                     Module        CPU Time
+-----------------------------------------  --------
+\end{verbatim}
+\caption{Initial Profile Result}
+\label{initial-profile-result}
+\end{figure}
+
+\subsection{Initial Timing Result}
+
+Include result here

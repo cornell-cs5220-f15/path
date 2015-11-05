@@ -1,0 +1,11 @@
+CC=icc
+MPICC=mpiicc
+CFLAGS=-std=c99 -g
+
+# If you're using icc, these are good flags to try
+OPTFLAGS=-O3 -no-prec-div -xcore-avx2 -ipo \
+	-qopt-report=5 -qopt-report-phase=vec
+
+CFLAGS+=$(OPTFLAGS)
+MPI_CFLAGS=$(CFLAGS)
+OMP_CFLAGS=$(CFLAGS) -openmp
