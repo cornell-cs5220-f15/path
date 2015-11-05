@@ -54,6 +54,7 @@ int square(int n,               // Number of nodes
            ddt* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
+    int lkj[n];
 
     for (int i = 0; i < n; i++)
         for(int j = 0; j < n; j++)
@@ -61,9 +62,17 @@ int square(int n,               // Number of nodes
             l_T[i*n + j] = l[j*n + i];
         }
 
+    // ===== Taejoon: Try copy optimization ======
+    for (int j = 0; j < n; ++j){
+        for (int k = 0; k < n; k++)
+          lkj[k] = l[j*n+k];
+    }
+    // ===========================================
+
     #pragma omp parallel for shared(l, l_T, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) 
     {
+
         for (int i = 0; i < n; ++i) 
         {
             int lij = lnew[j*n+i];
@@ -72,10 +81,10 @@ int square(int n,               // Number of nodes
                 // ===== Justin: addition now vectorized =====
                 int lik = l_T[i*n+k];
                 // ===========================================
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) 
+                //int lkj = l[j*n+k];
+                if (lik + lkj[k] < lij) 
                 {
-                    lij = lik+lkj;
+                    lij = lik+lkj[k];
                     done = 0;
                 }
             }
