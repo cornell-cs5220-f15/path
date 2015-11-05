@@ -40,8 +40,8 @@
  */
 
 
-typedef short ddt;
-long ddt_upper_range = (1 << (8 * sizeof(ddt) - 1)) - 1;
+typedef int ddt;
+long ddt_upper_range = (1 << (8 * sizeof(ddt) - 2)) - 1;
 
 
 // ========================================================================== 
