@@ -139,8 +139,9 @@ void shortest_paths(int n, int* restrict l)
     int* restrict lnew = (int*) _mm_malloc(n*n*sizeof(int),16);
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        memcpy(l, lnew, n*n * sizeof(int));
+        //done = square(n, l, lnew);
+        //memcpy(l, lnew, n*n * sizeof(int));
+        done = square(n, lnew, l);
     }
     //free(lnew);
     _mm_free(lnew);
