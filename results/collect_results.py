@@ -28,3 +28,5 @@ def collect(name):
                         print par, found
 
 collect('omp')
+collect('hybrid')
+collect('mpi')
