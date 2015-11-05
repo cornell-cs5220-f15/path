@@ -40,8 +40,12 @@
  */
 
 
+<<<<<<< HEAD
 typedef char ddt;
 long ddt_upper_range = (1 << (8 * sizeof(ddt) - 1)) - 1;
+=======
+
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
 
 
 // ========================================================================== 
@@ -49,9 +53,15 @@ long ddt_upper_range = (1 << (8 * sizeof(ddt) - 1)) - 1;
 // ==========================================================================
 
 int square(int n,               // Number of nodes
+<<<<<<< HEAD
            ddt* restrict l,     // Partial distance at step s
            ddt* restrict l_T,   // Transposed l matrix
            ddt* restrict lnew)  // Partial distance at step s+1
+=======
+           int* restrict l,     // Partial distance at step s
+           int* restrict l_T,   // Transposed l matrix
+           int* restrict lnew)  // Partial distance at step s+1
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
 {
     int done = 1;
 
@@ -99,6 +109,7 @@ int square(int n,               // Number of nodes
  * conventions.
  */
 
+<<<<<<< HEAD
 static inline void infinitize(int n, ddt* l)
 {
     for (int i = 0; i < n*n; ++i)
@@ -110,6 +121,19 @@ static inline void deinfinitize(int n, ddt* l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == ddt_upper_range)
+=======
+static inline void infinitize(int n, int* l)
+{
+    for (int i = 0; i < n*n; ++i)
+        if (l[i] == 0)
+            l[i] = n+1;
+}
+
+static inline void deinfinitize(int n, int* l)
+{
+    for (int i = 0; i < n*n; ++i)
+        if (l[i] == n+1)
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
             l[i] = 0;
 }
 
@@ -133,7 +157,11 @@ static inline void deinfinitize(int n, ddt* l)
 //      Justin: Since the totient is 2d torus, we need to use cannon's algorithm
 // ==================================================================================
 
+<<<<<<< HEAD
 void shortest_paths(int n, ddt* restrict l)
+=======
+void shortest_paths(int n, int* restrict l)
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
@@ -141,6 +169,7 @@ void shortest_paths(int n, ddt* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
+<<<<<<< HEAD
     ddt* restrict l_T  = (ddt*) calloc(n*n, sizeof(ddt)); 
     ddt* restrict lnew = (ddt*) calloc(n*n, sizeof(ddt));
     memcpy(lnew, l, n*n * sizeof(ddt));
@@ -148,6 +177,15 @@ void shortest_paths(int n, ddt* restrict l)
     {
         done = square(n, l, l_T, lnew);
         memcpy(l, lnew, n*n * sizeof(ddt));
+=======
+    int* restrict l_T  = (int*) calloc(n*n, sizeof(int)); 
+    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    memcpy(lnew, l, n*n * sizeof(int));
+    for (int done = 0; !done; ) 
+    {
+        done = square(n, l, l_T, lnew);
+        memcpy(l, lnew, n*n * sizeof(int));
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
     }
     free(l_T);
     free(lnew);
@@ -165,6 +203,7 @@ void shortest_paths(int n, ddt* restrict l)
  * random number generator in lieu of coin flips.
  */
 
+<<<<<<< HEAD
 ddt* gen_graph(int n, double p)
 {
     ddt* l = calloc(n*n, sizeof(ddt));
@@ -172,6 +211,14 @@ ddt* gen_graph(int n, double p)
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) 
     {
+=======
+int* gen_graph(int n, double p)
+{
+    int* l = calloc(n*n, sizeof(int));
+    struct mt19937p state;
+    sgenrand(10302011UL, &state);
+    for (int j = 0; j < n; ++j) {
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
         l[j*n+j] = 0;
@@ -196,19 +243,31 @@ ddt* gen_graph(int n, double p)
  * [wiki-fletcher]: http://en.wikipedia.org/wiki/Fletcher's_checksum
  */
 
+<<<<<<< HEAD
 int fletcher16(ddt* data, int count)
 {
     int sum1 = 0;
     int sum2 = 0;
     for(int index = 0; index < count; ++index) 
     {
+=======
+int fletcher16(int* data, int count)
+{
+    int sum1 = 0;
+    int sum2 = 0;
+    for(int index = 0; index < count; ++index) {
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
           sum1 = (sum1 + data[index]) % 255;
           sum2 = (sum2 + sum1) % 255;
     }
     return (sum2 << 8) | sum1;
 }
 
+<<<<<<< HEAD
 void write_matrix(const char* fname, int n, ddt* a)
+=======
+void write_matrix(const char* fname, int n, int* a)
+>>>>>>> 48b817f75fe4b20763e69b04b71133465dbf44f4
 {
     FILE* fp = fopen(fname, "w+");
     if (fp == NULL) {
