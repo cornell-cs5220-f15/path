@@ -1,0 +1,59 @@
+
+\documentclass[11pt]{article}
+\usepackage{amsmath,amsthm,verbatim,amssymb,amsfonts,amscd, graphicx}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{url}
+\usepackage{titlesec}
+\setcounter{secnumdepth}{4}
+
+
+
+
+\graphicspath{{./times/}}
+\topmargin0.0cm
+\headheight0.0cm
+\headsep0.0cm
+\oddsidemargin0.0cm
+\textheight23.0cm
+\textwidth16.5cm
+\footskip1.0cm
+
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+
+\begin{document}
+\title{CS 5220\\ Project 3 - All pair shortest path}
+\author{Marc Aurele Gilles (mtg79)\\ Edward NAME NETID \\ Yu NAME NETID}
+\maketitle
+
+\section{Introduction}
+In this project the goal is profile, parallelize and tune an algorithm which computes the shortest path between all the pairs in a graph
+
+
+\section{Profiling of original code}
+The profiling was done using amplxe. By looking at the hotspots report, we observe that most of the time (45 out of 67 seconds) is spent in the "square" function, which is to be expected as all of the computation are done in this function. A notable point however is that virtually all the rest of the time is spent waiting, which seems to indicate a significant load imbalance between the threads.
+By looking at the time spent inside of the "square" function, we observe that a majority of the time (27 out of 45 seconds) is spent fetching memory and writing it to a float, which could indicate that there is poor cache utilization.
+\\
+This profiling leads us to believe that we should try to address two problems for this OMP implementation: have better load balancing, and increase cache reuse.
+
+
+ 
+
+\section{Analysis}
+
+
+
+
+\begin{thebibliography}{9}
+
+
+\end{thebibliography}
+
+ 
+ 
+\end{document}
