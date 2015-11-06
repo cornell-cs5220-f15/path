@@ -35,7 +35,7 @@ void* _mm_calloc(size_t nelem, size_t elsize, size_t alignment)
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back 
+ * The functions `infinitize` and `deinfinitize` convert back
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
@@ -229,11 +229,9 @@ int main(int argc, char** argv)
     double t1 = MPI_Wtime();
 
     if (rank == 0) {
-        printf("== FW-MPI: %d MPI threads\n", num_p);
-        printf("n:     %d\n", n);
-        printf("p:     %g\n", p);
-        printf("Time:  %g\n", t1-t0);
-        printf("Check: %X\n", fletcher16(l, n*n));
+        // n, p, time, check, omp threads, mpi threads
+        printf("%d, %g, %g, %X, %d, %d\n",
+               n, p, t1-t0, fletcher16(l, n*n), omp_get_max_threads(), num_p);
 
         // Generate output file
         if (ofname)

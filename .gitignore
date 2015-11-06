@@ -13,6 +13,7 @@ r00*/
 r000ah/
 *.x
 *.x-ampl
+*.csv
 
 ################################################################################
 # C++
@@ -110,7 +111,7 @@ Session.vim
 # these rules might exclude image files for figures etc.
 # *.ps
 # *.eps
-# *.pdf
+*.pdf
 
 ## Bibliography auxiliary files (bibtex/biblatex/biber):
 *.bbl

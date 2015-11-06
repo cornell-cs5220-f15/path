@@ -21,8 +21,14 @@ RUNS   = $(addprefix run-,$(basename $(EXES)))
 AMPLS  = $(addprefix ampl-,$(basename $(EXES)))
 SWEEPS = $(addprefix sweep-,$(basename $(EXES)))
 OBJS   = mt19937p.o
-N      = 2400 # -n value passed to main program
-P      = 24   # -n value passed to mpirun
+
+SWEEPS := $(filter-out sweep-fw-hybrid, $(SWEEPS))
+
+N = 2400 # -n value passed to main program
+P = 24   # -n value passed to mpirun
+SWEEP_MIN = 480
+SWEEP_MAX = 2400
+SWEEP_STEP = 480
 
 # === Defaults
 
@@ -52,7 +58,7 @@ run-%-omp: %-omp.x
 	qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$(N)"
 
 sweep-%-omp: %-omp.x
-	for (( i = 500; i <= 5000; i += 500 )); do \
+	for (( i = $(SWEEP_MIN); i <= $(SWEEP_MAX); i += $(SWEEP_STEP) )); do \
 		qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$$i"; \
 	done \
 
@@ -70,7 +76,7 @@ run-%-hybrid: %-hybrid.x
 	qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$(N)"
 
 sweep-%-hybrid: %-hybrid.x
-	for (( i = 500; i <= 5000; i += 500 )); do \
+	for (( i = $(SWEEP_MIN); i <= $(SWEEP_MAX); i += $(SWEEP_STEP) )); do \
 		qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$$i"; \
 	done \
 
@@ -88,7 +94,7 @@ run-%-mpi: %-mpi.x
 	qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$(N)"
 
 sweep-%-mpi: %-mpi.x
-	for (( i = 500; i <= 5000; i += 500 )); do \
+	for (( i = $(SWEEP_MIN); i <= $(SWEEP_MAX); i += $(SWEEP_STEP) )); do \
 		qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$$i"; \
 	done \
 
@@ -110,6 +116,12 @@ phi.MIC: path-mic.o mtp.o
 
 path-mic.o: path-mpi-omp.c
 	$(MPICC) -mmic -c $(PHI_FLAGS) $< -o $@
+
+# plotting
+.PHONY: plot
+plot:
+	python results/pbs_to_csv.py *.o[1-9]*
+	python results/plot.py *.csv
 
 # === Miscellaneous
 
@@ -136,4 +148,5 @@ path.md: path.c
 clean:
 	rm -f *.o*
 	rm -f *.x
+	rm -f *.csv
 	rm -rf *.x-ampl
