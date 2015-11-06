@@ -15,21 +15,23 @@ include Makefile.in.$(PLATFORM)
 
 # === Variables
 
-SRCS  = $(shell ls *-{omp,mpi,hybrid}.c)
-EXES  = $(SRCS:.c=.x)
-RUNS  = $(addprefix run-,$(basename $(EXES)))
-AMPLS = $(addprefix ampl-,$(basename $(EXES)))
-OBJS  = mt19937p.o
-N     = 2400 # -n value passed to main program
-P     = 24   # -n value passed to mpirun
+SRCS   = $(shell ls *-{omp,mpi,hybrid}.c)
+EXES   = $(SRCS:.c=.x)
+RUNS   = $(addprefix run-,$(basename $(EXES)))
+AMPLS  = $(addprefix ampl-,$(basename $(EXES)))
+SWEEPS = $(addprefix sweep-,$(basename $(EXES)))
+OBJS   = mt19937p.o
+N      = 2400 # -n value passed to main program
+P      = 24   # -n value passed to mpirun
 
 # === Defaults
 
 .PHONY: default all
 default: all
-all:  $(EXES)
-run:  $(RUNS)
-ampl: $(AMPLS)
+all:   $(EXES)
+run:   $(RUNS)
+ampl:  $(AMPLS)
+sweep: $(SWEEPS)
 
 # === Executables
 #
@@ -49,6 +51,11 @@ ampl: $(AMPLS)
 run-%-omp: %-omp.x
 	qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$(N)"
 
+sweep-%-omp: %-omp.x
+	for (( i = 500; i <= 5000; i += 500 )); do \
+		qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$$i"; \
+	done \
+
 ampl-%-omp: %-omp.x
 	qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$(N),AMPL="
 
@@ -62,6 +69,11 @@ ampl-%-omp: %-omp.x
 run-%-hybrid: %-hybrid.x
 	qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$(N)"
 
+sweep-%-hybrid: %-hybrid.x
+	for (( i = 500; i <= 5000; i += 500 )); do \
+		qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$$i"; \
+	done \
+
 ampl-%-hybrid: %-hybrid.x
 	qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$(N),AMPL="
 
@@ -74,6 +86,11 @@ ampl-%-hybrid: %-hybrid.x
 
 run-%-mpi: %-mpi.x
 	qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$(N)"
+
+sweep-%-mpi: %-mpi.x
+	for (( i = 500; i <= 5000; i += 500 )); do \
+		qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$$i"; \
+	done \
 
 ampl-%-mpi: %-mpi.x
 	qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$(N),AMPL="
