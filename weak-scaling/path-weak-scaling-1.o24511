@@ -1,0 +1,50 @@
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.112
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.16
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.171
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  136.893
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.059
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.156
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.244
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.079
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.144
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  137.013
+Check: E525
