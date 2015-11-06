@@ -44,7 +44,7 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    int numThreads = omp_get_num_threads();
+    int numThreads = omp_get_max_threads();
 
     #pragma omp parallel for shared(l, lnew) reduction(&& : done) if(numThreads > 4)
     for (int j = 0; j < n; ++j) {

@@ -2,7 +2,7 @@
 
 #PBS -l nodes=1:ppn=24
 #PBS -l walltime=0:30:00
-#PBS -N path-weak-scaling-8
+#PBS -N path-weak-scaling-2
 #PBS -j oe
 
 module load cs5220
