@@ -13,13 +13,17 @@
 PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
+# === Variables
+
+SRCS = $(shell ls *-{omp,mpi,hybrid}.c)
+EXES = $(SRCS:.c=.x)
 OBJS = mt19937p.o
 
-.PHONY: omp mpi hybrid clean realclean
+# === Defaults
 
+.PHONY: default all
 default: all
-
-all: omp.x
+all: $(EXES)
 
 # === Executables
 #
@@ -27,45 +31,35 @@ all: omp.x
 # forms of parallelization (e.g. OpenMP, OpenMPI, hybrid). This leads to a lot
 # of different combinations and a lot of different executables. Instead of
 # having a set of Makefile rules for each executable, we can use some Makefile
-# tricks to define a single set of rules to build them all. Here's how that
-# works.
-#
-# Assume you're implementing the Floyd-Warshal algorithm using OpenMPI. You
-# would name your file fw-mpi.c. To build, all you have to do is run:
-#
-# 	make fw-mpi.x
+# tricks to reduce the number of rules.
 
-# http://stackoverflow.com/a/3066345/3187068
-define TEMPLATE
-%-$(1).x: $(1)-%.o $(OBJS)
-	$(eval FLAG = $($(shell echo $* | tr '[:lower:]' '[:upper:]')_CFLAGS))
-	$(CC) $(FLAG) $^ -o $@.x
-
-%-$(1).o: $(1)-%.c
-	$(eval FLAG = $($(shell echo $* | tr '[:lower:]' '[:upper:]')_CFLAGS))
-	$(CC) -c $(FLAG) $<
-endef
-
-PARALLELIZATIONS = MPI OMP HYBRID
-$(foreach p,$(PARALLELIZATIONS),$(eval $(call TEMPLATE,$(p))))
-
-# #### Floyd-Warshall Algorithm
-fwomp: fw-omp.x
-
-fw-omp.x: fw-omp.o mt19937p.o
+# omp
+%-omp.x: %-omp.o $(OBJS)
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
-fw-omp.o: fw-omp.c
+%-omp.o: %-omp.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
-fwmpi: fw-mpi.x
+# hybrid
+%-hybrid.x: %-hybrid.o $(OBJS)
+	$(MPICC) $(HYBRID_CFLAGS) $^ -o $@
 
-fw-mpi.x: fw-mpi.o mt19937p.o
-	$(MPICC) $(OMP_CFLAGS) $^ -o $@
+%-hybrid.o: %-hybrid.c
+	$(MPICC) -c $(HYBRID_CFLAGS) $<
 
-fw-mpi.o: fw-mpi.c
-	$(MPICC) -c $(OMP_CFLAGS) $<
+# mpi
+%-mpi.x: %-mpi.o $(OBJS)
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
+%-mpi.o: %-mpi.c
+	$(MPICC) -c $(MPI_CFLAGS) $<
+
+# generic
+mtp.o: mt19937p.c
+	$(CC) -mmic -c $(PHI_FLAGS) $< -o $@
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $<
 
 # phi compiling (of hybrid)
 phi: phi.MIC
@@ -75,40 +69,6 @@ phi.MIC: path-mic.o mtp.o
 
 path-mic.o: path-mpi-omp.c
 	$(MPICC) -mmic -c $(PHI_FLAGS) $< -o $@
-
-mtp.o: mt19937p.c
-	$(CC) -mmic -c $(PHI_FLAGS) $< -o $@
-
-#hybrid MPI-OMP compiling
-hybrid: hybrid.x
-
-hybrid.x: path-mpi-omp.o mt19937p.o
-	$(MPICC) $(OMP_CFLAGS) $^ -o $@
-
-path-mpi-omp.o: path-mpi-omp.c
-	$(MPICC) -c $(OMP_CFLAGS) $<
-
-#OMP Compiling
-omp: omp.x
-
-omp.x: path.o mt19937p.o
-	$(CC) $(OMP_CFLAGS) $^ -o $@
-
-path.o: path.c
-	$(CC) -c $(OMP_CFLAGS) $<
-
-#MPI Compiling
-mpi: mpi.x
-
-mpi.x: path-mpi.o mt19937p.o
-	$(MPICC) $(MPI_CFLAGS) $^ -o $@
-
-path-mpi.o: path-mpi.c
-	$(MPICC) -c $(MPI_CFLAGS) $<
-
-# General .o compiling
-%.o: %.c
-	$(CC) -c $(CFLAGS) $<
 
 # === Miscellaneous
 
@@ -129,11 +89,9 @@ main.pdf: README.md path.md
 path.md: path.c
 	ldoc -o $@ $^
 
-
 # === Cleanup and tarball
 
+.PHONY: clean
 clean:
 	rm -f *.o
-
-realclean: clean
-	rm -f path.x path-mpi.x path.md main.pdf
+	rm -f *.x

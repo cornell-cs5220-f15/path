@@ -11,3 +11,4 @@ PHI_FLAGS=-std=c99 -g -O3 -no-prec-div -ipo \
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS)
 OMP_CFLAGS=$(CFLAGS) -openmp
+HYBRID_CFLAGS=$(OMP_CFLAGS)
