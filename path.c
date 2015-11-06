@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <getopt.h>
 #include <unistd.h>
 #include <omp.h>
 #include "mt19937p.h"
@@ -49,17 +50,6 @@ int square(int n,               // Number of nodes
         l_transpose[j*n+i] = l[i*n+j];
       }
     }
-    //int blocksize = 64;
-    //for (int i = 0; i < n; i += blocksize) {
-    //    for (int j = 0; j < n; j += blocksize) {
-    //    // transpose the block beginning at [i,j]
-    //        for (int k = i; k < i + blocksize; ++k) {
-    //            for (int m = j; m < j + blocksize; ++m) {
-    //                l_transpose[k + m*n] = l[m + k*n];
-    //            }
-    //        }
-    //    }
-    //}
 
     int done = 1;
     //#pragma omp parallel for shared(l, lnew) reduction(&& : done)
