@@ -1,50 +1,50 @@
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  1.14306
+Time:  1.18232
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  0.962826
+Time:  1.13361
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  1.43897
+Time:  0.762778
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  1.10757
+Time:  1.2749
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  0.931134
+Time:  1.55213
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  0.763416
+Time:  0.752185
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  1.00381
+Time:  1.05448
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  1.05047
+Time:  1.22708
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  1.0129
+Time:  1.17054
 Check: E16C
 == OpenMP with 24 threads
 n:     2000
 p:     0.05
-Time:  0.987441
+Time:  0.917713
 Check: E16C

@@ -1,50 +1,50 @@
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  62.1416
+Time:  59.1384
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  50.616
+Time:  63.4265
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  66.8455
+Time:  66.483
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  66.4155
+Time:  63.5256
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  67.4197
+Time:  56.0413
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  70.166
+Time:  49.0624
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  53.5353
+Time:  62.5867
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  62.3319
+Time:  49.4483
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  57.3246
+Time:  64.0715
 Check: B9DC
 == OpenMP with 24 threads
 n:     8000
 p:     0.05
-Time:  406.808
+Time:  60.7646
 Check: B9DC

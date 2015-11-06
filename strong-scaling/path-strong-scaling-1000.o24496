@@ -1,50 +1,50 @@
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.208174
+Time:  0.205631
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.323632
+Time:  0.215562
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.205214
+Time:  0.205614
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.200045
+Time:  0.237028
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.214377
+Time:  0.208013
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.204855
+Time:  0.206591
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.194702
+Time:  0.200518
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.187202
+Time:  0.209867
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.225709
+Time:  0.19961
 Check: CC6A
 == OpenMP with 24 threads
 n:     1000
 p:     0.05
-Time:  0.205022
+Time:  0.20526
 Check: CC6A
