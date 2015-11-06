@@ -13,10 +13,41 @@
 PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
+OBJS = mt19937p.o
+
 .PHONY: omp mpi hybrid clean realclean
 
+default: all
+
+all: omp.x
 
 # === Executables
+#
+# We have many algorithms (e.g. Floyd-Warshal and repeated squares) and many
+# forms of parallelization (e.g. OpenMP, OpenMPI, hybrid). This leads to a lot
+# of different combinations and a lot of different executables. Instead of
+# having a set of Makefile rules for each executable, we can use some Makefile
+# tricks to define a single set of rules to build them all. Here's how that
+# works.
+#
+# Assume you're implementing the Floyd-Warshal algorithm using OpenMPI. You
+# would name your file fw-mpi.c. To build, all you have to do is run:
+#
+# 	make fw-mpi.x
+
+# http://stackoverflow.com/a/3066345/3187068
+define TEMPLATE
+%-$(1).x: $(1)-%.o $(OBJS)
+	$(eval FLAG = $($(shell echo $* | tr '[:lower:]' '[:upper:]')_CFLAGS))
+	$(CC) $(FLAG) $^ -o $@.x
+
+%-$(1).o: $(1)-%.c
+	$(eval FLAG = $($(shell echo $* | tr '[:lower:]' '[:upper:]')_CFLAGS))
+	$(CC) -c $(FLAG) $<
+endef
+
+PARALLELIZATIONS = MPI OMP HYBRID
+$(foreach p,$(PARALLELIZATIONS),$(eval $(call TEMPLATE,$(p))))
 
 # #### Floyd-Warshall Algorithm
 fwomp: fw-omp.x
@@ -79,6 +110,16 @@ path-mpi.o: path-mpi.c
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 
+# === Miscellaneous
+
+# Watch the status of your qsubbed jobs in reverse chronological order.
+.PHONY: watch
+watch:
+	watch -d -n 1 'qstat | tac'
+
+# http://blog.jgc.org/2015/04/the-one-line-you-should-add-to-every.html
+print-%:
+	@echo $*=$($*)
 
 # === Documentation
 
