@@ -44,8 +44,9 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
+    int numThreads = omp_get_num_threads();
 
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done) if(numThreads > 4)
     for (int j = 0; j < n; ++j) {
       for (int k = 0; k < n; ++k) {
         int lkj = l[j*n+k];
