@@ -1,50 +1,50 @@
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  12.9142
+Time:  13.7972
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  14.0634
+Time:  13.102
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  13.7748
+Time:  13.4952
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  12.6323
+Time:  13.9116
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  14.1118
+Time:  12.7498
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  13.5424
+Time:  12.6815
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  12.3882
+Time:  13.8818
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  13.9694
+Time:  13.0049
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  13.6797
+Time:  14.4113
 Check: E525
 == OpenMP with 16 threads
 n:     4000
 p:     0.05
-Time:  14.0547
+Time:  13.4973
 Check: E525

@@ -1,0 +1,50 @@
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.26
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.173
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.264
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.472
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.34
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.372
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.409
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.415
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.487
+Check: E525
+== OpenMP with 4 threads
+n:     4000
+p:     0.05
+Time:  136.345
+Check: E525
