@@ -50,7 +50,7 @@ path-mpi.o: path-mpi.c
 
 maqao: path.x
 	( module load maqao ; \
-	  maqao cqa ./path.x fct=shortest_paths uarch=HASWELL )
+	  maqao cqa ./path.x fct=main uarch=HASWELL > maqao.report )
 
 scan-build:
 	( module load llvm-analyzer ; \
