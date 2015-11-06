@@ -18,6 +18,8 @@ include Makefile.in.$(PLATFORM)
 SRCS = $(shell ls *-{omp,mpi,hybrid}.c)
 EXES = $(SRCS:.c=.x)
 OBJS = mt19937p.o
+N    = 2400 # -n value passed to main program
+P    = 24   # -n value passed to mpirun
 
 # === Defaults
 
@@ -40,6 +42,9 @@ all: $(EXES)
 %-omp.o: %-omp.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
+run-%-omp: %-omp.x
+	qsub omp.pbs -N $*-omp -vEXE=$*-omp.x,N=$(N)
+
 # hybrid
 %-hybrid.x: %-hybrid.o $(OBJS)
 	$(MPICC) $(HYBRID_CFLAGS) $^ -o $@
@@ -47,12 +52,18 @@ all: $(EXES)
 %-hybrid.o: %-hybrid.c
 	$(MPICC) -c $(HYBRID_CFLAGS) $<
 
+run-%-hybrid: %-hybrid.x
+	qsub hybrid.pbs -N $*-hybrid -vP=$(P),EXE=$*-hybrid.x,N=$(N)
+
 # mpi
 %-mpi.x: %-mpi.o $(OBJS)
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
 %-mpi.o: %-mpi.c
 	$(MPICC) -c $(MPI_CFLAGS) $<
+
+run-%-mpi: %-mpi.x
+	qsub mpi.pbs -N $*-mpi -vP=$(P),EXE=$*-mpi.x,N=$(N)
 
 # generic
 mtp.o: mt19937p.c

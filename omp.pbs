@@ -2,9 +2,21 @@
 
 #PBS -l nodes=1:ppn=24
 #PBS -l walltime=0:30:00
-#PBS -N omp
+#PBS -n
+#PBS -p 1023
 #PBS -j oe
+
+set -eou pipefail
+
+main() {
+    if [ -z ${EXE+x} ] || [ -z ${N+x} ]; then
+        echo "usage: qsub run.pbs -N <name> -vEXE=<executable>,N=<n>"
+        exit -1
+    fi
+
+    "$EXE" -n "$N"
+}
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./omp.x -n 5000
+main

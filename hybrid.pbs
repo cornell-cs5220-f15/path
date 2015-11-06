@@ -1,10 +1,1 @@
-#!/bin/sh -l
-
-#PBS -l nodes=1:ppn=24
-#PBS -l walltime=0:30:00
-#PBS -N hybrid
-#PBS -j oe
-
-module load cs5220
-cd $PBS_O_WORKDIR
-mpirun -n 1 ./hybrid.x -n 100
+mpi.pbs
