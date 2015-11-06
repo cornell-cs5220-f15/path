@@ -226,7 +226,8 @@ const char* usage =
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  - o -- file name where output matrix should be stored (none)\n"
+    "  - t -- set number of threads (max threads)\n";
 
 int main(int argc, char** argv)
 {
@@ -234,10 +235,11 @@ int main(int argc, char** argv)
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
+    int num_threads_used = omp_get_max_threads();
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:t:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -248,20 +250,25 @@ int main(int argc, char** argv)
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
+        case 't': num_threads_used = atoi(optarg); break;
         }
     }
-
+    
     // Graph generation + output
     int* restrict l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
+
+    if (num_threads_used <= omp_get_max_threads()){
+      omp_set_num_threads(num_threads_used);
+    }
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    printf("== OpenMP with %d threads\n", num_threads_used);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
