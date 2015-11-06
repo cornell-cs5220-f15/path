@@ -1,0 +1,26 @@
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  136.072
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  136.251
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  74.4925
+Check: E525
+== OpenMP with 1 threads
+n:     4000
+p:     0.05
+Time:  74.8008
+Check: E525
+/var/spool/torque/mom_priv/jobs/24481.en-cs-totient-01.coecis.cornell.edu.SC: line 16: ../path.x: No such file or directory
+/var/spool/torque/mom_priv/jobs/24481.en-cs-totient-01.coecis.cornell.edu.SC: line 17: ../path.x: No such file or directory
+/var/spool/torque/mom_priv/jobs/24481.en-cs-totient-01.coecis.cornell.edu.SC: line 18: ../path.x: No such file or directory
+/var/spool/torque/mom_priv/jobs/24481.en-cs-totient-01.coecis.cornell.edu.SC: line 19: ../path.x: No such file or directory
+/var/spool/torque/mom_priv/jobs/24481.en-cs-totient-01.coecis.cornell.edu.SC: line 20: ../path.x: No such file or directory
+/var/spool/torque/mom_priv/jobs/24481.en-cs-totient-01.coecis.cornell.edu.SC: line 21: ../path.x: No such file or directory

@@ -1,0 +1,50 @@
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  21.4147
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  20.972
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  23.0608
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  23.4348
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  20.624
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  20.5221
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  21.8308
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  21.311
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  22.6179
+Check: E525
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  75.0313
+Check: E525
