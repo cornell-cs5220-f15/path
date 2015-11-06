@@ -1,0 +1,50 @@
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.112112
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.144944
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.104537
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.062495
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.0566199
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.0675769
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.093492
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.110913
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.130519
+Check: 33CD
+== OpenMP with 24 threads
+n:     500
+p:     0.05
+Time:  0.196576
+Check: 33CD
