@@ -39,14 +39,14 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
+int square(int n,                // Number of nodes
+           int * restrict l,     // Partial distance at step s
+           int * restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    int numThreads = omp_get_max_threads();
+    // int numThreads = omp_get_max_threads();
 
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done) if(numThreads > 4)
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done) // if(numThreads > 4)
     for (int j = 0; j < n; ++j) {
       for (int k = 0; k < n; ++k) {
         int lkj = l[j*n+k];
