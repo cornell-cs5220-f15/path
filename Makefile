@@ -15,19 +15,21 @@ include Makefile.in.$(PLATFORM)
 
 # === Variables
 
-SRCS = $(shell ls *-{omp,mpi,hybrid}.c)
-EXES = $(SRCS:.c=.x)
-RUNS = $(addprefix run-,$(basename $(EXES)))
-OBJS = mt19937p.o
-N    = 2400 # -n value passed to main program
-P    = 24   # -n value passed to mpirun
+SRCS  = $(shell ls *-{omp,mpi,hybrid}.c)
+EXES  = $(SRCS:.c=.x)
+RUNS  = $(addprefix run-,$(basename $(EXES)))
+AMPLS = $(addprefix ampl-,$(basename $(EXES)))
+OBJS  = mt19937p.o
+N     = 2400 # -n value passed to main program
+P     = 24   # -n value passed to mpirun
 
 # === Defaults
 
 .PHONY: default all
 default: all
-all: $(EXES)
-run: $(RUNS)
+all:  $(EXES)
+run:  $(RUNS)
+ampl: $(AMPLS)
 
 # === Executables
 #
@@ -47,6 +49,9 @@ run: $(RUNS)
 run-%-omp: %-omp.x
 	qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$(N)"
 
+ampl-%-omp: %-omp.x
+	qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$(N),AMPL="
+
 # hybrid
 %-hybrid.x: %-hybrid.o $(OBJS)
 	$(MPICC) $(HYBRID_CFLAGS) $^ -o $@
@@ -57,6 +62,9 @@ run-%-omp: %-omp.x
 run-%-hybrid: %-hybrid.x
 	qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$(N)"
 
+ampl-%-hybrid: %-hybrid.x
+	qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$(N),AMPL="
+
 # mpi
 %-mpi.x: %-mpi.o $(OBJS)
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
@@ -66,6 +74,9 @@ run-%-hybrid: %-hybrid.x
 
 run-%-mpi: %-mpi.x
 	qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$(N)"
+
+ampl-%-mpi: %-mpi.x
+	qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$(N),AMPL="
 
 # generic
 mtp.o: mt19937p.c
@@ -106,5 +117,6 @@ path.md: path.c
 
 .PHONY: clean
 clean:
-	rm -f *.o
+	rm -f *.o*
 	rm -f *.x
+	rm -rf *.x-ampl

@@ -10,11 +10,16 @@ set -eou pipefail
 
 main() {
     if [ -z ${P+x} ] || [ -z ${EXE+x} ] || [ -z ${N+x} ]; then
-        echo "usage: qsub run.pbs -N <name> -vP=<p>,EXE=<executable>,N=<n>"
+        echo "usage: qsub run.pbs -N <name> -vP=<p>,EXE=<executable>,N=<n>[,AMPL=]"
         exit -1
     fi
 
-    mpirun -n "$P" "$EXE" -n "$N"
+    if [ -z ${AMPL+x} ]; then
+        mpirun -n "$P" "$EXE" -n "$N"
+    else
+        amplxe-cl -collect hotspots -r "$EXE-ampl" \
+        mpirun -n "$P" "$EXE" -n "$N"
+    fi
 }
 
 module load cs5220
