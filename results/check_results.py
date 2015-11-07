@@ -1,54 +1,38 @@
-import os, re, csv
+import csv
+import os
+import sys
 
-def check(basic, new):
-    for file_name in os.listdir(os.getcwd()):
-        if re.match('{}.o[0-9]+'.format(basic), file_name):
-            print "basic: %s in %s" %(basic, file_name)
-            basic_name = file_name
-            basic_out = open(file_name, 'r')
-            basic_result = {}
-            found = 0
-            for line in basic_out:
-                par = line.split()
-                if found == 0 and len(par) > 0 and par[0] == '==':
-                    found = 1
-                    p = par[2]
-                elif found == 1 and len(par) > 0 and par[0] == 'n:':
-                    found = 2
-                    n = par[-1]
-                elif found == 2 and len(par) > 0 and par[0] == 'Check:':
-                    result = par[-1]
-                    found = 0
-                    basic_result[n] = result
-            basic_out.close()
+def csv_to_dict(csv_filename):
+    with open(csv_filename, "r") as f:
+        reader = csv.DictReader(f)
+        return [row for row in reader]
 
-    for file_name in os.listdir(os.getcwd()):
-        if re.match('{}.o[0-9]+'.format(new), file_name):
-            print "new: %s in %s" %(new, file_name)
-            new_name = file_name
-            new_out = open(file_name, 'r')
-            found = 0
-            error = False
-            for line in new_out:
-                par = line.split()
-                if found == 0 and len(par) > 0 and par[0] == '==':
-                    found = 1
-                    p = par[2]
-                elif found == 1 and len(par) > 0 and par[0] == 'n:':
-                    found = 2
-                    n = par[-1]
-                elif found == 2 and len(par) > 0 and par[0] == 'Check:':
-                    result = par[-1]
-                    found = 0
-                    if result != basic_result[n]:
-                        print "ERROR IS DETECTED"
-                        print "%s in %s: n = %d, Check = %s" %(basic, basic_name, n, basic_result[n])
-                        print "%s in %s: n = %d, Check = %s" %(new, new_name, n, result)
-                        error = True
-            new_out.close()
+def base(s):
+    """ foo/bar/baz.py --> baz """
+    return os.path.splitext(os.path.basename(s))[0]
 
-            if not error:    
-                print "NO ERROR IS DETECTED"
+def index_by_n(ds):
+    return {d["n"]: d for d in ds}
 
-check('omp', 'mpi')
-check('omp', 'hybrid')
+def check((ref, ref_base), (dev, dev_base)):
+    ref = index_by_n(ref)
+    dev = index_by_n(dev)
+    for (n, d) in dev.iteritems():
+        ref_check = ref[n]["check"].strip()
+        dev_check = d["check"].strip()
+        if ref_check != dev_check:
+            print "ERROR: {}[{}] = {} != {} = {}[{}]".format(
+                    ref_base, n, ref_check, dev_check, dev_base, n)
+
+def main(csv_filenames):
+    if len(csv_filenames) < 1:
+        print "usage: python check_results.py reference.csv [out.csv]..."
+        sys.exit(-1)
+
+    ref_filename = csv_filenames.pop(0)
+    ref = csv_to_dict(ref_filename)
+    for f in csv_filenames:
+        check((ref, base(ref_filename)), (csv_to_dict(f), base(f)))
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

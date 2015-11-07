@@ -129,10 +129,15 @@ phi.MIC: path-mic.o mtp.o
 path-mic.o: path-mpi-omp.c
 	$(MPICC) -mmic -c $(PHI_FLAGS) $< -o $@
 
-# plotting
-.PHONY: plot
-plot:
+# checking and plotting
+.PHONY: check csv plot
+csv:
 	python results/pbs_to_csv.py *.o[1-9]*
+
+check: csv
+	python results/check_results.py rs-omp.csv *.csv
+
+plot: csv
 	python results/plot.py *.csv
 
 # === Miscellaneous
