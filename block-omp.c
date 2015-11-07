@@ -16,9 +16,6 @@
 #define BLOCK_SIZE ((int) 128)
 #endif
 
-int A_[BLOCK_SIZE * BLOCK_SIZE];
-int B_[BLOCK_SIZE * BLOCK_SIZE];
-
 /*
  * A is M-by-K
  * B is K-by-N
@@ -35,6 +32,9 @@ void basic_dgemm(const int lda,
                  int* restrict C,
                  int* restrict done) {
     int i, j, k;
+
+    int A_[BLOCK_SIZE * BLOCK_SIZE];
+    int B_[BLOCK_SIZE * BLOCK_SIZE];
 
     // transpose A into A_
     cm_transpose_into(A, lda, lda, M, K, A_, BLOCK_SIZE, BLOCK_SIZE);
@@ -102,6 +102,7 @@ int square(int n,              // Number of nodes
     const int n_blocks = n / BLOCK_SIZE + (n % BLOCK_SIZE? 1 : 0);
     int bi, bj, bk;
     int done = 1;
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (bi = 0; bi < n_blocks; ++bi) {
         for (bj = 0; bj < n_blocks; ++bj) {
             for (bk = 0; bk < n_blocks; ++bk) {
