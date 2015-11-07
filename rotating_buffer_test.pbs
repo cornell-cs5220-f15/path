@@ -7,4 +7,4 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-mpirun -n 8 ./rotating_buffer_test
+mpirun -n 10 ./rotating_buffer_test
