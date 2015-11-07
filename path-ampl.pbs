@@ -7,5 +7,5 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-amplxe-cl -collect advanced-hotspots \
-./path.x -n 2000
+amplxe-cl -collect hotspots \
+./omp.x -n 2000
