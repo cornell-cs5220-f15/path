@@ -39,7 +39,6 @@
  * identical, and false otherwise.
  */
 
-
 typedef char ddt;
 long ddt_upper_range = (1 << (8 * sizeof(ddt) - 1)) - 1;
 
