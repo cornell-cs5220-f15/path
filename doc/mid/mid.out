@@ -1,12 +1,10 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
-\BOOKMARK [1][-]{section.2}{Verification}{}% 2
-\BOOKMARK [1][-]{section.3}{Timing}{}% 3
-\BOOKMARK [2][-]{subsection.3.1}{Profiling}{section.3}% 4
-\BOOKMARK [2][-]{subsection.3.2}{Initial Profile Result}{section.3}% 5
-\BOOKMARK [2][-]{subsection.3.3}{Initial Timing Result}{section.3}% 6
-\BOOKMARK [1][-]{section.4}{Vectorization}{}% 7
-\BOOKMARK [1][-]{section.5}{Parallelization}{}% 8
-\BOOKMARK [1][-]{section.6}{Evaluation}{}% 9
-\BOOKMARK [2][-]{subsection.6.1}{What Worked}{section.6}% 10
-\BOOKMARK [2][-]{subsection.6.2}{What did not work}{section.6}% 11
-\BOOKMARK [1][-]{section.7}{Future Work}{}% 12
+\BOOKMARK [1][-]{section.2}{Profiling}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Identify bottlenecks}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Initial Timing Result}{section.2}% 4
+\BOOKMARK [1][-]{section.3}{Compiler Flags}{}% 5
+\BOOKMARK [1][-]{section.4}{Vectorization}{}% 6
+\BOOKMARK [1][-]{section.5}{Evaluation}{}% 7
+\BOOKMARK [2][-]{subsection.5.1}{What Worked}{section.5}% 8
+\BOOKMARK [2][-]{subsection.5.2}{What did not work}{section.5}% 9
+\BOOKMARK [1][-]{section.6}{Future Work}{}% 10

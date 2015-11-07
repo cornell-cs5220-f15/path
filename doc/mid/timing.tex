@@ -1,8 +1,37 @@
 \section{Timing}\label{sec:timing}
 \subsection{Profiling}
+To define the bottlenecks of our simulators, we profiled our code
+using Intel's VTune Amplifier, as shown in \figref{amplxe-command}.
 
+\begin{figure}[h]
+	\footnotesize
+	\begin{verbatim}
+	amplxe-cl -collect advanced-hotspots ./path
+    amplxe-cl -R hotspots -report-output vtune-report.csv -format csv -csv-delimiter comma
 
-\subsection{Initial Profile Result}
+	\end{verbatim}
+	\caption{VTune Amplifier Command}
+	\label{fig:amplxe-command}
+\end{figure}
 
+\subsection{Initial Timing Result}
+
+\begin{figure}[h]
+	\footnotesize
+	\begin{verbatim}
+	Function                     Module        CPU Time		CPU Time:Ideal
+	-----------------------------------------  --------     --------------
+	square			             path.x         45.14s			39.03s
+	_kmpbarrier                  libiomp5.so    6.485s			 0.16s
+	_kmpc_reduce_nowait          libiomp5.so    2.979s			 	0s
+	_kmp_fork_barrier            libiomp5.so    2.553s			 0.03s
+	gen_graph             		 path.x         0.030s				0s
+	_intel_ssse3_memcpy          path.x         0.030s				0s
+	fletcher16                   path.x         0.030s				0s
+	
+	\end{verbatim}
+	\caption{Initial Profile Result}
+	\label{fig:initial-profile-result}
+\end{figure}
 
 \subsection{Initial Timing Result}
