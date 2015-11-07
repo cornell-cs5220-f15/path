@@ -201,6 +201,45 @@ const char* usage =
     "  - i -- file name where adjacency matrix should be stored (none)\n"
     "  - o -- file name where output matrix should be stored (none)\n";
 
+void strong_scaling(int n, int p) {
+    FILE *fp;
+    fp = fopen("strong_scaling.csv", "w+");
+    double t_start, t_end;
+    int thread_max = 50, i, *l;
+
+    for (i = 1; i <= thread_max; i++) {
+        omp_set_num_threads(i);
+        l = gen_graph(n, p);
+        t_start = omp_get_wtime();
+        shortest_paths(n, l);
+        t_end = omp_get_wtime();
+        free(l);
+        fprintf(fp, "%d, %f\n", i, (t_end - t_start));
+    } 
+    fclose(fp);
+}
+
+void weak_scaling(int n, int p) {
+    FILE *fp;
+    fp = fopen("weak_scaling.csv", "w+");
+    double t_start, t_end;
+    int thread_max = 50, i, *l;
+    int problem_size = n * n;
+    int n_scaled;
+
+    for (i = 1; i <= thread_max; i++) {
+        omp_set_num_threads(i);
+        n_scaled = ceil(sqrt(problem_size / i));
+        l = gen_graph(n_scaled, p);
+        t_start = omp_get_wtime();
+        shortest_paths(n_scaled, l);
+        t_end = omp_get_wtime();
+        free(l);
+        fprintf(fp, "%d, %f\n", i, (t_end - t_start));
+    } 
+    fclose(fp);
+}
+
 int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
@@ -246,5 +285,8 @@ int main(int argc, char** argv)
 
     // Clean up
     free(l);
+
+    strong_scaling(n, p);
+    weak_scaling(4000, p);
     return 0;
 }
