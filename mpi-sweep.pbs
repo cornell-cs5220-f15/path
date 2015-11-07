@@ -1,0 +1,30 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -n
+#PBS -p 1023
+#PBS -j oe
+
+set -eou pipefail
+
+main() {
+    if [ -z ${SWEEP_MIN+x} ] ||
+       [ -z ${SWEEP_MAX+x} ] ||
+       [ -z ${SWEEP_STEP+x} ] ||
+       [ -z ${P+x} ] ||
+       [ -z ${EXE+x} ]; then
+        echo "usage: qsub mpi-sweep.pbs -N <name> " \
+               "-vSWEEP_MIN=<min>,SWEEP_MAX=<max>,SWEEP_STEP=<step>," \
+               "P=<p>,EXE=<executable>"
+        exit -1
+    fi
+
+	for (( n = "$SWEEP_MIN"; n <= "$SWEEP_MAX"; n += "$SWEEP_STEP" )); do
+        mpirun -n "$P" "$EXE" -n "$n"
+    done
+}
+
+module load cs5220
+cd $PBS_O_WORKDIR
+main

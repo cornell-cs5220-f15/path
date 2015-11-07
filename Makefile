@@ -20,9 +20,11 @@ EXES   = $(SRCS:.c=.x)
 RUNS   = $(addprefix run-,$(basename $(EXES)))
 AMPLS  = $(addprefix ampl-,$(basename $(EXES)))
 SWEEPS = $(addprefix sweep-,$(basename $(EXES)))
+SPRAYS = $(addprefix spray-,$(basename $(EXES)))
 OBJS   = mt19937p.o
 
 SWEEPS := $(filter-out sweep-fw-hybrid, $(SWEEPS))
+SPRAYS := $(filter-out spray-fw-hybrid, $(SPRAYS))
 
 N = 2400 # -n value passed to main program
 P = 24   # -n value passed to mpirun
@@ -38,6 +40,7 @@ all:   $(EXES)
 run:   $(RUNS)
 ampl:  $(AMPLS)
 sweep: $(SWEEPS)
+spray: $(SPRAYS)
 
 # === Executables
 #
@@ -58,6 +61,9 @@ run-%-omp: %-omp.x
 	qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$(N)"
 
 sweep-%-omp: %-omp.x
+	qsub omp-sweep.pbs -N $*-omp "-vSWEEP_MIN=$(SWEEP_MIN),SWEEP_MAX=$(SWEEP_MAX),SWEEP_STEP=$(SWEEP_STEP),EXE=$*-omp.x,N=$$i";
+
+spray-%-omp: %-omp.x
 	for (( i = $(SWEEP_MIN); i <= $(SWEEP_MAX); i += $(SWEEP_STEP) )); do \
 		qsub omp.pbs -N $*-omp "-vEXE=$*-omp.x,N=$$i"; \
 	done \
@@ -76,6 +82,9 @@ run-%-hybrid: %-hybrid.x
 	qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$(N)"
 
 sweep-%-hybrid: %-hybrid.x
+	qsub hybrid-sweep.pbs -N $*-hybrid "-vSWEEP_MIN=$(SWEEP_MIN),SWEEP_MAX=$(SWEEP_MAX),SWEEP_STEP=$(SWEEP_STEP),P=$(P),EXE=$*-hybrid.x,N=$$i";
+
+spray-%-hybrid: %-hybrid.x
 	for (( i = $(SWEEP_MIN); i <= $(SWEEP_MAX); i += $(SWEEP_STEP) )); do \
 		qsub hybrid.pbs -N $*-hybrid "-vP=$(P),EXE=$*-hybrid.x,N=$$i"; \
 	done \
@@ -94,6 +103,9 @@ run-%-mpi: %-mpi.x
 	qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$(N)"
 
 sweep-%-mpi: %-mpi.x
+	qsub mpi-sweep.pbs -N $*-mpi "-vSWEEP_MIN=$(SWEEP_MIN),SWEEP_MAX=$(SWEEP_MAX),SWEEP_STEP=$(SWEEP_STEP),P=$(P),EXE=$*-mpi.x,N=$$i";
+
+spray-%-mpi: %-mpi.x
 	for (( i = $(SWEEP_MIN); i <= $(SWEEP_MAX); i += $(SWEEP_STEP) )); do \
 		qsub mpi.pbs -N $*-mpi "-vP=$(P),EXE=$*-mpi.x,N=$$i"; \
 	done \
