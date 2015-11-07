@@ -1,0 +1,4 @@
+*.o
+*.optrpt
+*.csv
+path.x
