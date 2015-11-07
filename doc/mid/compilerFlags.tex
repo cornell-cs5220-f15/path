@@ -1,0 +1,7 @@
+\section{Compiler Flags}\label{compilerflags}
+With some experience from the previous project, we decided to play around with different compiler flags to examine whether it will help us the speedup of the code. We found that the icc compiler flag shown below gave us 8 times speedup to the \ttt{deinfinitize} function. 
+
+\begin{verbatim}
+	OPTFLAGS=-O3 -no-prec-div -opt-prefetch -xHost -ansi-alias -ipo -restrict
+\end{verbatim}
+
