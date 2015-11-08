@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path.x
+exe: path-mpi.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -49,6 +49,8 @@ path.md: path.c
 
 clean:
 	rm -f *.o
+	rm -f path-mpi.o*
+	rm -f *.x
 
 realclean: clean
 	rm -f path.x path-mpi.x path.md main.pdf
