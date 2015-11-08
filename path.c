@@ -7,6 +7,28 @@
 #include <omp.h>
 #include "mt19937p.h"
 
+#include <xmmintrin.h>// _mm_malloc
+#include <string.h>   // memset
+
+#ifdef __MIC__
+    #define BYTE_ALIGN 64
+#else
+    #define BYTE_ALIGN 32
+#endif
+
+#ifdef __INTEL_COMPILER
+    #define DEF_ALIGN(x) __declspec(align((x)))
+    #define USE_ALIGN(var, align) __assume_aligned((var), (align));
+
+    // frankly, this article is very unclear as to what needs to happen, lets just see what happens?
+    //     https://software.intel.com/en-us/articles/memcpy-memset-optimization-and-control
+    #define memcpy _intel_fast_memcpy
+    #define memset _intel_fast_memset
+#else // GCC
+    #define DEF_ALIGN(x) __attribute__ ((aligned((x))))
+    #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
+#endif
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -39,10 +61,13 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
-{
+int square(int n,                 // Number of nodes
+           int * restrict l,      // Partial distance at step s
+           int * restrict lnew) { // Partial distance at step s+1
+
+    USE_ALIGN(l,    BYTE_ALIGN);
+    USE_ALIGN(lnew, BYTE_ALIGN);
+
     int done = 1;
     #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
@@ -76,15 +101,17 @@ int square(int n,               // Number of nodes
  * conventions.
  */
 
-static inline void infinitize(int n, int* l)
-{
+static inline void infinitize(int n, int * restrict l) {
+    USE_ALIGN(l, BYTE_ALIGN);
+
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
 }
 
-static inline void deinfinitize(int n, int* l)
-{
+static inline void deinfinitize(int n, int * restrict l) {
+    USE_ALIGN(l, BYTE_ALIGN);
+
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
             l[i] = 0;
@@ -104,15 +131,22 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+void shortest_paths(int n, int * restrict l)
 {
+    USE_ALIGN(l, BYTE_ALIGN);
+
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    // int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    size_t num_bytes = n*n*sizeof(int);
+    DEF_ALIGN(BYTE_ALIGN) int * restrict lnew = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
+    // memset(lnew, 0, num_bytes);
+    USE_ALIGN(lnew, BYTE_ALIGN);
+
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
@@ -133,9 +167,14 @@ void shortest_paths(int n, int* restrict l)
  * random number generator in lieu of coin flips.
  */
 
-int* gen_graph(int n, double p)
+int * gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    // int* l = calloc(n*n, sizeof(int));
+    // 'calloc'
+    size_t num_bytes = n*n*sizeof(int);
+    DEF_ALIGN(BYTE_ALIGN) int *l = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
+    memset(l, 0, num_bytes);
+
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
