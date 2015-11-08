@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#include <mpi.h>
 #include <omp.h>
 #include "mt19937p.h"
 
@@ -47,10 +48,7 @@ long ddt_upper_range = (1 << (8 * sizeof(ddt) - 1)) - 1;
 //          Justin: this should be done as matrix multiplication
 // ==========================================================================
 
-int square(int n,               // Number of nodes
-           ddt* restrict l,     // Partial distance at step s
-           ddt* restrict l_T,   // Transposed l matrix
-           ddt* restrict lnew)  // Partial distance at step s+1
+int square(int n, ddt* restrict l, ddt* restrict l_T, ddt* restrict lnew) 
 {
     int done = 1;
 
@@ -134,14 +132,9 @@ static inline void deinfinitize(int n, ddt* l)
 
 void shortest_paths(int n, ddt* restrict l)
 {
-    // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
-
     // Repeated squaring until nothing changes
-    ddt* restrict l_T  = (ddt*) _mm_malloc(n*n * sizeof(ddt), 32); 
-    ddt* restrict lnew = (ddt*) _mm_malloc(n*n * sizeof(ddt), 32);
+    ddt* restrict l_T  = (ddt*) _mm_malloc(n*n * sizeof(ddt), 64); 
+    ddt* restrict lnew = (ddt*) _mm_malloc(n*n * sizeof(ddt), 64);
     memcpy(lnew, l, n*n * sizeof(ddt));
     for (int done = 0; !done; ) 
     {
@@ -166,7 +159,7 @@ void shortest_paths(int n, ddt* restrict l)
 
 ddt* gen_graph(int n, double p)
 {
-    ddt* l = _mm_malloc(n*n * sizeof(ddt), 32);
+    ddt* l = _mm_malloc(n*n * sizeof(ddt), 64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) 
@@ -177,6 +170,60 @@ ddt* gen_graph(int n, double p)
     }
     return l;
 }
+
+
+
+void copy_to_cpd(ddt* ori_graph, ddt* cpd_graph, int n, int nsplit, int nblock)
+{
+    int nside = nsplit * nblock; 
+    cpd_graph = _mm_malloc(nside*nside * sizeof(ddt), 64);
+    
+    for (int i = 0; i < nside; i++)
+    {
+        int  I = i / nblock; 
+        int ii = i % nblock;
+        for (int j = 0; j < nside; j++)
+        {
+            int  J = j / nblock;
+            int jj = j % nblock;
+
+            int cpd_offset = (I * nsplit + J) * (nblock*nblock) + (ii * nblock + jj);
+            
+            if ( i >= n || j >= n )
+            {
+                cpd_graph[cpd_offset] = ddt_upper_range;
+            }
+            else
+            {
+                int ori_offset = j * n + i;
+                cpd_graph[cpd_offset] = ori_graph[ori_offset];   
+            }
+        }
+    }
+}
+
+
+void copy_to_ori(ddt* ori_graph, ddt* cpd_graph, int n, int nsplit, int nblock)
+{
+    int nside = nsplit * nblock; 
+    
+    for (int i = 0; i < n; i++)
+    {
+        int  I = i / nblock; 
+        int ii = i % nblock;
+        for (int j = 0; j < n; j++)
+        {
+            int  J = j / nblock;
+            int jj = j % nblock;
+
+            int ori_offset = j * n + i;
+            int cpd_offset = (I * nsplit + J) * (nblock*nblock) + (ii * nblock + jj);
+
+            ori_graph[ori_offset] = cpd_graph[cpd_offset];   
+        }
+    }
+}
+
 
 /**
  * # Result checks
@@ -210,11 +257,13 @@ int fletcher16(ddt* data, int count)
 void write_matrix(const char* fname, int n, ddt* a)
 {
     FILE* fp = fopen(fname, "w+");
-    if (fp == NULL) {
+    if (fp == NULL) 
+    {
         fprintf(stderr, "Could not open output file: %s\n", fname);
         exit(-1);
     }
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) 
+    {
         for (int j = 0; j < n; ++j) 
             fprintf(fp, "%d ", a[j*n+i]);
         fprintf(fp, "\n");
@@ -236,6 +285,19 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
+    printf("1\n");
+    MPI_Init(&argc, &argv);
+    
+    int num_ranks;
+    int my_world_id;
+
+    printf("num_ranks:%d\n", num_ranks);
+    
+    MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_world_id);
+
+    printf("2\n");
+
     int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
@@ -259,28 +321,61 @@ int main(int argc, char** argv)
         }
     }
 
-    // Graph generation + output
-    ddt* l = gen_graph(n, p);
-    if (ifname)
-        write_matrix(ifname,  n, l);
+    printf("3\n");
+
+    ddt* ori_graph = NULL;
+    ddt* cpd_graph = NULL;
+    if ( my_world_id == 0 )
+    {
+        // Graph generation + output
+        ori_graph = gen_graph(n, p);
+        if (ifname)
+            write_matrix(ifname, n, ori_graph);
+    
+        printf("4\n");
+        
+        // Generate l_{ij}^0 from adjacency matrix representation
+        infinitize(n, ori_graph);
+        for (int i = 0; i < n*n; i += n+1)
+            ori_graph[i] = 0;
+        
+        printf("5\n");
+    
+        int nsplit = (int) ( sqrt(num_ranks) + 0.001 );
+        int nblock = (int) ( ceil( (double) n / nsplit ) + 0.001 );
+        copy_to_cpd(ori_graph, cpd_graph, n, nsplit, nblock);
+
+        for (int i = 0; i < nsplit * nblock; i++)
+        {
+            for (int j = 0; j < n * nblock; j++)
+                printf("a(%d, %d): %c", i, j, cpd_graph[i*nsplit*nblock + j]);
+            printf("\n");
+        }
+    }
 
     // Time the shortest paths code
-    double t0 = omp_get_wtime();
-    shortest_paths(n, l);
-    double t1 = omp_get_wtime();
+//    double t0 = omp_get_wtime();
+//    shortest_paths(n, l);
+//    double t1 = omp_get_wtime();
+//
+//    if ( my_world_id == 0 )
+//    {
+//        printf("== OpenMP with %d threads\n", omp_get_max_threads());
+//        printf("n:     %d\n", n);
+//        printf("p:     %g\n", p);
+//        printf("Time:  %g\n", t1-t0);
+//        printf("Check: %X\n", fletcher16(l, n*n));
+//
+//        // Generate output file
+//        if (ofname)
+//            write_matrix(ofname, n, l);
+//
+//        printf("ddt_upper_range:%d\n", ddt_upper_range);
+//        // Clean up
+//        _mm_free(l);
+//    }
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    MPI_Finalize();
 
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
-
-    printf("ddt_upper_range:%d\n", ddt_upper_range);
-    // Clean up
-    _mm_free(l);
     return 0;
 }
