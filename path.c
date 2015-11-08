@@ -185,7 +185,7 @@ void shortest_paths(int n, int * restrict l)
 
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    free(lnew);
+    _mm_free(lnew);
 
     double de_inf_start = omp_get_wtime();
     deinfinitize(n, l);
@@ -331,7 +331,7 @@ int main(int argc, char** argv)
     int check = fletcher16(l, n*n);
 
     // Clean up
-    free(l);
+    _mm_free(l);
 
     double overall_stop = omp_get_wtime();
     
