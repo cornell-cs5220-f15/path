@@ -30,7 +30,7 @@
 #endif
 
 // how many threads?
-int num_threads = 1;
+int n_threads = 1;
 
 // global timing constants
 double square_avg = 0.0;
@@ -76,21 +76,25 @@ int square(int n,                 // Number of nodes
     USE_ALIGN(lnew, BYTE_ALIGN);
 
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
+    #pragma omp parallel for       \
+            num_threads(n_threads) \
+            shared(l, lnew)        \
+            reduction(&& : done)
+        for (int j = 0; j < n; ++j) {
+            for (int i = 0; i < n; ++i) {
+                int lij = lnew[j*n+i];
+                for (int k = 0; k < n; ++k) {
+                    int lik = l[k*n+i];
+                    int lkj = l[j*n+k];
+                    if (lik + lkj < lij) {
+                        lij = lik+lkj;
+                        done = 0;
+                    }
                 }
+                lnew[j*n+i] = lij;
             }
-            lnew[j*n+i] = lij;
         }
-    }
+
     return done;
 }
 
@@ -281,15 +285,15 @@ int main(int argc, char** argv)
 {
     double overall_start = omp_get_wtime();
 
-    int n    = 200;            // Number of nodes
-    double p = 0.05;           // Edge probability
-    num_threads = omp_get_max_threads();
-    const char* ifname = NULL; // Adjacency matrix file name
-    const char* ofname = NULL; // Distance matrix file name
+    int n     = 200;                   // Number of nodes
+    double p  = 0.05;                  // Edge probability
+    n_threads = omp_get_max_threads(); // Number of threads to use with OMP
+    const char* ifname = NULL;         // Adjacency matrix file name
+    const char* ofname = NULL;         // Distance matrix file name
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:t";
+    const char* optstring = "hn:d:p:o:i:t:";
     int c;
     // int num_threads <-- defined at top for global scope
     while ((c = getopt(argc, argv, optstring)) != -1) {
@@ -297,11 +301,11 @@ int main(int argc, char** argv)
         case 'h':
             fprintf(stderr, "%s", usage);
             return -1;
-        case 'n': n           = atoi(optarg); break;
-        case 'p': p           = atof(optarg); break;
-        case 'o': ofname      = optarg;       break;
-        case 'i': ifname      = optarg;       break;
-        case 't': num_threads = atoi(optarg); break;
+        case 'n': n         = atoi(optarg); break;
+        case 'p': p         = atof(optarg); break;
+        case 'o': ofname    = optarg;       break;
+        case 'i': ifname    = optarg;       break;
+        case 't': n_threads = atoi(optarg); break;
         }
     }
 
@@ -331,7 +335,7 @@ int main(int argc, char** argv)
 
     double overall_stop = omp_get_wtime();
     
-    printf("== OpenMP with %d threads\n", num_threads);
+    printf("== OpenMP with %d threads\n", n_threads);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Check: %X\n", check);
