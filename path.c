@@ -20,10 +20,10 @@
     #define DEF_ALIGN(x) __declspec(align((x)))
     #define USE_ALIGN(var, align) __assume_aligned((var), (align));
 
-    // frankly, this article is very unclear as to what needs to happen, lets just see what happens?
-    //     https://software.intel.com/en-us/articles/memcpy-memset-optimization-and-control
-    #define memcpy _intel_fast_memcpy
-    #define memset _intel_fast_memset
+    // // frankly, this article is very unclear as to what needs to happen, lets just see what happens?
+    // //     https://software.intel.com/en-us/articles/memcpy-memset-optimization-and-control
+    // #define memcpy _intel_fast_memcpy
+    // #define memset _intel_fast_memset
 #else // GCC
     #define DEF_ALIGN(x) __attribute__ ((aligned((x))))
     #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
