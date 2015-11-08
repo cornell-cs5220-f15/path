@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path-mpi.x
+exe: path.x path-mpi.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
