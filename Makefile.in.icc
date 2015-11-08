@@ -3,8 +3,9 @@ MPICC=mpiicc
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
-OPTFLAGS=-O3 -no-prec-div -xcore-avx2 -ipo \
+OPTFLAGS=-O3 -no-prec-div -xcore-avx2 -ipo -ipo -restrict\
 	-qopt-report=5 -qopt-report-phase=vec
+#-xHost, -opt-prefetch
 
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS)
