@@ -260,16 +260,15 @@ int main(int argc, char** argv)
 	if (rank == (nproc-1))	{
 		nlocal += n % nproc;
 	}
+	int nelements = n * nlocal;
 
 	int *scounts = (int*) calloc(nproc, sizeof(int));
 	int *displs = (int*) calloc(nproc, sizeof(int));
+
 	for (int i = 0; i < nproc; ++i)	{
 		displs[i] = offset;
-		scounts[i] = nlocal*n;
 	}
-	//scounts[nproc-1] = nlocal+ n%nproc;
-	//printf("Core %d: value = %d, nlocal = %d\n", rank, scounts[nproc-1], nlocal);
-
+	MPI_Gather(&nelements, 1, MPI_INT, scounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	// Generate l_{ij}^0 from adjacency matrix representation
 	if (rank == 0)	{
@@ -280,11 +279,11 @@ int main(int argc, char** argv)
 
 	int* restrict lproc = (int*) calloc(n*nlocal, sizeof(int));
 
-	MPI_Scatterv(l, scounts, displs, MPI_INT, lproc, n*nlocal, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Scatterv(l, scounts, displs, MPI_INT, lproc, nelements, MPI_INT, 0, MPI_COMM_WORLD);
 
 	shortest_paths(n, nlocal, lproc, nproc, rank);
 		
-	MPI_Gatherv(lproc, n*nlocal, MPI_INT, l, scounts, displs, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gatherv(lproc, nelements, MPI_INT, l, scounts, displs, MPI_INT, 0, MPI_COMM_WORLD);
 
 	free(scounts);
 	free(displs);
