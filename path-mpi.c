@@ -215,8 +215,8 @@ void shortest_paths(int nproc, int rank, int vector_nwords,
   // (64B) to allow vector loads/stores. Always allocate memory at the
   // granularity of vector accesses to avoid masked vector loads/stores.
 
-  int lproc_nwords = ((n * nlocal) + vector_nwords - 1) / vector_nwords;
-  int col_k_nwords = (n + vector_nwords - 1) / vector_nwords;
+  int lproc_nwords = n * nlocal; //((n * nlocal) + vector_nwords - 1) / vector_nwords;
+  int col_k_nwords = n; //(n + vector_nwords - 1) / vector_nwords;
 
   int* restrict lproc = _mm_malloc(lproc_nwords * sizeof(int), 32);
   int* restrict col_k = _mm_malloc(col_k_nwords * sizeof(int), 32);
@@ -236,8 +236,6 @@ void shortest_paths(int nproc, int rank, int vector_nwords,
   // Clean up local buffers
   free(scounts);
   free(displs);
-  free(lproc);
-  free(col_k);
 
   if (rank == 0)
     deinfinitize(n, l);
