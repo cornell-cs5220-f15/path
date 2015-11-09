@@ -14,9 +14,6 @@
 // used within the innermost loop of the computation kernel to further
 // parallelize computation across multiple elements in a column.
 
-#if defined _PARALLEL_DEVICE
-#pragma offload_attribute(push,target(mic))
-#endif
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +22,9 @@
 #include <unistd.h>
 #include "mt19937p.h"
 #include <mpi.h>
+#if defined _PARALLEL_DEVICE
+#pragma offload_attribute(push,target(mic))
+#endif
 #include <immintrin.h>
 #if defined _PARALLEL_DEVICE
 #pragma offload_attribute(pop)
@@ -78,7 +78,9 @@
  *  loop.
  */
 
+#if defined _PARALLEL_NODE
 inline __attribute__((always_inline))
+#endif
 void col_copy(int *col, int *l, int index, int n)
 {
   for (int m = 0; m < n; ++m)
@@ -144,7 +146,9 @@ void unpack_padded_data(int n, int npadded, int *l, int *lpadded)
  * identical, and false otherwise.
  */
 
+#if defined _PARALLEL_NODE
 inline __attribute__((always_inline))
+#endif
 int square(int nproc, int rank, int n, int nlocal, int col_nwords,
            int* restrict lproc, int* restrict col_k)
 {
@@ -197,10 +201,10 @@ int square(int nproc, int rank, int n, int nlocal, int col_nwords,
 
     int* done_ptr = &done;
 
-    #pragma offload target(mic:0) in(n) in(nlocal) in(num_padding) \
-                                  in(col_k : length(col_nwords)) \
-                                  inout(done_ptr : length(1)) \
-                                  inout(lproc : length(col_nwords*nlocal))
+    #pragma offload target(mic) in(n) in(nlocal) in(num_padding) \
+                                in(col_k : length(col_nwords)) \
+                                inout(done_ptr : length(1)) \
+                                inout(lproc : length(col_nwords*nlocal))
     {
 
     #endif

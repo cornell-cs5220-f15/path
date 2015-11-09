@@ -1,6 +1,6 @@
 CC=icc
 MPICC=mpiicc
-CFLAGS=-std=c99 -g
+CFLAGS=-std=c99 -g -openmp
 
 # If you're using icc, these are good flags to try
 OPTFLAGS=-O3 -no-prec-div -xcore-avx2 -ipo \
