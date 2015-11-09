@@ -58,7 +58,7 @@ over the largest amount of work that we can assign to the accelerator at
 a time. One way we can do this is by broadcasting chunks of multiple
 columns every k-th iteration instead of just one column. For example,
 this decreases the order of MPI messages for the column broadcast from
-O(n^2) to O(num\_cores^2). Although this reduces inter-core
+$O(n^2)$ to $O(num\_cores^2)$. Although this reduces inter-core
 communication, all ranks still need to synchronize at every k-th
 iteration. The offloading should also benefit from reducing the number of
 synchronization points. Ideally, we want all ranks to synchronize once
