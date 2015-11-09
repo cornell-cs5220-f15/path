@@ -279,14 +279,12 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
   // (64B) to allow vector loads/stores. Always allocate memory at the
   // granularity of vector accesses to avoid masked vector loads/stores.
 
-  int lproc_nvecs = ((n * nlocal) + VECTOR_NWORDS - 1) / VECTOR_NWORDS;
-  int col_k_nvecs = (n + VECTOR_NWORDS - 1) / VECTOR_NWORDS;
+  int col_nvecs    = (n + VECTOR_NWORDS - 1) / VECTOR_NWORDS;
+  int col_nwords   = col_nvecs * VECTOR_NWORDS;
+  int lproc_nwords = col_nwords * nlocal;
 
-  int lproc_nwords = lproc_nvecs * VECTOR_NWORDS;
-  int col_k_nwords = col_k_nvecs * VECTOR_NWORDS;
-
+  int* restrict col_k = _mm_malloc(col_nwords * sizeof(int), 32);
   int* restrict lproc = _mm_malloc(lproc_nwords * sizeof(int), 32);
-  int* restrict col_k = _mm_malloc(col_k_nwords * sizeof(int), 32);
 
   // Number of elements to send and displacement from global grid array
   // from which the master rank should send data to each rank.
@@ -294,15 +292,15 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
   int *scounts, *displs;
 
   if (rank == 0) {
-    scounts = (int*) calloc(nproc, sizeof(int));
-    displs  = (int*) calloc(nproc, sizeof(int));
+    scounts = (int*)calloc(nproc, sizeof(int));
+    displs  = (int*)calloc(nproc, sizeof(int));
 
     for (int i = 0; i < nproc; ++i) {
       scounts[i] = lproc_nwords;
       displs[i]  = i * lproc_nwords;
     }
 
-    scounts[nproc-1] += (n % nproc) * col_k_nwords;
+    scounts[nproc-1] += (n % nproc) * col_nwords;
   }
 
   // Generate l_{ij}^0 from adjacency matrix representation
@@ -315,7 +313,7 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
   // Pack global grid array with padding if necessary to ensure all
   // columns are aligned to the vector width.
 
-  int  npadded = col_k_nwords;
+  int  npadded = col_nwords;
   int *lpadded;
 
   if (rank == 0) {
