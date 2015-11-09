@@ -14,6 +14,9 @@
 // used within the innermost loop of the computation kernel to further
 // parallelize computation across multiple elements in a column.
 
+#if defined _PARALLEL_DEVICE
+#pragma offload_attribute(push,target(mic))
+#endif
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,12 +26,49 @@
 #include "mt19937p.h"
 #include <mpi.h>
 #include <immintrin.h>
+#if defined _PARALLEL_DEVICE
+#pragma offload_attribute(pop)
+#endif
 
 // Global definitions
 
 #define MASK_1 0xffffffffffffffff
 #define MASK_0 0x0000000000000000
-#define VECTOR_NWORDS 8 // Number of 32b words in vector width
+
+// Number of 32b words in vector width. Determine based on what platform
+// we're running on. Also set the corresponding AVX intrinsics and data
+// types.
+
+#if defined _PARALLEL_NODE
+#define VECTOR_NWORDS 8
+#define VECTOR_NBYTES 32
+#define vec         __m256i
+#define vec_set     _mm256_set_epi32
+#define vec_set1    _mm256_set1_epi32
+#define vec_load    _mm256_load_si256
+#define vec_add     _mm256_add_epi32
+#define vec_cmpgt   _mm256_cmpgt_epi32
+#define vec_setzero _mm256_setzero_si256
+#define vec_and     _mm256_and_si256
+#define vec_testc   _mm256_testc_si256
+#define vec_andnot  _mm256_andnot_si256
+#define vec_store   _mm256_store_si256
+#elif defined _PARALLEL_DEVICE
+#define VECTOR_NWORDS 16
+#define VECTOR_NBYTES 64
+#define vec         __m512i
+#define vec_mask    __mmask16
+#define vec_set     _mm512_set_epi32
+#define vec_set1    _mm512_set1_epi32
+#define vec_load    _mm512_load_epi32
+#define vec_add     _mm512_add_epi32
+#define vec_cmpgt   _mm512_cmpgt_epi32_mask
+#define vec_setzero _mm512_setzero_epi32
+#define vec_testc   _mm512_kortestc
+#define vec_and     _mm512_mask_and_epi32
+#define vec_andnot  _mm512_mask_andnot_epi32
+#define vec_store   _mm512_store_epi32
+#endif
 
 //ldoc on
 
@@ -118,7 +158,8 @@ int square(int nproc, int rank, int n, int nlocal,
 
   int num_padding = n % VECTOR_NWORDS;
 
-  __m256i pad_vec = _mm256_set_epi32(
+  #if defined _PARALLEL_NODE
+  vec pad_vec = vec_set(
       (num_padding > 7) ? MASK_1 : MASK_0,
       (num_padding > 6) ? MASK_1 : MASK_0,
       (num_padding > 5) ? MASK_1 : MASK_0,
@@ -128,6 +169,7 @@ int square(int nproc, int rank, int n, int nlocal,
       (num_padding > 1) ? MASK_1 : MASK_0,
       (num_padding > 0) ? MASK_1 : MASK_0
   );
+  #endif
 
   // Moving across columns of the global matrix
   for (int k = 0; k < n; ++k) {
@@ -153,8 +195,8 @@ int square(int nproc, int rank, int n, int nlocal,
 
       // Broadcast column element to be added to row elements to compare
       // against current shortest path.
-      int     lkj     = lproc[j*n+k];
-      __m256i lkj_vec = _mm256_set1_epi32(lkj);
+      int lkj     = lproc[j*n+k];
+      vce lkj_vec = vec_set1(lkj);
 
       // Vectorize inner loop across row elements of both output elements
       // (i.e., current shortest path) and input elements in k-th
@@ -164,11 +206,18 @@ int square(int nproc, int rank, int n, int nlocal,
         int *lij_vec_addr = lproc + (j * n) + (i * VECTOR_NWORDS);
         int *lik_vec_addr = col_k + (i * VECTOR_NWORDS);
 
-        __m256i lij_vec = _mm256_load_si256((__m256i*)lij_vec_addr);
-        __m256i lik_vec = _mm256_load_si256((__m256i*)lik_vec_addr);
+        vec lij_vec = vec_load((vec*)lij_vec_addr);
+        vec lik_vec = vec_load((vec*)lik_vec_addr);
 
         // Calculate sum of shortest paths between (i,k) and (k,j)
-        __m256i sum_vec = _mm256_add_epi32(lik_vec, lkj_vec);
+        vec sum_vec = vec_add(lik_vec, lkj_vec);
+
+        //----------------------------------------------------------------
+        // The comparison intrinsics for AVX-512 return a different mask
+        // type, so we need different logic to handle this case.
+        //----------------------------------------------------------------
+
+        #if define _PARALLEL_NODE
 
         // Create a mask based on a vector-wide comparison between the
         // current shortest path and the sum of the shortest paths
@@ -176,8 +225,9 @@ int square(int nproc, int rank, int n, int nlocal,
         // comparison will return a mask of all 1s (0xffffffff) if the
         // sum is the new shortest path, otherwise will return a mask of
         // all 0s (0x00000000).
-        __m256i mask_vec = _mm256_cmpgt_epi32(lij_vec, sum_vec);
-        __m256i zero_vec = _mm256_setzero_si256();
+
+        vec mask_vec = vec_cmpgt(lij_vec, sum_vec);
+        vec zero_vec = vec_setzero();
 
         // We need to invalidate the comparisons of the mask that were
         // calculated from junk elements beyond the boundaries of the
@@ -186,25 +236,58 @@ int square(int nproc, int rank, int n, int nlocal,
         // determination of whether we are done with computation or not.
 
         if ((num_padding > 0) && (i == num_wide_ops - 1))
-          mask_vec = _mm256_and_si256(mask_vec, pad_vec);
+          mask_vec = vec_and(mask_vec, pad_vec);
 
         // If the comparison for any of the elements was true (i.e., a
         // new shortest path was found), then we are not done yet. This
         // vector operation ANDs the mask and the NOT of a zero vector,
         // so a vector of all 1s, and returns 1 if the result is all 0s,
         // otherwise returns 0.
-        if (!_mm256_testc_si256(mask_vec, zero_vec))
+        if (!vec_testc(mask_vec, zero_vec))
           done = 0;
 
         // Use the mask to zero out the elements in both the sum and
         // current shortest path vectors that are not the shortest path,
         // then add them together to get the new shortest path vector
         // which is stored back to memory.
-        sum_vec = _mm256_and_si256(mask_vec, sum_vec);
-        lij_vec = _mm256_andnot_si256(mask_vec, lij_vec);
-        lij_vec = _mm256_add_epi32(sum_vec, lij_vec);
+        sum_vec = vec_and(mask_vec, sum_vec);
+        lij_vec = vec_andnot(mask_vec, lij_vec);
 
-        _mm256_store_si256((__m256i*)lij_vec_addr, lij_vec);
+        //----------------------------------------------------------------
+        // AVX-512 comparison logic
+        //----------------------------------------------------------------
+
+        #elif defined _PARALLEL_DEVICE
+
+        // Comparison return a 16b vector mask, elements with a true
+        // comparison are set to 1.
+        vec_mask mask_vec = vec_cmpgt(lij_vec, sum_vec);
+
+        // Convert vector mask into int. If we are at the last iteration
+        // and we need ignore any elements beyond the padding, we set the
+        // pad mask accordingly.
+
+        int cmp_mask = vec_testc(mask_vec, mask_vec);
+        int pad_mask = 0xffffffff;
+
+        if ((num_padding > 0) && (i == num_wide_ops - 1))
+          pad_mask = ~(pad_mask << num_padding);
+
+        // If any comparison was true, we are not done with computation
+        if ((cmp_mask & pad_mask) != 0)
+          done = 0;
+
+        // Isolate the shortest path elements and store to memory
+
+        vec zero_vec = vec_setzero();
+
+        sum_vec = vec_andnot(zero_vec, mask_vec, zero_vec, sum_vec);
+        lij_vec = vec_and(lij_vec, mask_vec, zero_vec, zero_vec);
+
+        #endif
+
+        lij_vec = vec_add(sum_vec, lij_vec);
+        vec_store((vec*)lij_vec_addr, lij_vec);
       }
     }
   }
@@ -275,8 +358,8 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
   int col_nwords   = col_nvecs * VECTOR_NWORDS;
   int lproc_nwords = col_nwords * nlocal;
 
-  int* restrict col_k = _mm_malloc(col_nwords * sizeof(int), 32);
-  int* restrict lproc = _mm_malloc(lproc_nwords * sizeof(int), 32);
+  int* restrict col_k = _mm_malloc(col_nwords * sizeof(int), VECTOR_NBYTES);
+  int* restrict lproc = _mm_malloc(lproc_nwords * sizeof(int), VECTOR_NBYTES);
 
   // Number of elements to send and displacement from global grid array
   // from which the master rank should send data to each rank.
