@@ -174,9 +174,8 @@ void shortest_paths(int n, int* restrict l)
     int delem[world_size];
     int offset = jlow*n;
     
-    MPI_Gather(&nelem, 1, MPI_INT, &pelem, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Gather(&offset, 1, MPI_INT, &delem, 1, MPI_INT, 0, MPI_COMM_WORLD);
-//    printf("Got here 2");
+    MPI_Allgather(&nelem, 1, MPI_INT, &pelem, 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&offset, 1, MPI_INT, &delem, 1, MPI_INT, MPI_COMM_WORLD);
     
     int* restrict lnew = (int*) calloc(nelem, sizeof(int));
     
@@ -186,7 +185,7 @@ void shortest_paths(int n, int* restrict l)
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
     }
-    
+    MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(l, pelem, delem, MPI_INT, lnew, nelem, MPI_INT, 0, MPI_COMM_WORLD);
 //    printf("Got here 3");
     
@@ -195,8 +194,8 @@ void shortest_paths(int n, int* restrict l)
     for (int doneall = 0; doneall<world_size; ) {
         int done = square(n, l, lnew, jlow, jup);
         MPI_Allreduce(&done, &doneall, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-        MPI_Gatherv(lnew, nelem, MPI_INT, l, pelem, delem, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Allgatherv(lnew, nelem, MPI_INT, l, pelem, delem, MPI_INT, MPI_COMM_WORLD);
+//        MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
     }
 //    printf("Got here 4");
     free(lnew);
@@ -331,7 +330,6 @@ int main(int argc, char** argv)
         l = calloc(n*n, sizeof(int));
     }
     
-    MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
 //    printf("Got here 1");
     // Time the shortest paths code
     
