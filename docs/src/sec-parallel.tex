@@ -10,5 +10,73 @@
 
 \input{fig-parallel-node-results}
 
-\subsection{Parallelizing for the Accelerator Board}
+\subsection{Parallelizing for the Accelerator Device}
 \label{sec-parallel-device}
+
+There are some notable limitations with combining MPI with offloading
+computation to the accelerator. The most significant limitation is that
+we \emph{cannot} invoke MPI routines inside of the offloaded
+kernel. Intel recommends three approaches for offloading code that uses
+MPI:
+
+\begin{itemize}
+  \item Native Execution: All MPI ranks live on the accelerator, binary
+    must be executed natively on the accelerator.
+  \item Symmetric Execution: MPI ranks live on both the host and the
+    accelerator, two separate binaries must be compiled.
+  \item Host Execution: All MPI ranks live on the host, each rank can
+    offload kernels separately.
+\end{itemize}
+
+For the purposes of this assignment, symmetric execution is not very
+practical, so the remaining options are native and host execution. For
+the sake of simplicity and due to issues running native MPI code on the
+Totient cluster, we focus on using host execution for offloading
+computation.
+
+Because the parallelization for the compute nodes uses an outer loop that
+iterates across the k-domain, where each k-th iteration triggers a
+broadcast of some number of columns to all cores, the earliest point we
+can offload computation is right after this broadcast, effectively
+enclosing the j-domain and i-domain loops. In our scheme, each MPI rank
+offloads these loops to the accelerator once they reach this
+point. Having each rank offload a separate kernel can cause suboptimal
+resource allocation inside the accelerator. Intel recommends either using
+a few dedicated ranks for the offloading, but this would limit our
+parallelism for the non-offloading ranks. Since the accelerators have
+longer vector lengths compared to the compute nodes (i.e., 512b
+vs. 256b), we ideally want the vectorized computation to happen on the
+accelerator as much as possible. Fortunately, in terms of memory
+transfer, the only significant regions of memory required by the
+offloaded kernel are the per-core local buffer and the column buffer that
+holds the broadcasted columns mentioned above.
+
+The fact that each rank offloads computation \emph{every} k-th iteration
+means that we want to maximize the compute density of the offloaded
+kernel. In other words, we want to amortize the overhead of the offload
+over the largest amount of work that we can assign to the accelerator at
+a time. One way we can do this is by broadcasting chunks of multiple
+columns every k-th iteration instead of just one column. For example,
+this decreases the order of MPI messages for the column broadcast from
+O(n^2) to O(num\_cores^2). Although this reduces inter-core
+communication, all ranks still need to synchronize at every k-th
+iteration. The offloading should also benefit from reducing the number of
+synchronization points. Ideally, we want all ranks to synchronize once
+per super-step (i.e., computing outputs for its assigned block). We can
+do this by increasing the per-core local buffer to hold the entire grid
+instead of just its assigned block. Each rank would only write to its
+assigned block but use the elements from other blocks as read-only,
+similar to how we used ghost cells in the previous assignment.
+
+Currently, our parallelization for the accelerator runs at orders of
+magnitude slower than even the serial implementation of the algorithm
+(i.e., 3 minutes for a 2000 node graph). However, this was not using the
+potential optimizations described above, so we believe that there is
+still a much room for improvement.
+
+One problem we ran into when implementing the parallelization for the
+accelerator was an offload error complaining that it could not find the
+offload entry. Apparently the source of this error was the use of forced
+inlining of the \texttt{square()} function. Only by disabling inlining
+for this function, the host was able to find the section of the binary
+corresponding to the offload kernel.
