@@ -22,16 +22,24 @@ exe: path.x
 
 exe-base: path-base.x
 
+exe-blocked: path-blocked.x
+
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
 path-base.x: path-base.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
+path-blocked.x: path-blocked.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
 path.o: path.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
 path-base.o: path-base.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+path-blocked.o: path-blocked.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
 path-mpi.x: path-mpi.o mt19937p.o
@@ -46,11 +54,15 @@ path-mpi.o: path-mpi.c
 
 # === Profiling
 
-.PHONY: maqao scan-build
+.PHONY: maqao-cqa maqao-perf scan-build vtune-report
 
-maqao: path.x
+maqao-cqa: path.x
 	( module load maqao ; \
-	  maqao cqa ./path.x fct=main uarch=HASWELL > maqao.report )
+	  maqao cqa ./path.x fct=main uarch=HASWELL > maqao-cqa.report )
+
+maqao-perf: path.x
+	( module load maqao ; \
+	  maqao perf ./path.x fct=main uarch=HASWELL > maqao-perf.report )
 
 scan-build:
 	( module load llvm-analyzer ; \

@@ -1,0 +1,141 @@
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{dominatrix}[2013/09/30]
+
+% Logic Units
+\@ifclasswith{scrartcl}{twocolumn}{\setlength{\columnsep}{.5in}}{} % Expand the default column spacing by a bit if a two-column layout is set
+\@ifclasswith{article}{twocolumn}{\setlength{\columnsep}{.5in}}{}  % Expand the default column spacing by a bit if a two-column layout is set
+
+\@ifundefined{KOMAClassName} % Checks if a KOMA-Script class has been used
+{
+  \usepackage[parfill]{parskip} % Removes the automatic indentation at the start of every paragraph
+}
+{ % Change the default KOMA-Script styling for section headers back to LaTeX style
+  \setkomafont{title}{\rmfamily\mdseries\upshape\normalsize}
+  \setkomafont{sectioning}{\rmfamily\mdseries\upshape\normalsize}
+  \setkomafont{descriptionlabel}{\rmfamily\mdseries\upshape\normalsize}
+  \KOMAoptions{parskip=half}
+}
+\usepackage[l2tabu,orthodox]{nag} % Checks for incorrect or obsolete LaTeX packages
+\usepackage{lmodern}                % Uses the lmodern font as a replacement for the dated default Computer Modern font
+\usepackage[longnamesfirst]{natbib} % Reimplements \cite to work with author-year and numerical citations
+
+% Universal Fixes
+\usepackage{fixltx2e} % Fixes a host of bugs in LaTeX2e until LaTeX3 is released
+\usepackage{fix-cm}   % Fixes rendering issues with Computer Modern fonts
+\usepackage{exscale}  % Fixes a bug in operator rendering at large font sizes
+
+% Math
+\usepackage{mathtools} % Swiss-knife math package
+% Very hacky code that allows a vertical line in a matrix, e.g. for augmented matrices
+% This, however, cannot be used with mathtools starred matrix environments :(
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+  \hskip - \arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{#1}}
+\makeatother
+\usepackage{amssymb}             % Provides common mathematical symbols
+\usepackage{esint}               % Adds additional integral symbols
+\usepackage{mathdots}            % Fixes dot sizing problems for the \vdots and \ddots commands
+\usepackage{esint}               % Provides access to alternate integration symbols
+\numberwithin{equation}{section} % Restarts the equation number count at every section
+\usepackage{turnstile}           % Provides functionality for typesetting advanced turnstiles (in logic)
+\usepackage{braket}              % Provides the \Set{} environment, allowing us to use nice vertical bars
+\usepackage{relsize}             % Defines the \mathlarger macro for establishing hierarchy with sequential operators
+\usepackage{polynom}             % Provides the ability to factorize or divide (and display) polynomials
+
+% Theorems
+\usepackage{amsthm} % Provides functionality for a theorem and proof environment
+\newtheorem*{theorem}{Theorem}
+\makeatletter
+\newenvironment{stheorem}
+{\enskip\hspace{-1.25ex}\textbf{Theorem.\space}\itshape} % Magic number that prevents an ugly line-break before "Theorem"
+{\enskip}
+\makeatother
+\newtheorem{theorem-n}{Theorem}
+\makeatletter
+\newenvironment{stheorem-n}
+{\enskip\refstepcounter{thm}\textbf{Theorem~\thethm.\space}\itshape}
+{\enskip}
+\makeatother
+\newtheorem*{lemma}{Lemma}
+\newtheorem{lemma-n}{Lemma}
+\newtheorem*{definition}{Definition}
+\newtheorem{definition-n}{Definition}
+\usepackage{thmtools} % Provides added theorem designation functionality
+
+% Layout and Format
+\usepackage{parallel}          % Aligns paragraphs across columns
+\usepackage{lineno}            % Appends line-numbers in the margin if \linenumbers is declared
+\usepackage[final]{showkeys}   % Shows label references where they are defined.
+\usepackage{csquotes}          % Fixes inline and display quotations
+\usepackage{paralist}          % Allows inline enumeration in a paragraph and compact enums/lists
+\usepackage{enumitem}          % Provides fine-grain control over enumeration environments
+\makeatletter\AtBeginDocument{ % Outsets enumeration markers so double-digit numbers and above don't spoil a ragged-right alignment
+  \renewcommand{\@listi}
+  {\setlength{\labelwidth}{4em}}
+}\makeatother
+\usepackage{pdflscape}                           % Allows for the occasional landscape page with correct orientation in PDFs
+\usepackage{xspace}                              % Fixes spacing problem after \newcommand
+\usepackage[flushmargin,hang,multiple]{footmisc} % Aligns footnotes to the edge of the margin and the dividing line
+\renewcommand*{\titlepagestyle}{empty}           % Removes the page number on a title page
+
+% Referencing
+\usepackage{cleveref}   % Adds semantic naming when referencing figures
+\usepackage{varioref}   % Introduces referencing by page instead of figure number
+% \usepackage{datenumber} % Provides commands to convert a date into a number
+\usepackage{marginnote} % Allows adding author notes to the margin
+
+% Fonts and Typography
+\usepackage[stretch=10,shrink=10]{microtype} % Tweaks smallish fonts and kernings
+\makeatletter
+\def\MT@register@subst@font{
+ \MT@exp@one@n\MT@in@clist\font@name\MT@font@list
+ \ifMT@inlist@\else\xdef\MT@font@list{\MT@font@list\font@name,}\fi}
+ \makeatother
+\usepackage{textcomp}   % Supports the Text Companion font, which provides additional text symbols
+\usepackage{siunitx}    % Provides support for typesetting SI units
+\usepackage{hyperref}   % Converts \url references to valid hyperlinks in PDF documents
+\hypersetup{
+breaklinks    = true,   % Tells LaTeX that it's ok to split a URL across two lines
+hypertexnames = false,
+plainpages    = false,
+colorlinks    = true,   % Color-ify links so they can be differentiated from normal text
+pdfborder     = {0 0 0} % Remove the border box drawn around links in Adobe Reader/Acrobat
+}
+\urlstyle{same}
+\usepackage{randtext}       % Provides a command to obfuscate email addresses
+\usepackage{ellipsis}       % Fixes space uneveness around ellipses
+\usepackage{url}            % Allows encapsulated URLs to break across lines
+% \usepackage[super]{nth}     % Automatically superscripts counters
+\usepackage[T1]{fontenc}    % Magic to improve font quality
+\usepackage{setspace}       % Provides functionality for specifying single or double spacing in the document
+\usepackage[english]{babel} % It's called BABEL. What other questions do you have?
+
+% Code
+% \usepackage{minted} % Source code highlighting package that bridges to the Pygment library
+% \usepackage{algorithmicx} % Provides functionality for typesetting algorithms
+% \usepackage{algorithm} % Provides a floated and numbered algorithm environment
+
+% Tables and Figures
+\usepackage{booktabs}                                          % For drawing nice tables with proper line weights
+\usepackage{float}                                             % Floats tables and figures
+\usepackage{flafter}                                           % To ensure that figures float only after they are defined/referenced
+\usepackage{subcaption}                                        % Figure-ception - Allows figures within figures
+\usepackage{array}                                             % Extends options for column formats, alignments and layouts
+\usepackage{tabu}                                              % Provides better control for tables and column widths
+\usepackage{longtable}                                         % Allows tables to span across pages - integrates with tabu
+\usepackage{multicol}                                          % Allows spanning columns in tables
+\usepackage{caption}                                           % Allows greater customization of captions and captions outside floats
+\usepackage{framed}                                            % Provides an environment for creating lined boxes
+\usepackage[section]{placeins}                                 % Implements \FloatBarrier to keep figures within their sections
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp} % Fixes ragged-right in table elements redefining \\ commands
+\let\PBS=\PreserveBackslash
+
+% Graphics
+\usepackage{graphicx}          % Allows inserting of graphics and images
+\usepackage{epstopdf}          % Converts .eps files to .pdf for easy manipulation
+\usepackage[Export]{adjustbox} % Constraints large images to the page width
+\adjustboxset{max size={\textwidth}{1.0\textheight}}
+
+\endinput

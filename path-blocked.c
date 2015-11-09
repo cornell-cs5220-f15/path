@@ -3,70 +3,11 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <omp.h>
 #include <getopt.h>
+#include <immintrin.h>
 #include "mt19937p.h"
-
-//ldoc on
-/**
- * # The basic recurrence
- *
- * At the heart of the method is the following basic recurrence.
- * If $l_{ij}^s$ represents the length of the shortest path from
- * $i$ to $j$ that can be attained in at most $2^s$ steps, then
- * $$
- *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^2 \}.
- * $$
- * That is, the shortest path of at most $2^{s+1}$ hops that connects
- * $i$ to $j$ consists of two segments of length at most $2^s$, one
- * from $i$ to $k$ and one from $k$ to $j$.  Compare this with the
- * following formula to compute the entries of the square of a
- * matrix $A$:
- * $$
- *   a_{ij}^2 = \sum_k a_{ik} a_{kj}.
- * $$
- * These two formulas are identical, save for the niggling detail that
- * the latter has addition and multiplication where the former has min
- * and addition.  But the basic pattern is the same, and all the
- * tricks we learned when discussing matrix multiplication apply -- or
- * at least, they apply in principle.  I'm actually going to be lazy
- * in the implementation of `square`, which computes one step of
- * this basic recurrence.  I'm not trying to do any clever blocking.
- * You may choose to be more clever in your assignment, but it is not
- * required.
- *
- * The return value for `square` is true if `l` and `lnew` are
- * identical, and false otherwise.
- */
-
-int square(const int n,          // Number of nodes
-           int * restrict l,     // Partial distance at step s
-           int * restrict lnew)  // Partial distance at step s+1
-{
-  int done = 1;
-
-  #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-  for (int j = 0; j < n; ++j) {
-    for (int k = 0; k < n; ++k) {
-      int lkj = l[j*n+k];
-
-      #pragma vector aligned
-      for (int i = 0; i < n; ++i) {
-        int lij = lnew[j*n+i];
-        int lik = l[k*n+i];
-
-        if (lik + lkj < lij) {
-          lij = lik+lkj;
-          done = 0;
-        }
-
-        lnew[j*n+i] = lij;
-      }
-    }
-  }
-
-  return done;
-}
 
 /**
  *
@@ -82,18 +23,14 @@ int square(const int n,          // Number of nodes
  * conventions.
  */
 
-static inline void infinitize(int n, int* l)
+static inline void infinitize(int n, int * l)
 {
-    for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0)
-            l[i] = n+1;
+    for (int i = 0; i < n*n; ++i) if (l[i] == 0) l[i] = n+1;
 }
 
-static inline void deinfinitize(int n, int* l)
+static inline void deinfinitize(int n, int * l)
 {
-    for (int i = 0; i < n*n; ++i)
-        if (l[i] == n+1)
-            l[i] = 0;
+    for (int i = 0; i < n*n; ++i) if (l[i] == n+1) l[i] = 0;
 }
 
 /**
@@ -110,28 +47,47 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+void shortest_paths(int n, int * restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
 
     for (int i = 0; i < n * n; ++i) {
-      if (i % (n + 1) == 0) {
-        l[i] = 0;
-      }
+      if (i % (n + 1) == 0) l[i] = 0;
     }
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    memcpy(lnew, l, n*n * sizeof(int));
+    int * restrict lnew = (int *) _mm_malloc(n*n*sizeof(int), 64);
+    memcpy(lnew, l, n*n*sizeof(int));
 
-    int done = 0;
+    bool done = false;
     while (!done) {
-      done = square(n, l, lnew);
-      memcpy(l, lnew, n*n * sizeof(int));
+      done = true;
+
+      #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+      for (int j = 0; j < n; ++j) {
+        const int jn = j * n;
+        for (int k = 0; k < n; ++k) {
+          const int lkj = l[jn+k];
+
+          #pragma vector aligned
+          for (int i = 0; i < n; ++i) {
+            const int lijOriginal = lnew[jn+i];
+            const int lik = l[k*n+i];
+            const int lijTest = lik + lkj;
+
+            if (lijTest < lijOriginal) {
+              lnew[jn+i] = lijTest;
+              done = false;
+            }
+          }
+        }
+      }
+
+      memcpy(l, lnew, n*n*sizeof(int));
     }
 
-    free(lnew);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -148,19 +104,19 @@ void shortest_paths(int n, int* restrict l)
 
 int* gen_graph(const int n, const double p)
 {
-    int* l = calloc(n*n, sizeof(int));
-    struct mt19937p state;
-    sgenrand(10302011UL, &state);
+  int * l = _mm_malloc(n*n*sizeof(int), 64);
+  struct mt19937p state;
+  sgenrand(10302011UL, &state);
 
-    for (int j = 0; j < n; ++j) {
-      for (int i = 0; i < n; ++i) {
-        l[j*n+i] = (genrand(&state) < p);
-      }
-
-      l[j*n+j] = 0;
+  for (int j = 0; j < n; ++j) {
+    for (int i = 0; i < n; ++i) {
+      l[j*n+i] = (genrand(&state) < p);
     }
 
-    return l;
+    l[j*n+j] = 0;
+  }
+
+  return l;
 }
 
 /**
@@ -180,7 +136,7 @@ int* gen_graph(const int n, const double p)
  * [wiki-fletcher]: http://en.wikipedia.org/wiki/Fletcher's_checksum
  */
 
-int fletcher16(const int * data, const int count)
+int fletcher16(int* data, int count)
 {
     int sum1 = 0;
     int sum2 = 0;
@@ -191,22 +147,6 @@ int fletcher16(const int * data, const int count)
     return (sum2 << 8) | sum1;
 }
 
-void write_matrix(const char* fname, int n, int* a)
-{
-    FILE* fp = fopen(fname, "w+");
-    if (fp == NULL) {
-      fprintf(stderr, "Could not open output file: %s\n", fname);
-      exit(-1);
-    }
-
-    for (int i = 0; i < n; ++i) {
-      for (int j = 0; j < n; ++j)
-        fprintf(fp, "%d ", a[j*n+i]);
-      fprintf(fp, "\n");
-    }
-    fclose(fp);
-}
-
 /**
  * # The `main` event
  */
@@ -215,37 +155,28 @@ const char* usage =
     "path.x -- Parallel all-pairs shortest path on a random graph\n"
     "Flags:\n"
     "  - n -- number of nodes (200)\n"
-    "  - p -- probability of including edges (0.05)\n"
-    "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  - p -- probability of including edges (0.05)\n";
 
 int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
-    const char* ifname = NULL; // Adjacency matrix file name
-    const char* ofname = NULL; // Distance matrix file name
 
     // Option processing
     extern char* optarg;
     const char* optstring = "hn:d:p:o:i:";
     int c;
+
     while ((c = getopt(argc, argv, optstring)) != -1) {
-        switch (c) {
-        case 'h':
-            fprintf(stderr, "%s", usage);
-            return -1;
+      switch (c) {
+        case 'h': fprintf(stderr, "%s", usage); return -1;
         case 'n': n = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
-        case 'o': ofname = optarg;  break;
-        case 'i': ifname = optarg;  break;
-        }
+      }
     }
 
     // Graph generation + output
-    int* l = gen_graph(n, p);
-    if (ifname)
-        write_matrix(ifname,  n, l);
+    int * l = gen_graph(n, p);
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
@@ -258,11 +189,8 @@ int main(int argc, char** argv)
     printf("Time:  %g\n", t1-t0);
     printf("Check: %X\n", fletcher16(l, n*n));
 
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
-
     // Clean up
-    free(l);
+    _mm_free(l);
+
     return 0;
 }
