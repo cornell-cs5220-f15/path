@@ -1,5 +1,0 @@
-== OpenMP with 4 threads
-n:     2000
-p:     0.05
-Time:  7.45561
-Check: E16C
