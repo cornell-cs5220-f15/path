@@ -1,0 +1,168 @@
+Processor rank: 3  Iproc: 1   Jproc: 3   
+Processor rank: 17  Iproc: 5   Jproc: 1   
+Processor rank: 19  Iproc: 5   Jproc: 3   
+Processor rank: 24  Iproc: 6   Jproc: 4   
+Processor rank: 2  Iproc: 1   Jproc: 2   
+Processor rank: 4  Iproc: 1   Jproc: 4   
+Processor rank: 5  Iproc: 2   Jproc: 1   
+Processor rank: 6  Iproc: 2   Jproc: 2   
+Processor rank: 7  Iproc: 2   Jproc: 3   
+Processor rank: 8  Iproc: 2   Jproc: 4   
+Processor rank: 9  Iproc: 3   Jproc: 1   
+Processor rank: 10  Iproc: 3   Jproc: 2   
+Processor rank: 11  Iproc: 3   Jproc: 3   
+Processor rank: 12  Iproc: 3   Jproc: 4   
+Processor rank: 13  Iproc: 4   Jproc: 1   
+Processor rank: 14  Iproc: 4   Jproc: 2   
+Processor rank: 16  Iproc: 4   Jproc: 4   
+Processor rank: 18  Iproc: 5   Jproc: 2   
+Processor rank: 20  Iproc: 5   Jproc: 4   
+Processor rank: 21  Iproc: 6   Jproc: 1   
+Processor rank: 22  Iproc: 6   Jproc: 2   
+Processor rank: 23  Iproc: 6   Jproc: 3   
+Processor rank: 1  Iproc: 1   Jproc: 1   
+irank=1  imin_=0  imax_=334 jmin_=0 jmax_=500
+ irank=2  imin_=0  imax_=334 jmin_=500 jmax_=1000
+ Processor rank: 15  Iproc: 4   Jproc: 3   
+irank=3  imin_=0  imax_=334 jmin_=1000 jmax_=1500
+ irank=4  imin_=0  imax_=334 jmin_=1500 jmax_=2000
+ irank=5  imin_=334  imax_=668 jmin_=0 jmax_=500
+ irank=6  imin_=334  imax_=668 jmin_=500 jmax_=1000
+ irank=7  imin_=334  imax_=668 jmin_=1000 jmax_=1500
+ irank=8  imin_=334  imax_=668 jmin_=1500 jmax_=2000
+ irank=9  imin_=668  imax_=1001 jmin_=0 jmax_=500
+ irank=10  imin_=668  imax_=1001 jmin_=500 jmax_=1000
+ irank=11  imin_=668  imax_=1001 jmin_=1000 jmax_=1500
+ irank=12  imin_=668  imax_=1001 jmin_=1500 jmax_=2000
+ irank=13  imin_=1001  imax_=1334 jmin_=0 jmax_=500
+ irank=14  imin_=1001  imax_=1334 jmin_=500 jmax_=1000
+ irank=15  imin_=1001  imax_=1334 jmin_=1000 jmax_=1500
+ irank=16  imin_=1001  imax_=1334 jmin_=1500 jmax_=2000
+ irank=17  imin_=1334  imax_=1667 jmin_=0 jmax_=500
+ irank=18  imin_=1334  imax_=1667 jmin_=500 jmax_=1000
+ irank=19  imin_=1334  imax_=1667 jmin_=1000 jmax_=1500
+ irank=20  imin_=1334  imax_=1667 jmin_=1500 jmax_=2000
+ irank=21  imin_=1667  imax_=2000 jmin_=0 jmax_=500
+ irank=22  imin_=1667  imax_=2000 jmin_=500 jmax_=1000
+ irank=23  imin_=1667  imax_=2000 jmin_=1000 jmax_=1500
+ irank=24  imin_=1667  imax_=2000 jmin_=1500 jmax_=2000
+ == MPI with 24 threads
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68396
+n:     2000
+p:     0.05
+Time:  6.68081
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68366
+== MPI with 24 threads
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68165
+n:     2000
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68934
+p:     0.05
+Time:  6.68426
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68523
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68397
+== MPI with 24 threads
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68733
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68761
+n:     2000
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68619
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68635
+p:     0.05
+Time:  6.68588
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.6887
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68738
+== MPI with 24 threads
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.69079
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.69194
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.69174
+n:     2000
+p:     0.05
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68877
+Time:  6.69112
+== MPI with 24 threads
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68878
+n:     2000
+p:     0.05
+Time:  6.68977
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68906
+== MPI with 24 threads
+n:     2000
+p:     0.05
+Time:  6.68941
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C
+Check: E16C

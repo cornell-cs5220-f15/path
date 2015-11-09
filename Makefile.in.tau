@@ -1,10 +1,9 @@
-CC= icc
+CC=tau_cc.sh
 MPICC=mpiicc
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
-OPTFLAGS=-O3 -no-prec-div -ipo \
-	-qopt-report=5 -qopt-report-phase=vec #-xcore-avx2
+OPTFLAGS=-O3 -no-prec-div -ipo
 
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS) -openmp
