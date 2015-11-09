@@ -3,3 +3,6 @@
 
 # ignore compiled files too
 *.o
+
+# these are different
+*.optrpt
