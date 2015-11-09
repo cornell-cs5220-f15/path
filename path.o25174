@@ -1,0 +1,1 @@
+/var/spool/torque/mom_priv/jobs/25174.en-cs-totient-01.coecis.cornell.edu.SC: line 10: 17824 Segmentation fault      (core dumped) ./path.x -n 2000

@@ -1,0 +1,5 @@
+amplxe: Collection started. To stop the collection, either press CTRL-C or enter from another console window: amplxe-cl -r /home/wh343/path/r001ah -command stop.
+amplxe: Warning: To enable hardware event-base[d] sampling, VTune Amplifier has disabled the NMI watchdog timer. The watchdog timer will be re-enabled after collection completes.
+amplxe: Error: Failed to connect to PMU reservation service (PAX). Check if driver is loaded with appropriate permissions.
+amplxe: Collection failed.
+amplxe: Internal Error

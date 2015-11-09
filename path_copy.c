@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <omp.h>
 #include "mt19937p.h"
-#define n_threads 24
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -44,7 +44,6 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-	omp_set_num_threads(n_threads);
     #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
@@ -211,7 +210,6 @@ int main(int argc, char** argv)
 
     // Option processing
     extern char* optarg;
-	//printf("%s\n",optarg);
     const char* optstring = "hn:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
@@ -236,7 +234,7 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", n_threads);
+    printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
