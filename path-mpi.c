@@ -145,7 +145,7 @@ void unpack_padded_data(int n, int npadded, int *l, int *lpadded)
  */
 
 inline __attribute__((always_inline))
-int square(int nproc, int rank, int n, int nlocal,
+int square(int nproc, int rank, int n, int nlocal, int col_nwords,
            int* restrict lproc, int* restrict col_k)
 {
   int done      = 1;
@@ -187,6 +187,24 @@ int square(int nproc, int rank, int n, int nlocal,
 
     MPI_Bcast(col_k, n, MPI_INT, root, MPI_COMM_WORLD);
 
+    // Offload computation kernel after the MPI broadcast to the
+    // accelerator if necessary. Remember we *cannot* have MPI calls
+    // inside offloaded kernels. We will probably benefit more for
+    // chunking more of the k-domain columns during the broadcast to
+    // amortize the overhad of the offload with more computation.
+
+    #if defined _PARALLEL_DEVICE
+
+    int* done_ptr = &done;
+
+    #pragma offload target(mic:0) in(n) in(nlocal) in(num_padding) \
+                                  in(col_k : length(col_nwords)) \
+                                  inout(done_ptr : length(1)) \
+                                  inout(lproc : length(col_nwords*nlocal))
+    {
+
+    #endif
+
     // Moving across local columns in lproc
 
     int num_wide_ops = (n + VECTOR_NWORDS - 1) / VECTOR_NWORDS;
@@ -196,7 +214,7 @@ int square(int nproc, int rank, int n, int nlocal,
       // Broadcast column element to be added to row elements to compare
       // against current shortest path.
       int lkj     = lproc[j*n+k];
-      vce lkj_vec = vec_set1(lkj);
+      vec lkj_vec = vec_set1(lkj);
 
       // Vectorize inner loop across row elements of both output elements
       // (i.e., current shortest path) and input elements in k-th
@@ -217,7 +235,7 @@ int square(int nproc, int rank, int n, int nlocal,
         // type, so we need different logic to handle this case.
         //----------------------------------------------------------------
 
-        #if define _PARALLEL_NODE
+        #if defined _PARALLEL_NODE
 
         // Create a mask based on a vector-wide comparison between the
         // current shortest path and the sum of the shortest paths
@@ -275,7 +293,7 @@ int square(int nproc, int rank, int n, int nlocal,
 
         // If any comparison was true, we are not done with computation
         if ((cmp_mask & pad_mask) != 0)
-          done = 0;
+          *done_ptr = 0;
 
         // Isolate the shortest path elements and store to memory
 
@@ -290,6 +308,11 @@ int square(int nproc, int rank, int n, int nlocal,
         vec_store((vec*)lij_vec_addr, lij_vec);
       }
     }
+
+    #if defined _PARALLEL_DEVICE
+    }
+    #endif
+
   }
 
   return done;
@@ -415,7 +438,7 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
 
   // Repeated squaring until nothing changes
   for (int done = 0; !done; )
-    done = square(nproc, rank, n, nlocal, lproc, col_k);
+    done = square(nproc, rank, n, nlocal, col_nwords, lproc, col_k);
 
   // Master rank receives blocks from each rank to pack final results
   MPI_Gatherv(
