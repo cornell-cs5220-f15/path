@@ -48,11 +48,12 @@ int square(int irank, int imin_, int jmin_, int imax_, int jmax_,
 {
     int done = 1;
     for (int j = jmin_; j < jmax_; ++j) {
+      int jn = j*n;
       for (int i = imin_; i < imax_; ++i) {
-        int lij = lnew[j*n+i];
+        int lij = lnew[jn+i];
         for (int k = 0; k < n; ++k) {
+          int lkj = l[jn+k];
           int lik = l[k*n+i];
-          int lkj = l[j*n+k];
           if (lik + lkj < lij) {
             lij = lik+lkj;
             done = 0;
@@ -202,7 +203,9 @@ const char* usage =
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  - o -- file name where output matrix should be stored (none)\n"
+    "  - x -- number of processors in i-direction for MPI (none)\n"
+    "  - y -- number of processors in j-direction for MPI (none)\n";
 
 int main(int argc, char** argv)
 {
@@ -236,7 +239,6 @@ int main(int argc, char** argv)
     int* l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
-
     // Time the shortest paths code
     double t0 = omp_get_wtime();
   
@@ -257,7 +259,7 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &irank);
     int iroot = 0; // Master processor
   
-    if(npx*npy > world_size && irank==iroot) {
+    if(npx*npy != world_size && irank==iroot) {
       printf("ERROR:  %d procs requested while only %d procs available \n",npx*npy,world_size);
       exit(-1);
     }
@@ -277,7 +279,6 @@ int main(int argc, char** argv)
     irank = irank + 1;
     iproc = iproc + 1;
     jproc = jproc + 1;
-    printf("Processor rank: %d  Iproc: %d   Jproc: %d   \n", irank, iproc, jproc);
   
     // Set up indexing for convenience and translation back to global l
     int nx = n;
@@ -326,14 +327,6 @@ int main(int argc, char** argv)
     jmax_ = jmin_ + ny_;
 //    jmino_ = jmin_ - nghost;
 //    jmaxo_ = jmax_ + nghost;
-
-    for(int i=1;i<=world_size; ++i){
-      if(i==irank){
-        printf("irank=%d  imin_=%d  imax_=%d jmin_=%d jmax_=%d\n ",irank,imin_,imax_,jmin_,jmax_);
-      }
-    MPI_Barrier(cart_comm);
-    }
-  if(irank==iroot) {printf("irank=%d  imin=%d  imax=%d jmin=%d jmax=%d",irank,imin,imax,jmin,jmax);}
   
     // Each proc computes on its smaller square
     shortest_paths(cart_comm,irank, imin_,imax_,jmin_,jmax_,n,l);

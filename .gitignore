@@ -1,0 +1,5 @@
+# why .x...WHY?
+*.x
+
+# ignore compiled files too
+*.o

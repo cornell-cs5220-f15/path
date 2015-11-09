@@ -51,4 +51,4 @@ clean:
 	rm -f *.o
 
 realclean: clean
-	rm -f path.x path-mpi.x path.md main.pdf
+	rm -f path.x path-mpi.x # path.md main.pdf
