@@ -174,7 +174,9 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
 	}
 	
 	// Some serial setup
-	int nproc = 16; // assume this is a square for now
+	
+	int nproc;
+	MPI_Comm_size(MPI_COMM_WORLD, &nproc);  // assume this is a square for now
 	int n_block = sqrt(nproc); // ratio of big to small, that is there is ratio^2 sub_grids
 	assert(n%n_block == 0 ); // throws error is n is not divisible by ratio, need to change this later
 	int block_size = n/n_block;
@@ -185,7 +187,7 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
 	
 	//MPI Setup
 	
-	MPI_Init(&argc, &argv); // probably wrong
+//	MPI_Init(&argc, &argv); // probably wrong
 	MPI_Group* col_group= (MPI_Group*) _mm_malloc(n_block*sizeof(MPI_Group),64);// group ID of column groups
 	MPI_Group* row_group= (MPI_Group*) _mm_malloc(n_block*sizeof(MPI_Group),64);// group ID of row groups
 	MPI_Group World_Group; // group handle of World (main group) 
@@ -200,15 +202,13 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
 	int* myblock = (int*) _mm_malloc(block_size*block_size*sizeof(int),64); // block owned by specific processor
 	int* col_buf = (int*) _mm_malloc(n_block*block_size*block_size*sizeof(int),64); // buffer for the column (size n x block_size
 	int* row_buf = (int*) _mm_malloc(n_block*block_size*block_size*sizeof(int),64); // buffer for the row (size n x block_size)
-	int size;
 	int myrank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 	
 	MPI_Comm_group(MPI_COMM_WORLD, &World_Group);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	
 	if (myrank==0){
-		printf("Number of processes %d \n", size); 
+		printf("Number of processes %d \n", nproc); 
 	}
 	mycolrank = myrank/n_block;
 	myrowrank = myrank%n_block;
@@ -369,8 +369,8 @@ int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
-    const char* ifname = NULL; // Adjacency matrix file name
-    const char* ofname = NULL; // Distance matrix file name
+    const char* ifname = "adj"; // Adjacency matrix file name
+    const char* ofname = "dist"; // Distance matrix file name
 
     // Option processing
     extern char* optarg;
@@ -394,7 +394,7 @@ int main(int argc, char** argv)
         write_matrix(ifname,  n, l);
 
     // Time the shortest paths code
-    //MPI_Init(&argc, &argv);
+    MPI_Init(&argc, &argv);
     double t0 = MPI_Wtime();
     shortest_paths(n, l, argc, argv);
     double t1 = MPI_Wtime();
