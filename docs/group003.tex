@@ -1,0 +1,80 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}
+\geometry{letterpaper}
+\geometry{margin=0.5in}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{xcolor}
+% credit: http://tex.stackexchange.com/questions/68091/how-do-i-add-syntax-coloring-to-my-c-source-code-in-beamer
+% https://en.wikibooks.org/wiki/LaTeX/Source_Code_Listings
+\lstset{language=C,
+        basicstyle=\ttfamily,
+        keywordstyle=\color{blue}\ttfamily,
+        stringstyle=\color{red}\ttfamily,
+        commentstyle=\color{green}\ttfamily,
+        morecomment=[l][\color{magenta}]{\#}
+}
+
+\title{\textbf{CS 5220 Project 1 Final Report}}
+\author{Stephen McDowell (sjm324)}
+\date{\textbf{September 2015}}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+
+\usepackage{enumerate}
+
+\newcommand{\tab}{\hspace*{2em}}
+\newcommand{\norm}[1]{\lVert#1\rVert}
+\newcommand{\sub}{\textsubscript}
+\newcommand{\Depth}{2}
+\newcommand{\Height}{2}
+\newcommand{\Width}{2}
+
+\usepackage{mathtools}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\usepackage{relsize}
+\usepackage{pdfpages}
+
+\def\wl{\par \vspace{\baselineskip}}
+
+\makeatletter
+\renewcommand{\maketitle}{\bgroup\setlength{\parindent}{0pt}
+\begin{flushleft}
+  {\Large \textsc{\@title}}\newline
+  \textsc{\@author}
+  \rule{\textwidth}{1pt}
+\end{flushleft}\egroup
+}
+\makeatother
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\rhead{\textsc{Group 003 -- rmc298, sjm324} \thepage}
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\headheight}{0.5in}
+
+\title{CS 5220: Project 3 Initial Report}
+\author{Group 003: Robert Chiodi (rmc298), Stephen McDowell (sjm324)}
+
+\begin{document}
+\thispagestyle{empty}
+\maketitle
+
+\section{Introduction}
+
+\section{Message Passing Interface (MPI)}
+
+\section{Optimizations}
+
+\section{Offloading to the Phi's}
+
+\section{Summary}
+
+
+\end{document}
