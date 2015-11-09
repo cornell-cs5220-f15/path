@@ -241,7 +241,7 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
 	}
 	int colid, rowid;
 	MPI_Comm_rank( row_comm[myrowrank], &rowid);
-	MPI_Comm_rank(col_comm[mycolrank], &colid);
+	MPI_Comm_rank( col_comm[mycolrank], &colid);
 
 	//printf("processor %d, row group: %d, row ID: %d, rank group: %d, rank ID: %d \n", myrank, myrowrank, rowid, mycolrank, colid);
 
@@ -273,7 +273,7 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
  	for (int i=0; i<block_size*block_size; ++i){
 		bl[BA+i]=myblock[i];
 	}
-
+	MPI_Gather(myblock, block_size*block_size, MPI_INT, bl, block_size*block_size, MPI_INT,0, MPI_COMM_WORLD);
         MPI_Barrier(MPI_COMM_WORLD);
 	if (myrank==0){
   		block_to_column(l,bl,n, block_size);	
