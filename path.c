@@ -42,23 +42,25 @@
  * identical, and false otherwise.
  */
 
-int square_entry(const int n, 
+int square_column(const int n, 
                  int* restrict l,
                  int* restrict l_t,
                  int* restrict lnew,
-                 const int i, const int j)
+                 const int j)
 {
     int done = 1;
-    int lij = lnew[j*n+i];
-    for (int k = 0; k < n; ++k) {
-        int lik = l_t[i*n+k];
-        int lkj = l[j*n+k];
-        if (lik + lkj < lij) {
-            lij = lik+lkj;
-            done = 0;
+    for (int i = 0; i < n; ++i) {
+        int lij = lnew[j*n+i];
+        for (int k = 0; k < n; ++k) {
+            int lik = l_t[i*n+k];
+            int lkj = l[j*n+k];
+            if (lik + lkj < lij) {
+                lij = lik+lkj;
+                done = 0;
+            }
         }
+        lnew[j*n+i] = lij;
     }
-    lnew[j*n+i] = lij;
     return done;
 }
 
@@ -66,6 +68,7 @@ int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1                          
 {
+    // Precompute the transpose for more efficient memory access
     int l_t[n*n];
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
@@ -75,10 +78,8 @@ int square(int n,               // Number of nodes
 
     int done = 1;
     for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int entry_done = square_entry(n, l, l_t, lnew, i, j);
-            done = done && entry_done;
-        }
+        int entry_done = square_column(n, l, l_t, lnew, j);
+        done = done && entry_done;
     }
     return done;
 }
@@ -224,7 +225,7 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
-    int n    = 400;            // Number of nodes
+    int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
