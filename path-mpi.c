@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include "mt19937p.h"
 #include <mpi.h>
+#include <immintrin.h>
 
 //ldoc on
 
@@ -54,7 +55,8 @@ void col_copy(int *col, int *l, int index, int n)
  */
 
 inline __attribute__((always_inline))
-int square(int nproc, int rank, int n, int nlocal,
+int square(int nproc, int rank, int vector_nwords,
+           int n, int nlocal,
            int* restrict lproc, int* restrict col_k)
 {
   int done      = 1;
@@ -77,16 +79,56 @@ int square(int nproc, int rank, int n, int nlocal,
     MPI_Bcast(col_k, n, MPI_INT, root, MPI_COMM_WORLD);
 
     // Moving across local columns in lproc
-    for (int j = 0; j < nlocal; ++j) {
-      int lkj = lproc[j*n+k];
 
-      for (int i = 0; i < n; ++i) {
-        int lij = lproc[j*n+i];
-        int lik = col_k[i];
-        if (lik + lkj < lij) {
-          lproc[j*n+i] = lik+lkj;
+    int num_wide_ops = (n + vector_nwords - 1) / vector_nwords;
+
+    for (int j = 0; j < nlocal; ++j) {
+
+      // Broadcast column element to be added to row elements to compare
+      // against current shortest path.
+      int     lkj     = lproc[j*n+k];
+      __m256i lkj_vec = _mm256_set1_epi32(lkj);
+
+      // Vectorize inner loop across row elements of both output elements
+      // (i.e., current shortest path) and input elements in k-th
+      // iteration.
+      for (int i = 0; i < num_wide_ops; ++i) {
+
+        int *lij_vec_addr = lproc + (j * n) + (i * vector_nwords);
+        int *lik_vec_addr = col_k + (i * vector_nwords);
+
+        __m256i lij_vec = _mm256_load_si256((__m256i*)lij_vec_addr);
+        __m256i lik_vec = _mm256_load_si256((__m256i*)lik_vec_addr);
+
+        // Calculate sum of shortest paths between (i,k) and (k,j)
+        __m256i sum_vec = _mm256_add_epi32(lik_vec, lkj_vec);
+
+        // Create a mask based on a vector-wide comparison between the
+        // current shortest path and the sum of the shortest paths
+        // between (i,k) and (k,j). For each element in the vector, this
+        // comparison will return a mask of all 1s (0xffffffff) if the
+        // sum is the new shortest path, otherwise will return a mask of
+        // all 0s (0x00000000).
+        __m256i mask_vec = _mm256_cmpgt_epi32(lij_vec, sum_vec);
+        __m256i zero_vec = _mm256_setzero_si256();
+
+        // If the comparison for any of the elements was true (i.e., a
+        // new shortest path was found), then we are not done yet. This
+        // vector operation ANDs the mask and the NOT of a zero vector,
+        // so a vector of all 1s, and returns 1 if the result is all 0s,
+        // otherwise returns 0.
+        if (!_mm256_testc_si256(mask_vec, zero_vec))
           done = 0;
-        }
+
+        // Use the mask to zero out the elements in both the sum and
+        // current shortest path vectors that are not the shortest path,
+        // then add them together to get the new shortest path vector
+        // which is stored back to memory.
+        sum_vec = _mm256_and_si256(mask_vec, sum_vec);
+        lij_vec = _mm256_andnot_si256(mask_vec, lij_vec);
+        lij_vec = _mm256_add_epi32(sum_vec, lij_vec);
+
+        _mm256_store_si256((__m256i*)lij_vec_addr, lij_vec);
       }
     }
   }
@@ -136,7 +178,8 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int nproc, int rank, int n, int* restrict l)
+void shortest_paths(int nproc, int rank, int vector_nwords,
+                    int n, int* restrict l)
 {
   // Calculate number of columns to process for this rank and the offset
   // to the block from the global grid this rank is responsible for. We
@@ -168,9 +211,15 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
   }
 
   // Allocate per-rank local buffers to hold blocks and columns
-  // transferred from other ranks.
-  int* restrict lproc = (int*) calloc(n * nlocal, sizeof(int));
-  int* restrict col_k = (int*) calloc(n, sizeof(int));
+  // transferred from other ranks. Align local buffers to cache lines
+  // (64B) to allow vector loads/stores. Always allocate memory at the
+  // granularity of vector accesses to avoid masked vector loads/stores.
+
+  int lproc_nwords = ((n * nlocal) + vector_nwords - 1) / vector_nwords;
+  int col_k_nwords = (n + vector_nwords - 1) / vector_nwords;
+
+  int* restrict lproc = _mm_malloc(lproc_nwords * sizeof(int), 32);
+  int* restrict col_k = _mm_malloc(col_k_nwords * sizeof(int), 32);
 
   // Master rank sends blocks of global grid to corresponding ranks
   MPI_Scatterv(l, scounts, displs, MPI_INT, lproc,
@@ -178,7 +227,7 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
 
   // Repeated squaring until nothing changes
   for (int done = 0; !done; )
-    done = square(nproc, rank, n, nlocal, lproc, col_k);
+    done = square(nproc, rank, vector_nwords, n, nlocal, lproc, col_k);
 
   // Master rank receives blocks from each rank to pack final results
   MPI_Gatherv(lproc, nelements, MPI_INT, l, scounts, displs,
@@ -315,9 +364,12 @@ int main(int argc, char** argv)
       write_matrix(ifname, n, l);
   }
 
+  // Set the number of 32b words in the vector width
+  int vector_nwords = 8;
+
   // Time the shortest paths code
   double t0 = MPI_Wtime();
-  shortest_paths(nproc, rank, n, l);
+  shortest_paths(nproc, rank, vector_nwords, n, l);
   double t1 = MPI_Wtime();
 
   // Execution statistics. Only master rank prints this out.
