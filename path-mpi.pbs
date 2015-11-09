@@ -7,4 +7,5 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
+#ulimit -c unlimited
 mpirun -n 20 ./path-mpi.x -n 2000

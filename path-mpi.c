@@ -53,10 +53,6 @@ void col_copy(int *col, int *l, int index, int n)
 inline __attribute__((always_inline))
 void pack_padded_data(int npadded, int n, int *lpadded, int *l)
 {
-  if (npadded == n)
-    lpadded = l;
-    return;
-
   int i, j;
   for (j = 0; j < n; ++j)
     for (i = 0; i < n; ++i)
@@ -71,10 +67,6 @@ void pack_padded_data(int npadded, int n, int *lpadded, int *l)
 inline __attribute__((always_inline))
 void unpack_padded_data(int n, int npadded, int *l, int *lpadded)
 {
-  if (n == npadded)
-    l = lpadded;
-    return;
-
   int i, j;
   for (j = 0; j < n; ++j)
     for (i = 0; i < n; ++i)
@@ -317,8 +309,12 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
   int *lpadded;
 
   if (rank == 0) {
-    lpadded = (int*) calloc(npadded*n, sizeof(int));
-    pack_padded_data(npadded, n, lpadded, l);
+    if (npadded == n)
+      lpadded = l;
+    else {
+      lpadded = (int*) calloc(npadded*n, sizeof(int));
+      pack_padded_data(npadded, n, lpadded, l);
+    }
   }
 
   // Master rank sends blocks of global grid to corresponding ranks
@@ -354,8 +350,10 @@ void shortest_paths(int nproc, int rank, int n, int* restrict l)
   // Unpack data from padded grid to output grid. Clean up local buffers
   // in master rank.
   if (rank == 0) {
-    unpack_padded_data(n, npadded, l, lpadded);
-    free(lpadded);
+    if (n != npadded) {
+      unpack_padded_data(n, npadded, l, lpadded);
+      free(lpadded);
+    }
     free(scounts);
     free(displs);
     deinfinitize(n, l);
@@ -383,6 +381,38 @@ int* gen_graph(int n, double p)
             l[j*n+i] = (genrand(&state) < p);
         l[j*n+j] = 0;
     }
+    return l;
+}
+
+/**
+ * Read in custom adjacency graph from file.
+ */
+
+int* read_graph(int n, const char* fname)
+{
+    int* l = calloc(n*n, sizeof(int));
+    FILE* fp = fopen(fname, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Could not open input file: %s\n", fname);
+        exit(-1);
+    }
+
+    char strbuf[2048];
+
+    int i = 0;
+    while (fgets(strbuf, sizeof(strbuf), fp)) {
+      char* tokens = strtok(strbuf, " ");
+      int j = 0;
+      while (tokens != NULL) {
+        l[j*n+i] = atoi(tokens);
+        tokens = strtok(NULL, " ");
+        j++;
+      }
+      i++;
+    }
+
+    fclose(fp);
+
     return l;
 }
 
@@ -439,7 +469,8 @@ const char* usage =
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  - o -- file name where output matrix should be stored (none)\n"
+    "  - f -- input adjacency matrix file (random)\n";
 
 int main(int argc, char** argv)
 {
@@ -450,10 +481,11 @@ int main(int argc, char** argv)
   double p = 0.05;           // Edge probability
   const char* ifname = NULL; // Adjacency matrix file name
   const char* ofname = NULL; // Distance matrix file name
+  const char* cfname = NULL; // Custom adjacency matrix file name
 
   // Option processing
   extern char* optarg;
-  const char* optstring = "hn:d:p:o:i:";
+  const char* optstring = "hn:d:p:o:i:f:";
   int c;
   while ((c = getopt(argc, argv, optstring)) != -1) {
     switch (c) {
@@ -464,6 +496,7 @@ int main(int argc, char** argv)
       case 'p': p = atof(optarg); break;
       case 'o': ofname = optarg;  break;
       case 'i': ifname = optarg;  break;
+      case 'f': cfname = optarg;  break;
     }
   }
 
@@ -478,7 +511,10 @@ int main(int argc, char** argv)
   // for now. Look into parallelizing graph generation across ranks.
   int* l;
   if (rank == 0) {
-    l = gen_graph(n, p);
+    if (cfname)
+      l = read_graph(n, cfname);
+    else
+      l = gen_graph(n, p);
     if (ifname)
       write_matrix(ifname, n, l);
   }

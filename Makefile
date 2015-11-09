@@ -49,6 +49,7 @@ path.md: path.c
 
 clean:
 	rm -f *.o
+	rm -f path.o*
 	rm -f path-mpi.o*
 	rm -f *.x
 
