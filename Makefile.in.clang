@@ -3,8 +3,9 @@ MPICC=mpicc
 CFLAGS=-std=c99 -g
 
 # If you're using clang, these are good flags to try
-OPTFLAGS=-Ofast -march=native
-
-CFLAGS+=$(OPTFLAGS)
-MPI_CFLAGS=$(CFLAGS)
+#OPTFLAGS=-Ofast -mtune=intel
+#OPTFLAGS=
+CFLAGS+=$(OPTFLAGS) -I/opt/openmpi/include/
+MPI_CFLAGS=$(CFLAGS) -I/opt/openmpi/include/
 OMP_CFLAGS=$(CFLAGS)
+
