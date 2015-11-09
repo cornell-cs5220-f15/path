@@ -7,6 +7,10 @@
 #include <omp.h>
 #include "mt19937p.h"
 
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE ((int) 10)
+#endif
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -39,25 +43,44 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
+int square_column(const int n, 
+                 int* restrict l,
+                 int* restrict l_t,
+                 int* restrict lnew,
+                 const int j)
 {
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    for (int i = 0; i < n; ++i) {
+        int lij = lnew[j*n+i];
+        for (int k = 0; k < n; ++k) {
+            int lik = l_t[i*n+k];
+            int lkj = l[j*n+k];
+            if (lik + lkj < lij) {
+                lij = lik+lkj;
+                done = 0;
+            }
+        }
+        lnew[j*n+i] = lij;
+    }
+    return done;
+}
+
+int square(int n,               // Number of nodes
+           int* restrict l,     // Partial distance at step s
+           int* restrict lnew)  // Partial distance at step s+1                          
+{
+    // Precompute the transpose for more efficient memory access
+    int l_t[n*n];
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
+            l_t[i*n + j] = l[j*n + i];
         }
+    }
+
+    int done = 1;
+    for (int j = 0; j < n; ++j) {
+        int entry_done = square_column(n, l, l_t, lnew, j);
+        done = done && entry_done;
     }
     return done;
 }
@@ -234,7 +257,7 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    // printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
