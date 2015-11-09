@@ -1,3 +1,19 @@
+//========================================================================
+// path-mpi.c
+//========================================================================
+// MPI-based parallel implementation of the Floyd-Warshall all-source
+// shortest-paths algorithm. We use 1D domain decomposition to split the
+// shortest paths matrix into vertical strips/blocks to exploit cache
+// locality (with a column-major memory layout). Each core is assigned a
+// strip for which it is responsible for calculating the shortest paths
+// of the elements therein. The outer loop of the computation kernel
+// iterates across the k-domain, where one or more columns in the current
+// kth-iteration is broadcast to all cores to be used to calculate all
+// (i,j) outputs in the corresponding block. This is done to maximize the
+// compute density of each broadcasted message. Manual vectorization is
+// used within the innermost loop of the computation kernel to further
+// parallelize computation across multiple elements in a column.
+
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +23,12 @@
 #include "mt19937p.h"
 #include <mpi.h>
 #include <immintrin.h>
+
+// Global definitions
+
+#define MASK_1 0xffffffffffffffff
+#define MASK_0 0x0000000000000000
+#define VECTOR_NWORDS 8 // Number of 32b words in vector width
 
 //ldoc on
 
@@ -21,6 +43,42 @@ void col_copy(int *col, int *l, int index, int n)
 {
   for (int m = 0; m < n; ++m)
     col[m] = l[n * index + m];
+}
+
+/**
+ * Pack the input data array into an output data array that has each
+ * column padded to the vector width.
+ */
+
+inline __attribute__((always_inline))
+void pack_padded_data(int npadded, int n, int *lpadded, int *l)
+{
+  if (npadded == n)
+    lpadded = l;
+    return;
+
+  int i, j;
+  for (j = 0; j < n; ++j)
+    for (i = 0; i < n; ++i)
+      lpadded[j*npadded+i] = l[j*n+i];
+}
+
+/**
+ * Unpack the input data array that has extra padding into an unpadded
+ * output data array.
+ */
+
+inline __attribute__((always_inline))
+void unpack_padded_data(int n, int npadded, int *l, int *lpadded)
+{
+  if (n == npadded)
+    l = lpadded;
+    return;
+
+  int i, j;
+  for (j = 0; j < n; ++j)
+    for (i = 0; i < n; ++i)
+      l[j*n+i] = lpadded[j*npadded+i];
 }
 
 /**
@@ -55,12 +113,29 @@ void col_copy(int *col, int *l, int index, int n)
  */
 
 inline __attribute__((always_inline))
-int square(int nproc, int rank, int vector_nwords,
-           int n, int nlocal,
+int square(int nproc, int rank, int n, int nlocal,
            int* restrict lproc, int* restrict col_k)
 {
   int done      = 1;
   int col_shift = n / nproc;
+
+  // Generate padding mask for graph sizes not evenly divisible by the
+  // vector width. This mask is used on the last iteration of the
+  // i-loop, if necessary, to mask off junk data in the padding
+  // elements.
+
+  int num_padding = n % VECTOR_NWORDS;
+
+  __m256i pad_vec = _mm256_set_epi32(
+      (num_padding > 7) ? MASK_1 : MASK_0,
+      (num_padding > 6) ? MASK_1 : MASK_0,
+      (num_padding > 5) ? MASK_1 : MASK_0,
+      (num_padding > 4) ? MASK_1 : MASK_0,
+      (num_padding > 3) ? MASK_1 : MASK_0,
+      (num_padding > 2) ? MASK_1 : MASK_0,
+      (num_padding > 1) ? MASK_1 : MASK_0,
+      (num_padding > 0) ? MASK_1 : MASK_0
+  );
 
   // Moving across columns of the global matrix
   for (int k = 0; k < n; ++k) {
@@ -80,7 +155,7 @@ int square(int nproc, int rank, int vector_nwords,
 
     // Moving across local columns in lproc
 
-    int num_wide_ops = (n + vector_nwords - 1) / vector_nwords;
+    int num_wide_ops = (n + VECTOR_NWORDS - 1) / VECTOR_NWORDS;
 
     for (int j = 0; j < nlocal; ++j) {
 
@@ -94,8 +169,8 @@ int square(int nproc, int rank, int vector_nwords,
       // iteration.
       for (int i = 0; i < num_wide_ops; ++i) {
 
-        int *lij_vec_addr = lproc + (j * n) + (i * vector_nwords);
-        int *lik_vec_addr = col_k + (i * vector_nwords);
+        int *lij_vec_addr = lproc + (j * n) + (i * VECTOR_NWORDS);
+        int *lik_vec_addr = col_k + (i * VECTOR_NWORDS);
 
         __m256i lij_vec = _mm256_load_si256((__m256i*)lij_vec_addr);
         __m256i lik_vec = _mm256_load_si256((__m256i*)lik_vec_addr);
@@ -111,6 +186,15 @@ int square(int nproc, int rank, int vector_nwords,
         // all 0s (0x00000000).
         __m256i mask_vec = _mm256_cmpgt_epi32(lij_vec, sum_vec);
         __m256i zero_vec = _mm256_setzero_si256();
+
+        // We need to invalidate the comparisons of the mask that were
+        // calculated from junk elements beyond the boundaries of the
+        // grid. These junk elements are allocated as padding to force
+        // alignment across columns, but should never affect the
+        // determination of whether we are done with computation or not.
+
+        if ((num_padding > 0) && (i == num_wide_ops - 1))
+          mask_vec = _mm256_and_si256(mask_vec, pad_vec);
 
         // If the comparison for any of the elements was true (i.e., a
         // new shortest path was found), then we are not done yet. This
@@ -178,67 +262,106 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int nproc, int rank, int vector_nwords,
-                    int n, int* restrict l)
+void shortest_paths(int nproc, int rank, int n, int* restrict l)
 {
   // Calculate number of columns to process for this rank and the offset
   // to the block from the global grid this rank is responsible for. We
   // use a 1D domain decomposition where each rank computes the output
   // for a non-overlapping "stripe" in the global grid.
+
   int nlocal = n / nproc;
-  int offset = rank * nlocal * n;
 
   if (rank == (nproc - 1))
     nlocal += n % nproc;
-  int nelements = n * nlocal;
-
-  // Number of elements to send and displacement from global grid array
-  // from which the master rank should send data to each rank.
-  int *scounts = (int*) calloc(nproc, sizeof(int));
-  int *displs  = (int*) calloc(nproc, sizeof(int));
-
-  for (int i = 0; i < nproc; ++i)
-    displs[i]  = offset;
-
-  MPI_Gather(&nelements, 1, MPI_INT, scounts, 1,
-             MPI_INT, 0, MPI_COMM_WORLD);
-
-  // Generate l_{ij}^0 from adjacency matrix representation
-  if (rank == 0)  {
-    infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-      l[i] = 0;
-  }
 
   // Allocate per-rank local buffers to hold blocks and columns
   // transferred from other ranks. Align local buffers to cache lines
   // (64B) to allow vector loads/stores. Always allocate memory at the
   // granularity of vector accesses to avoid masked vector loads/stores.
 
-  int lproc_nwords = n * nlocal; //((n * nlocal) + vector_nwords - 1) / vector_nwords;
-  int col_k_nwords = n; //(n + vector_nwords - 1) / vector_nwords;
+  int lproc_nvecs = ((n * nlocal) + VECTOR_NWORDS - 1) / VECTOR_NWORDS;
+  int col_k_nvecs = (n + VECTOR_NWORDS - 1) / VECTOR_NWORDS;
+
+  int lproc_nwords = lproc_nvecs * VECTOR_NWORDS;
+  int col_k_nwords = col_k_nvecs * VECTOR_NWORDS;
 
   int* restrict lproc = _mm_malloc(lproc_nwords * sizeof(int), 32);
   int* restrict col_k = _mm_malloc(col_k_nwords * sizeof(int), 32);
 
+  // Number of elements to send and displacement from global grid array
+  // from which the master rank should send data to each rank.
+
+  int *scounts, *displs;
+
+  if (rank == 0) {
+    scounts = (int*) calloc(nproc, sizeof(int));
+    displs  = (int*) calloc(nproc, sizeof(int));
+
+    for (int i = 0; i < nproc; ++i) {
+      scounts[i] = lproc_nwords;
+      displs[i]  = i * lproc_nwords;
+    }
+
+    scounts[nproc-1] += (n % nproc) * col_k_nwords;
+  }
+
+  // Generate l_{ij}^0 from adjacency matrix representation
+  if (rank == 0) {
+    infinitize(n, l);
+    for (int i = 0; i < n*n; i += n+1)
+      l[i] = 0;
+  }
+
+  // Pack global grid array with padding if necessary to ensure all
+  // columns are aligned to the vector width.
+
+  int  npadded = col_k_nwords;
+  int *lpadded;
+
+  if (rank == 0) {
+    lpadded = (int*) calloc(npadded*n, sizeof(int));
+    pack_padded_data(npadded, n, lpadded, l);
+  }
+
   // Master rank sends blocks of global grid to corresponding ranks
-  MPI_Scatterv(l, scounts, displs, MPI_INT, lproc,
-               nelements, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(
+      lpadded,       // sendbuf: base address of data to send
+      scounts,       // sendcounts: number of elements to send to each rank
+      displs,        // displs: offsets from base address to send data
+      MPI_INT,       // sendtype: type of data to send
+      lproc,         // recvbuf: buffer to receive data (if not sending)
+      lproc_nwords,  // recvcount: number of elements to receive
+      MPI_INT,       // recvtype: type of data to receive
+      0,             // root: rank of sending process
+      MPI_COMM_WORLD // communicator
+  );
 
   // Repeated squaring until nothing changes
   for (int done = 0; !done; )
-    done = square(nproc, rank, vector_nwords, n, nlocal, lproc, col_k);
+    done = square(nproc, rank, n, nlocal, lproc, col_k);
 
   // Master rank receives blocks from each rank to pack final results
-  MPI_Gatherv(lproc, nelements, MPI_INT, l, scounts, displs,
-              MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(
+      lproc,         // sendbuf: base address of data to send
+      lproc_nwords,  // sendcount: number of elements to send to root rank
+      MPI_INT,       // sendtype: type of data to send
+      lpadded,       // recvbuf: buffer to receive data
+      scounts,       // recvcounts: number of elements to receive from each rank
+      displs,        // displs: offsets from base address to receive data
+      MPI_INT,       // recvtype: type of data to receive
+      0,             // root: rank of receiving process
+      MPI_COMM_WORLD // communicator
+  );
 
-  // Clean up local buffers
-  free(scounts);
-  free(displs);
-
-  if (rank == 0)
+  // Unpack data from padded grid to output grid. Clean up local buffers
+  // in master rank.
+  if (rank == 0) {
+    unpack_padded_data(n, npadded, l, lpadded);
+    free(lpadded);
+    free(scounts);
+    free(displs);
     deinfinitize(n, l);
+  }
 }
 
 /**
@@ -362,12 +485,9 @@ int main(int argc, char** argv)
       write_matrix(ifname, n, l);
   }
 
-  // Set the number of 32b words in the vector width
-  int vector_nwords = 8;
-
   // Time the shortest paths code
   double t0 = MPI_Wtime();
-  shortest_paths(nproc, rank, vector_nwords, n, l);
+  shortest_paths(nproc, rank, n, l);
   double t1 = MPI_Wtime();
 
   // Execution statistics. Only master rank prints this out.
