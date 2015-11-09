@@ -44,10 +44,17 @@ This profiling leads us to believe that we should try to address two problems fo
 
  
 
-\section{Analysis}
+\section{MPI Implementation}
+\subsection{General setup}
+We assign each processor to a block of the the matrix instead of a column.
+Note that to update one entry of the matrix for one step of the outer loop  we need to have access to the whole column and row of that matrix. Therefore, if we assign each processor to a column, then each processor needs to access each other column, and therefore communicate with all of the other processors. By assigning each processor to a block of the matrix instead, we allow each processor to have to communicate with only the blocks that share its row and its column.
 
+To take advantage of this blocking strategy, we create  $2n_{block}$ groups and communicators, where $n_{block}=n/blocksize$. Here $n$  is the dimension of the matrix and $blocksize$ is the dimension of the blocks. That is, we have one communicator for each row of blocks, and one communicator for each column of blocks. Each thread, which owns its own block, is then added to the communicator of its row and to the communicator of its column. Therefore each thread is in two different communicators (on top of the world communicator), but no two thread is in the same two communicators. Each processor then makes one \textbf{ \texttt{MPI\_Gatherall} } call in its column communicator and one \textbf{ \texttt{MPI\_Gatherall} } call in its row communicator , so that each processors gathers all of the entries in its block column and block row, performs the update on its own block, and calls \textbf{\texttt{MPI\_Gatherall} }again.
 
+The number of entries to be shared in this manner is of
+$2 \cdot n \cdot blocksize$ per thread and per time step, compared to $n^2$ if each thread owned a column instead.
 
+The MPI implementation runs in 3.2 seconds for n=2000, which is about $10 \%$ more than the original OMP implementation, which runs in 2.9 seconds.
 
 \begin{thebibliography}{9}
 
