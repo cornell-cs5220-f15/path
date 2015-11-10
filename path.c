@@ -47,7 +47,7 @@ int square(int n,               // Number of nodes
     #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
+            int lij = l[j*n+i];
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
                 int lkj = l[j*n+k];
