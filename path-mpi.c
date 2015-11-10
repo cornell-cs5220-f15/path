@@ -113,7 +113,7 @@ void shortest_paths(int n, int* restrict l, int irank, int imin, int imax, int j
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-
+    printf("MPI_ALLREDUCE \n");
     for (int done = 0; !done; ) {
       int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
         MPI_ALLREDUCE(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
@@ -249,7 +249,6 @@ int main(int argc, char** argv)
     // Time the shortest paths code
     if(irank = 1) t0 = MPI_Wtime();
     //ok, now probably just each processor computes some shortest paths and then broadcasts 
-    printf("Starting shortest paths \n");
     shortest_paths(n, l, irank, imin, imax, jmin, jmax);
     t1 = MPI_Wtime();
 
