@@ -87,23 +87,14 @@ int square(int n,                 // Number of nodes
         for (int j = 0; j < n; ++j) {
             for (int i = 0; i < n; ++i) {
                 int lij = lnew[j*n+i];
-                #pragma omp simd lastprivate(done)
                 for (int k = 0; k < n; ++k) {
                     int lik = l[k*n+i];
                     int lkj = l[j*n+k];
 
-                    // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-                    // If you know that INT_MIN <= x - y <= INT_MAX, then you can use the following,
-                    // which are faster because (x - y) only needs to be evaluated once.
-                    int sum  = lik + lkj;
-                    int prev = lij;
-                    lij = lij + ((sum - lij) & ((sum - lij) >> (sizeof(int) * CHAR_BIT - 1))); // min(sum, lij)
-                    done = done && sum >= prev;
-
-                    // if (lik + lkj < lij) {
-                    //     lij = lik+lkj;
-                    //     done = 0;
-                    // }
+                    if (lik + lkj < lij) {
+                        lij = lik+lkj;
+                        done = 0;
+                    }
                 }
                 lnew[j*n+i] = lij;
             }
