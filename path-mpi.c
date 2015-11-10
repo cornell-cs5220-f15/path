@@ -83,7 +83,7 @@ int square(int n,int rank, int np,               // Number of nodes
         }
     }
     free(tmp);
-    fee(lold);
+    free(lold);
     return done;
 }
 
@@ -133,7 +133,7 @@ void shortest_paths(int n, int* restrict l, int np, int rank)
 {
     int size1=((rank+1)*n/np)-((rank)*n/np);
     
-    int restrict *local=(int *) calloc(n*size1*sizeof(int));
+    int* restrict local=(int *) calloc(n*size1*sizeof(int));
     
     int *countElements=(int *) calloc(np,sizeof(int));
     int *displs=(int *) calloc(np,sizeof(int));
@@ -169,7 +169,7 @@ void shortest_paths(int n, int* restrict l, int np, int rank)
         done = square(n, rank, np, local);
     }
     
-    MPI_Gatherv(local, nelements, MPI_INT, l, countElements, displs,
+    MPI_Gatherv(local, size1*n, MPI_INT, l, countElements, displs,
                 MPI_INT, 0, MPI_COMM_WORLD);
     
     free(countElements);
@@ -293,7 +293,7 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
     
     int np;   // Number of processors
-    MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+    MPI_Comm_size(MPI_COMM_WORLD,&np);
     
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
