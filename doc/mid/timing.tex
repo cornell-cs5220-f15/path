@@ -16,18 +16,36 @@ amplxe-cl -report hotspots -source-object function=<NAME>
 \end{figure}
 
 \subsection{Initial Profile Result}
-Include result here
+Initial profile result can be found at Figure \ref{initial_profile_result_0},
+and more detail in Figure \ref{initial_profile_result_1}.
+
+We found that "square" function is the main bottleneck and do the most critical
+steps for this program, so this point is where we started to tune the code.
 
 \begin{figure}[h]
-\footnotesize
-\begin{verbatim}
-Function                     Module        CPU Time
------------------------------------------  --------
-\end{verbatim}
-\caption{Initial Profile Result}
-\label{initial-profile-result}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/0_analysis.png}
+    \caption{Initial Profile Analysis}
+    \label{initial_profile_result_0}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/0_assembly.png}
+    \caption{Initial Assembly Result}
+    \label{initial_profile_result_1}
 \end{figure}
 
 \subsection{Initial Timing Result}
 
-Include result here
+Initial timing result is shown in Figure \ref{initial_profile_result_2}. As we
+can see the program is running with 8 threads using OpenMP and it takes 11.0818
+seconds for 2000 nodes.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/0_timing.png}
+    \caption{Initial Timing Result}
+    \label{initial_profile_result_2}
+\end{figure}
+

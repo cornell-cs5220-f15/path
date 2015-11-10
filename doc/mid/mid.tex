@@ -46,6 +46,15 @@
 
 \setlength\parindent{0pt} % Removes all indentation from paragraphs - comment this line for an assignment with lots of text
 
+\usepackage{listings}
+\usepackage{paralist}
+\usepackage{tikz}
+
+\newcommand{\todo}[1]{{\huge \textcolor{red}{TODO: #1}}}
+\newcommand{\ttt}[1]{{\footnotesize \texttt{#1}}}
+\newcommand{\secref}[1]{\S \ref{sec:#1}}
+
+
 %----------------------------------------------------------------------------------------
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
@@ -66,11 +75,12 @@
 
 \begin{document}
 
+\graphicspath {{figs/}}
 \maketitle % Print the title
 \input{intro.tex}
 \input{timing.tex}
 \input{vectorization.tex}
-%\input{parallelization.tex}
+\input{parallelization.tex}
 \input{evaluation.tex}
 \input{future.tex}
 \end{document}
