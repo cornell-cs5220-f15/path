@@ -26,6 +26,15 @@
 \section{Base OpenMP Code}
 
 \subsection{Profiling}
+A look into performance of the code was conducted by using Intel's VTUNE on Totient. Due to some technical issues with the cluster, we ran the "hotspots" option for our analysis rather than the "advanced-hotspots" one. 
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.7\columnwidth]{amplxe}
+			\caption{Most time consuming functions in the base code.}
+			\label{amplxe}
+		\end{center}
+	\end{figure}
+
 \subsection{Scaling}
 
 \section{OpenMPI}
