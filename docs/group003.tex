@@ -40,6 +40,7 @@
 
 \usepackage{relsize}
 \usepackage{pdfpages}
+\usepackage{hyperref}
 
 \def\wl{\par \vspace{\baselineskip}}
 
@@ -55,7 +56,7 @@
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
-\rhead{\textsc{Group 003 -- rmc298, sjm324} \thepage}
+\rhead{\textsc{Group 003} -- rmc298, sjm324 -- \textsc{Page} \thepage}
 \renewcommand{\headrulewidth}{0pt}
 \setlength{\headheight}{0.5in}
 
@@ -67,26 +68,22 @@
 \maketitle
 
 \section{Introduction}
+For the third assignment, we employ techniques we have learned in previous assignments as well as explore the capabilities of the Message Passing Interface (MPI) in the context of the of the \href{https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm}{\textcolor{blue}{\underline{Floyd-Warshall}}} algorithm for computing all pairwise shortest paths.  As described in the assignment description, this assignment is very similar to the matrix multiplication algorithm we have studied previously in terms of overall problem setup, and only differs in the actual computations being performed.\\
 
-tmp: for solidarity:
+\noindent We begin by focusing our efforts on using MPI to coordinate computation across multiple nodes on the \emph{totient} cluster, and then discuss optimizations of the algorithm to speedup the computation.  We end with a discussion of offloading the computation to the Xeon Phi's, and a summary of our tactics.\\
 
-strong:
-prob $\in$ [0.025, 0.05, 0.10, 0.30]\\
-n = 4000
+\noindent It is worth mentioning at this point that the assignment asked us to implement a parallel MPI algorithm, and then choose between optimizing the given OpenMP implementation and our own MPI implementation.  We choose to do both for two reasons:
 
-weak:
-prob $\in$ [0.025, 0.05, 0.10, 0.30]\\
-\begin{tabular}{|r|l|}
-	\hline
-	1 & 1000\\ \hline
-	2 & 1414\\ \hline
-	4 & 2000\\ \hline
-	8 & 2828\\ \hline
-	16 & 4000\\ \hline
-	24 & 4899\\ \hline
-\end{tabular}
+\begin{enumerate}[1.]
+  \item The optimizations for the OpenMP implementation are very much the same as the MPI implementation in that the algorithm being executed is the same -- the only difference being how threads are delegated work, and
+  \item Recent trends in high performance computing fall more along the lines of ``first, use MPI to coordinate between multiple nodes, then use OpenMP on each node to further parallelize the work.''
+\end{enumerate}
+
+\noindent The following section, though, describes the reality of statement (2) with respect to the \emph{totient} cluster.
 
 \section{Message Passing Interface (MPI)}
+
+yo rob checkout the intro and make sure that is in line with what you were telling me.  i'll leave it to you with whether or not you want to include a statement about how MPI worked on the other cluster you have access to.  you may want to be vague to not incriminate yourself
 
 \section{Optimizations}
 
