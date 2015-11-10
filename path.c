@@ -95,10 +95,10 @@ int square(int n,                 // Number of nodes
                     // If you know that INT_MIN <= x - y <= INT_MAX, then you can use the following,
                     // which are faster because (x - y) only needs to be evaluated once.
 
-                    int summand = lik + lkj;
-                    lij = lij + ((summand - lij) & ((summand - lij) >> (sizeof(int) * CHAR_BIT - 1))); // min(summand, lij)
-                    done = lij == summand;
-
+                    int sum  = lik + lkj;
+                    int prev = lij;
+                    lij = lij + ((sum - lij) & ((sum - lij) >> (sizeof(int) * CHAR_BIT - 1))); // min(sum, lij)
+                    done = done && sum >= prev;
 
                     // if (lik + lkj < lij) {
                     //     lij = lik+lkj;
