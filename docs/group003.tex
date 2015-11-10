@@ -133,8 +133,75 @@ int square(int n,                 // Number of nodes
 \noindent When used correctly, the \texttt{DEF} -- \texttt{USE} strategy can be quite effective at optimizing almost anything.  Comparing to the base code, including this simple two-phase process gives the following increases:
 
 \begin{center}
-  THIS IS A FIGURE
+  THIS IS A FIGURE SHOWING RESULTS OF VECTORIZATION FROM ICC
 \end{center}
+
+\noindent The only other optimization at this level that we tried was with respect to the branching in the square function:
+
+\begin{lstlisting}
+    if (lik + lkj < lij) {
+        lij = lik+lkj;
+        done = 0;
+    }
+\end{lstlisting}
+
+\noindent Basic parallel programming techniques dictate that branches are the death of all parallel algorithms -- they induce thread divergence and prevent effective chaining of the parallel algorithm.  Our remedy was to remove the branching using the following strategy:
+
+\begin{lstlisting}
+    // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+    // If you know that INT_MIN <= x - y <= INT_MAX, then you can use the
+    // following, which are faster because (x - y) only needs to be evaluated
+    // once.
+    int sum  = lik + lkj;
+    int prev = lij;
+    // min(sum, lij)
+    lij = lij + ((sum - lij) & ((sum - lij) >> (sizeof(int) * CHAR_BIT - 1)));
+    done = done && sum >= prev;
+\end{lstlisting}
+
+\noindent Though this removes the branching in the code, it actually performs significantly worse.  The reason becomes clear after noticing two things.  First, the introduction of significantly more instructions in this loop (as examined by using \texttt{objdump}):
+
+\begin{lstlisting}
+216d: 04 7f                 add    $0x7f,%al
+216f: 00 0d 0e 73 75 6d     add    %cl,0x6d75730e
+2175: 2e 31 32              xor    %esi,%cs:(%rdx
+2178: 34 32                 xor    $0x32,%al
+217a: 5f                    pop    %rdi
+217b: 56                    push   %rsi
+217c: 24 31                 and    $0x31,%al
+217e: 65 00 0a              add    %cl,%gs:(%rdx)
+2181: 04 00                 add    $0x0,%al
+2183: 04 00                 add    $0x0,%al
+2185: 00 56 6e              add    %dl,0x6e(%rsi)
+2188: 82                    (bad)
+2189: 88 00                 mov    %al,(%rax)
+218b: 00 06                 add    %al,(%rsi)
+218d: 04 7f                 add    $0x7f,%al
+218f: 00 0e                 add    %cl,(%rsi)
+2191: 0f 70 72 65 76        pshufw $0x76,0x65(%rd
+2196: 2e 31 32              xor    %esi,%cs:(%rdx
+2199: 34 32                 xor    $0x32,%al
+219b: 5f                    pop    %rdi
+219c: 56                    push   %rsi
+219d: 24 31                 and    $0x31,%al
+219f: 66                    data16
+21a0: 00 0b                 add    %cl,(%rbx)
+21a2: 04 00                 add    $0x0,%al
+21a4: 04 00                 add    $0x0,%al
+21a6: 00 56 6e              add    %dl,0x6e(%rsi)
+21a9: 82                    (bad)
+21aa: 88 00                 mov    %al,(%rax)
+21ac: 00 06                 add    %al,(%rsi)
+21ae: 04 7f                 add    $0x7f,%al
+21b0: 01 4d 5f              add    %ecx,0x5f(%rbp
+21b3: 00 01                 add    %al,(%rcx)
+21b5: 00 00                 add    %al,(%rax)
+21b7: 00 02                 add    %al,(%rdx)
+21b9: 4d 5f                 rex.WRB pop %r15
+21bb: 01 02                 add    %eax,(%rdx)
+\end{lstlisting}
+
+\noindent Oh my!!!  The other element that must be observed here is that x86 and later have instructions for conditional move / set, for which the branch above actually reduces to a small set of simple instructions.  That is, although in code we write a branch using an if statement, it gets reduced to a consistent number of instructions, since the logic inside of the branch is simple enough for the compiler to reduce it to a branchless set of instructions anyway.
 
 \subsection{Algorithmic Optimizations}
 
