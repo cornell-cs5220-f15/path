@@ -91,7 +91,7 @@ int* gen_graph(int n, double p)
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i)
-            l[j*n+i] = 1; //(genrand(&state) < p);
+            l[j*n+i] = (genrand(&state) < p);
         l[j*n+j] = 0;
     }
     return l;
@@ -180,16 +180,9 @@ int main(int argc, char** argv)
     if (ifname)
         write_matrix(ifname,  n, l);
 
-    // Time the shortest paths code
-    double t0 = omp_get_wtime();
+    // Time the shortest paths cod
+
     shortest_paths(n, l);
-    double t1 = omp_get_wtime();
-
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
-
     // Generate output file
     if (ofname)
         write_matrix(ofname, n, l);
