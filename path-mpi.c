@@ -75,11 +75,10 @@ int square(int n,int rank, int np,               // Number of nodes
                 lij = lold[j*n+i];
                 int lik = tmp[i];
                 if (lik + lkj < lij) {
-                    lij = lik+lkj;
+                    l[j*n+i] = lik+lkj;
                     done = 0;
                 }
             }
-            l[j*n+i] = lij;
         }
     }
     free(tmp);
@@ -166,7 +165,6 @@ void shortest_paths(int n, int* restrict l, int np, int rank)
 
 
     for (int done = 0; !done; ) {
-        printf("%d %d",done,rank);
         done = square(n, rank, np, local);
     }
     
