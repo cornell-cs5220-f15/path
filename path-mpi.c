@@ -220,7 +220,7 @@ int main(int argc, char** argv)
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:npx:npy:";
+    const char* optstring = "hn:d:p:o:i:x:y:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -231,8 +231,8 @@ int main(int argc, char** argv)
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
-        case 'npx': npx = atoi(optarg); break;
-        case 'npy': npy = atof(optarg); break;
+        case 'x': npx = atoi(optarg); break;
+        case 'y': npy = atof(optarg); break;
         }
     }
 
