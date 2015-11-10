@@ -1,0 +1,5 @@
+#!/bin/bash
+SIZE=$(cat path.o$1 |  grep 'n:' | tr -d ' ' | cut -d ':' -f 2)
+RUNTIME=$(cat path.o$1 |  grep 'Time:' | tr -d ' ' | cut -d ':' -f 2)
+# RUNTIME=$(cat path.o$1 | grep 'Time:' | cut -d ' ' -f 1)
+echo $SIZE,$RUNTIME >> $2

@@ -1,0 +1,10 @@
+#!/bin/bash
+filename="$1"
+
+echo "size,time">>$2
+
+while read -r line
+do
+    index=$line
+    ./get_size $line $2
+done < "$filename"

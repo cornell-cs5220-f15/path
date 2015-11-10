@@ -7,4 +7,4 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-./path.x $ARGS
+mpirun -n 24 ./path-mpi.x $ARGS
