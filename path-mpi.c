@@ -115,8 +115,8 @@ void shortest_paths(int n, int* restrict l, int irank, int imin, int imax, int j
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     for (int done = 0; !done; ) {
       int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
-        MPI_ALLREDUCE(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-        MPI_ALLREDUCE(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+        MPI_Allreduce(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+        MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
     }
     printf("Post MPI_ALLREDUCE \n");
 
