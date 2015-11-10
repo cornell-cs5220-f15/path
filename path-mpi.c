@@ -299,9 +299,9 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // Time the shortest paths code
-    double t0 = omp_get_wtime();
+    double t0 =MPI_Wtime();
     shortest_paths(n, l,np,rank);
-    double t1 = omp_get_wtime();
+    double t1 = MPI_Wtime();
     
     if (rank ==0){
 
