@@ -29,6 +29,10 @@
     #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
 #endif
 
+#ifndef CHAR_BIT
+    #define CHAR_BIT 8
+#endif
+
 // how many threads?
 int n_threads = 1;
 
@@ -86,6 +90,7 @@ int square(int n,                 // Number of nodes
                 for (int k = 0; k < n; ++k) {
                     int lik = l[k*n+i];
                     int lkj = l[j*n+k];
+
                     if (lik + lkj < lij) {
                         lij = lik+lkj;
                         done = 0;
