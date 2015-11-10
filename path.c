@@ -62,6 +62,31 @@ int square(int n,               // Number of nodes
     return done;
 }
 
+int square_with_transpose
+          (int n,               // Number of nodes
+           int* restrict l,     // Partial distance at step s
+           int* restrict lnew,  // Partial distance at step s+1
+           int* restrict lT)    // Partial distance at step s (transposed)
+{
+    int done = 1;
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i < n; ++i) {
+            int lij = lnew[j*n+i];
+            for (int k = 0; k < n; ++k) {
+                int lik = lT[i*n+k];
+                int lkj = l[j*n+k];
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
+                    done = 0;
+                }
+            }
+            lnew[j*n+i] = lij;
+        }
+    }
+    return done;
+}
+
 /**
  *
  * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
@@ -71,7 +96,7 @@ int square(int n,               // Number of nodes
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back 
+ * The functions `infinitize` and `deinfinitize` convert back
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
@@ -110,15 +135,28 @@ void shortest_paths(int n, int* restrict l)
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
+    //generate the transposed copy
+    int * restrict lT = malloc(n*n * sizeof(int));
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            lT[i*n+j] = l[j*n+i];
+        }
+    }
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
+        done = square_with_transpose(n, l, lnew, lT);
         memcpy(l, lnew, n*n * sizeof(int));
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = 0; j < n; j++) {
+                lT[i*n+j] = l[j*n+i];
+            }
+        }
     }
     free(lnew);
+    free(lT);
     deinfinitize(n, l);
 }
 
@@ -182,7 +220,7 @@ void write_matrix(const char* fname, int n, int* a)
         exit(-1);
     }
     for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) 
+        for (int j = 0; j < n; ++j)
             fprintf(fp, "%d ", a[j*n+i]);
         fprintf(fp, "\n");
     }
