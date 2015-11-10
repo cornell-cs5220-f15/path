@@ -50,28 +50,6 @@ struct Result
  * identical, and false otherwise.
  */
 
-int square_column(const int n, 
-                 int* restrict l,
-                 //int* restrict l_t,
-                 int* restrict lnew,
-                 const int j)
-{
-    int done = 1;
-    for (int i = 0; i < n; ++i) {
-        int lij = l[j*n+i];
-        for (int k = 0; k < n; ++k) {
-            int lik = l[k*n+i];
-            int lkj = l[j*n+k];
-            if (lik + lkj < lij) {
-                lij = lik+lkj;
-                done = 0;
-            }
-        }
-        lnew[j*n+i] = lij;
-    }
-    return done;
-}
-
 int square_columns(int n,               // Number of nodes
                    int j_min,
                    int j_max,
@@ -87,9 +65,19 @@ int square_columns(int n,               // Number of nodes
     // }
 
     int done = 1;
-    for (int j = 0; j < j_max - j_min; ++j) {
-        int entry_done = square_column(n, l, lnew, j + j_min);
-        done = done && entry_done;
+    for (int j = j_min; j < j_max; ++j) {
+        for (int i = 0; i < n; ++i) {
+            int lij = l[j*n+i];
+            for (int k = 0; k < n; ++k) {
+                int lik = l[k*n+i];
+                int lkj = l[j*n+k];
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
+                done = 0;
+                }
+            }
+        lnew[(j-j_min)*n+i] = lij;
+        }
     }
     return done;
 }
@@ -122,6 +110,8 @@ static inline void deinfinitize(int n, int* l)
             l[i] = 0;
 }
 
+// static inlinde void divide(evently)
+
 /**
  *
  * Of course, any loop-free path in a graph with $n$ nodes can
@@ -152,22 +142,23 @@ void shortest_paths(int num_p, int rank, int n, int* restrict l)
     int j_min = num_columns*rank;
     int j_max = num_columns*(rank+1);
 
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    printf("[%d]: [%d,%d]\n", rank, j_min, j_max);
+
+    int* restrict partial_lnew = (int*) calloc((j_max - j_min)*n, sizeof(int));
     
     int global_done = 1;
     do {
-        int local_done = 1;
+        int local_done = square_columns(n, j_min, j_max, l, partial_lnew);
 
-        local_done = square_columns(n, j_min, j_max, l, lnew);
-
-        MPI_Allgather(lnew + j_min*n, n*num_columns, MPI_INT, l, n*num_columns, MPI_INT, MPI_COMM_WORLD);
+        MPI_Allgather(partial_lnew, n*num_columns, MPI_INT, l, n*num_columns, MPI_INT, MPI_COMM_WORLD);
 
         // Must reach consensus on completion
         MPI_Allreduce(&local_done, &global_done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
     
     } while (!global_done);
     
-    free(lnew);
+    free(partial_lnew);
+
     if (rank == 0) {
         deinfinitize(n, l);
     }
@@ -287,6 +278,8 @@ int main(int argc, char** argv)
 
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+    // int r = n % num_p;
+    // int num_columns = (r == 0) ? n : n + (num_p - r);
     int* l = calloc(n*n, sizeof(int));
     double t0;
     if (rank == 0) {
@@ -303,7 +296,7 @@ int main(int argc, char** argv)
     if (rank == 0) {
         double t1 = omp_get_wtime();
 
-        // printf("== OpenMP with %d threads\n", omp_get_max_threads());
+        printf("== MPI with %d threads\n", num_p);
         printf("n:     %d\n", n);
         printf("p:     %g\n", p);
         printf("Time:  %g\n", t1-t0);
