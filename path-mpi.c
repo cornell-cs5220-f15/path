@@ -70,8 +70,9 @@ int square(int n,int rank, int np,               // Number of nodes
 
         for (j = 0; j < size1; ++j) {
             int lkj = lold[j*n+k];
+            int lij;
             for (i = 0; i < n; ++i) {
-                int lij = lold[j*n+i];
+                lij = lold[j*n+i];
                 int lik = tmp[i];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
