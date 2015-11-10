@@ -7,6 +7,28 @@
 
 \subsection{Parallelizing for the Compute Node}
 \label{sec-parallel-node}
+First an attempt was made to improve the data access pattern inside the 
+square function. This was done by removing data dependencies from the k-loop, 
+and making it the outermost loop. In doing so, we access data without striding
+through the adjacency matrix in the innermost (i) loop.
+For the purpose of distributing the adjacency matrix, we use a 1D domain 
+decomposition method, wherein each process owns a non-overlapping, 
+vertical "stripe" in the global grid. This assignment of chunks of continuous 
+columns is done, using MPI\_Scatterv, in order of process rank. In case the grid 
+size isn't exactly divisible by the number of processes, we assign (for simplicity) 
+the remainder of the columns to the last process. As we move along the columns in 
+the outermost(k-loop), we do a modulus operation on the k value to calculate which 
+process owns the column, and broadcast this column to every other process.
+
+To strike a balance between communication and computation costs, we tried broadcasting 
+the entire chunk of columns (instead of just one column at a time), that 
+any given process owns, to every other process. And it turns out that, atleast for a 
+very specific case of 24 processes with a grid size of 2000, the performance decreases slightly.
+
+We also see performance dips when the number of cores (equivalently, the number of
+stripes) is equal to integer powers of 2 (4, 8, and 16). This could perhaps be attributed 
+to an increase in cache misses. We could perhaps do a copy optimisation operation that 
+would help in leveling these dips out.
 
 \input{fig-parallel-node-results}
 
