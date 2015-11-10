@@ -135,8 +135,8 @@ void shortest_paths(int n, int* restrict l, int np, int rank)
     
     int* local=(int *) malloc(n*size1*sizeof(int));
     
-    int *countElements=(int *) malloc(np,sizeof(int));
-    int *displs=(int *) malloc(np,sizeof(int));
+    int *countElements=(int *) malloc(np*sizeof(int));
+    int *displs=(int *) malloc(np*sizeof(int));
 
     
  
