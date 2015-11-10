@@ -1,0 +1,4 @@
+./path-mpi.x: invalid option -- 't'
+Fatal error in MPI_Cart_coords: Invalid communicator, error stack:
+MPI_Cart_coords(154): MPI_Cart_coords(MPI_COMM_NULL, rank=0, maxdims=2, coords=0x7ffefccf77a8) failed
+MPI_Cart_coords(85).: Null communicator

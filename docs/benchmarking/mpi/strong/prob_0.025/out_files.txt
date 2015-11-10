@@ -7,3 +7,10 @@
 25636.en-cs-totient-01.coecis.cornell.edu
 25637.en-cs-totient-01.coecis.cornell.edu
 25638.en-cs-totient-01.coecis.cornell.edu
+26052.en-cs-totient-01.coecis.cornell.edu
+26055.en-cs-totient-01.coecis.cornell.edu
+26056.en-cs-totient-01.coecis.cornell.edu
+26057.en-cs-totient-01.coecis.cornell.edu
+26058.en-cs-totient-01.coecis.cornell.edu
+26060.en-cs-totient-01.coecis.cornell.edu
+26059.en-cs-totient-01.coecis.cornell.edu

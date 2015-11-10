@@ -1,0 +1,4 @@
+Fatal error in PMPI_Cart_create: Invalid argument, error stack:
+PMPI_Cart_create(340).....: MPI_Cart_create(MPI_COMM_WORLD, ndims=2, dims=0x7ffc1c8b5d18, periods=0x7ffc1c8b5d20, reorder=1, comm_cart=0x7ffc1c8b5d58) failed
+MPIR_Cart_create_impl(194): 
+MPIR_Cart_create(58)......: Size of the communicator (1) is smaller than the size of the Cartesian topology (24)

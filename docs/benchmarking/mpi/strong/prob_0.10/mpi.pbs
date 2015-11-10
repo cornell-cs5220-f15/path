@@ -1,5 +1,10 @@
 #!/bin/sh -l
 
+#PBS -l nodes=en-cs-totient-06.coecis.cornell.edu:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N mpi.pbs
+#PBS -j oe
+
 # default args / control over what is submitted
 # usage example: qsub -v SIZE=900,THREADS=12 path.pbs
 P_SIZE=${SIZE:-4000}
@@ -7,11 +12,6 @@ X_THREADS=${XT:-4} # procs for x dir
 Y_THREADS=${YT:-4} # procs for y dir
 P_THREADS=${THREADS:-24} # aka omp max threads for node
 P_PROB=${PROB:-0.10}
-
-#PBS -l nodes=en-cs-totient-06.coecis.cornell.edu:ppn=24
-#PBS -l walltime=0:30:00
-#PBS -N $Y_THREADS
-#PBS -j oe
 
 echo $PBS_JOBID >> $PBS_O_WORKDIR/out_files.txt
 
