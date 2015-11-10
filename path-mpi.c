@@ -161,7 +161,7 @@ void shortest_paths(MPI_Comm cart_comm, int imin_, int imax_, int jmin_, int jma
   // memset(lnew, 0, num_bytes);
   USE_ALIGN(lnew, BYTE_ALIGN);
   
-  MPI_Allreduce(l,lnew,n*n,MPI_INT,MPI_MAX,cart_comm);
+  MPI_Allreduce(l,lnew,n*n,MPI_INT,MPI_MIN,cart_comm);
   for (int done = 0; !done; ) {
     
     double square_start = omp_get_wtime();
