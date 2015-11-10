@@ -1,20 +1,19 @@
 \documentclass[11pt]{article}
-\usepackage{geometry}
-\geometry{letterpaper}
-\geometry{margin=0.5in}
-
+\usepackage[letterpaper,left=1in,right=1in,top=1in,bottom=1in]{geometry}
 
 \usepackage[utf8]{inputenc}
 \usepackage{listings}
-\usepackage{xcolor}
+% \usepackage{xcolor}
+\usepackage[dvipsnames]{xcolor}
 % credit: http://tex.stackexchange.com/questions/68091/how-do-i-add-syntax-coloring-to-my-c-source-code-in-beamer
 % https://en.wikibooks.org/wiki/LaTeX/Source_Code_Listings
 \lstset{language=C,
         basicstyle=\ttfamily,
         keywordstyle=\color{blue}\ttfamily,
         stringstyle=\color{red}\ttfamily,
-        commentstyle=\color{green}\ttfamily,
-        morecomment=[l][\color{magenta}]{\#}
+        commentstyle=\color{OliveGreen}\ttfamily,
+        morecomment=[l][\color{black}]{\#},
+        tabsize=2
 }
 
 \title{\textbf{CS 5220 Project 1 Final Report}}
@@ -82,6 +81,133 @@ For the third assignment, we employ techniques we have learned in previous assig
 \end{enumerate}
 
 \section{Optimizations}
+There are two general forms of optimizations that we employ:
+
+\begin{enumerate}[1.]
+  \item Vectorization and/or compilation optimizations, and
+  \item Algorithmic optimizations and/or enhancements.
+\end{enumerate}
+
+\noindent Each provide their own flavor of performance increase, but (1) is not as applicable for this assignment as it has been in the past since we do not have a large concern of optimizing the throughput of floating point operations.  As such, after a few modifications, the majority of optimization efforts should be focused on (2).
+
+\subsection{Vectorization and Compilation Strategies}
+
+Though at a first glance there do not seem to be many opportunities for vectorization, we elect to give \texttt{icc} the hints it needs to optimize as much as possible.  To enable portability, the following compilation hints are defined:
+
+\begin{lstlisting}
+#ifdef __INTEL_COMPILER
+    #define DEF_ALIGN(x) __declspec(align((x)))
+    #define USE_ALIGN(var, align) __assume_aligned((var), (align));
+#else // GCC
+    #define DEF_ALIGN(x) __attribute__ ((aligned((x))))
+    /* __builtin_assume_align is unreliabale... */
+    #define USE_ALIGN(var, align) ((void)0)
+#endif
+\end{lstlisting}
+
+\noindent These two must be used in lock-step.  When declaring a variable of a specific alignment, we use \texttt{DEF\_ALIGN} to declare that this variable has a specific alignment.  An example usage would be 
+\begin{lstlisting}
+  DEF_ALIGN(BYTE_ALIGN)
+  int * restrict lnew = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
+\end{lstlisting}
+
+\noindent noting that declaring alignment is not enough, it must be enforced through either aligned allocators or \texttt{\_mm\_malloc}.  However, declaring alignment alone is not enough to enable the compiler to make the proper decisions when arranging loops and vectorizing. For example, when you pass a variable to a function, you need to indicate to the compiler that it has a given alignment, as in
+
+\begin{lstlisting}
+int square(int n,                 // Number of nodes
+           int * restrict l,      // Partial distance at step s
+           int * restrict lnew) { // Partial distance at step s+1
+
+    USE_ALIGN(l,    BYTE_ALIGN);
+    USE_ALIGN(lnew, BYTE_ALIGN);
+    .
+    .
+    .
+}
+\end{lstlisting}
+
+\noindent When used correctly, the \texttt{DEF} -- \texttt{USE} strategy can be quite effective at optimizing.  Comparing to the base code, including this simple two-phase process gives the following increases:
+
+\begin{center}
+  THIS IS A FIGURE SHOWING RESULTS OF VECTORIZATION FROM ICC
+\end{center}
+
+\noindent The only other optimization at this level that we tried was with respect to the branching in the square function:
+
+\begin{lstlisting}
+    if (lik + lkj < lij) {
+        lij = lik+lkj;
+        done = 0;
+    }
+\end{lstlisting}
+
+\noindent Basic parallel programming techniques dictate that branches are the death of all parallel algorithms -- they induce thread divergence and prevent effective chaining of the parallel algorithm.  Our remedy was to remove the branching using the following strategy:
+
+\begin{lstlisting}
+    // https://graphics.stanford.edu/
+    //~seander/bithacks.html#IntegerMinOrMax
+    // If you know that INT_MIN <= x - y <= INT_MAX,
+    // then you can use the following, which are faster
+    // because (x - y) only needs to be evaluated once.
+    int sum  = lik + lkj;
+    int prev = lij;
+    // min(sum, lij)
+    lij = lij + ((sum - lij) & ((sum - lij) >>
+     (sizeof(int) * CHAR_BIT - 1)));
+    done = done && sum >= prev;
+\end{lstlisting}
+
+\noindent Though this removes the branching in the code, it actually performs significantly worse.  The reason becomes clear after noticing two things.  First, the introduction of significantly more instructions in this loop (as examined by using \texttt{objdump}):
+
+\begin{lstlisting}
+216d: 04 7f                 add    $0x7f,%al
+216f: 00 0d 0e 73 75 6d     add    %cl,0x6d75730e
+2175: 2e 31 32              xor    %esi,%cs:(%rdx
+2178: 34 32                 xor    $0x32,%al
+217a: 5f                    pop    %rdi
+217b: 56                    push   %rsi
+217c: 24 31                 and    $0x31,%al
+217e: 65 00 0a              add    %cl,%gs:(%rdx)
+2181: 04 00                 add    $0x0,%al
+2183: 04 00                 add    $0x0,%al
+2185: 00 56 6e              add    %dl,0x6e(%rsi)
+2188: 82                    (bad)
+2189: 88 00                 mov    %al,(%rax)
+218b: 00 06                 add    %al,(%rsi)
+218d: 04 7f                 add    $0x7f,%al
+218f: 00 0e                 add    %cl,(%rsi)
+2191: 0f 70 72 65 76        pshufw $0x76,0x65(%rd
+2196: 2e 31 32              xor    %esi,%cs:(%rdx
+2199: 34 32                 xor    $0x32,%al
+219b: 5f                    pop    %rdi
+219c: 56                    push   %rsi
+219d: 24 31                 and    $0x31,%al
+219f: 66                    data16
+21a0: 00 0b                 add    %cl,(%rbx)
+21a2: 04 00                 add    $0x0,%al
+21a4: 04 00                 add    $0x0,%al
+21a6: 00 56 6e              add    %dl,0x6e(%rsi)
+21a9: 82                    (bad)
+21aa: 88 00                 mov    %al,(%rax)
+21ac: 00 06                 add    %al,(%rsi)
+21ae: 04 7f                 add    $0x7f,%al
+21b0: 01 4d 5f              add    %ecx,0x5f(%rbp
+21b3: 00 01                 add    %al,(%rcx)
+21b5: 00 00                 add    %al,(%rax)
+21b7: 00 02                 add    %al,(%rdx)
+21b9: 4d 5f                 rex.WRB pop %r15
+21bb: 01 02                 add    %eax,(%rdx)
+\end{lstlisting}
+
+\noindent The other element that must be observed here is that x86 and later have instructions for conditional move / set, for which the branch above actually reduces to a small set of simple instructions.  That is, although in code we write a branch using an if statement, it gets reduced to a consistent number of instructions, since the logic inside of the branch is simple enough for the compiler to reduce it to a branchless set of instructions anyway.
+
+\subsection{Algorithmic Optimizations}
+
+\noindent The most immediate and obvious form of algorithmic optimization for this assignment is to employ the \texttt{matmul-} style sub-blocking we used in the first assignment.  This section will be detailed at a later time after we have incorporated this in our program.  Since this technique is familiar at this point, we elected to focus our efforts on MPI and elsewhere for the initial report.\\
+
+\noindent At this time we feel it only worth mentioning that arbitrarily sized sub-blocks are a desirable feature, and that when considering the dimensions of the sub-blocks to employ a simple enhancement can be to have rectangular blocks that are larger in the horizontal than in the vertical.  This enables unit-stride access for a greater number of elements when doing the actual computation.
+
+\section{Message Passing Interface (MPI)}
 
 \begin{equation}
 \mathrm{Strong \; Scaling} = \frac{t_{\mathrm{serial}}}{t_{\mathrm{parallel}}}
@@ -98,14 +224,14 @@ For the third assignment, we employ techniques we have learned in previous assig
 \label{ws}
 \end{equation}
 
-\section{Message Passing Interface (MPI)}
+
 The method of MPI parallelization was chosen for its ease of implementation and decent performance. To start, the Floyd-Warshall pathing algorithm, originally parallelized using OpenMP, was changed in order to make use of MPI. First, the parallelization and delegation of work was moved outside of the square function to the main function, in order to eliminate multiple parallel initialization costs. From this point, the pathing matrix is split into $\mathtt{npx}\times \mathtt{npy}$ subdomains, where \texttt{npx} and \texttt{npy} are the number of processors used to divide the matrix in the horizontal and vertical directions, respectively. \texttt{MPI\_CART} commands are used to organize these threads in an optimal orientation and provide coordinates for the responsibilities of each processor, which are then used to determine the starting and ending indices of each threads subdomain in relation to the global pathing matrix. At this point, each thread has its own copy of the entire pathing matrix and calls the \texttt{shortest\_paths} function. \\
 
 \noindent The functions \texttt{infinitize} and \texttt{deinfinitize}, as well as the diagonal zeroing loop, were not parallelized due to their relatively little computational expense. In doing so, the associated parallel communication costs were avoided. The values of \texttt{l} are then copied into \texttt{lnew} using \texttt{MPI\_ALLREDUCE} with the \texttt{MPI\_MIN} operator. In this way, consistency between processors is ensured. It would also be easily possible to parallelize \texttt{infinitize} and \texttt{deinfinitize} with this method of communication, if the problem size became large enough to warrant the additional communication costs associated with it. \\
 
 \noindent In the main loop, the \texttt{square} function is called by each thread, where each thread determines the shortest paths for its subdomain. Once each thread is finished inside square, \texttt{MPI\_ALLREDUCE} is once again used with the \texttt{MPI\_MIN} operator to determine if all processors returned a value of 1, indicating all shortest paths have been found. The array \texttt{lnew} is then communicated and stored in \texttt{l}, once again using \texttt{MPI\_ALLREDUCE} with the \texttt{MPI\_MIN} operator. \\
 
-While this is not the most efficient MPI implementation, we believe it to be sufficient to show that shared memory OpenMP will be significantly faster than MPI for problem sizes that fit on one node. This is due to the nature of the pathing algorithm, where every point to the left, right, top, and bottom of the element of interest needs to be checked to determine if it provides a shorter path, making this more efficient with shared memory. If the problem sizes driven by an application scaled greatly so that they could no longer fit on one node, the MPI implementation could be rewritten to provide some marginal gains in performance and noticeable gains in memory efficiency, enabling the algorithm to be run on very large problem sizes. \\
+\noindent While this is not the most efficient MPI implementation, we believe it to be sufficient to show that shared memory OpenMP will be significantly faster than MPI for problem sizes that fit on one node. This is due to the nature of the pathing algorithm, where every point to the left, right, top, and bottom of the element of interest needs to be checked to determine if it provides a shorter path, making this more efficient with shared memory. If the problem sizes driven by an application scaled greatly so that they could no longer fit on one node, the MPI implementation could be rewritten to provide some marginal gains in performance and noticeable gains in memory efficiency, enabling the algorithm to be run on very large problem sizes. \\
 
 \noindent Due to the ability of MPI to utilize several nodes, we believe a heterogeneous parallelization strategy would be ideal, where MPI is used for inter-node communications and OpenMP is otherwise used to compute on the Xeon Phi cores. At this time, however, we have been unable to run on multiple nodes of Totient using MPI, preventing us from implementing this.
 
@@ -187,6 +313,29 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 
 
 \section{Offloading to the Phi's}
+
+The following compilation hint has been defined:
+
+\begin{lstlisting}
+#ifdef __MIC__
+    #define BYTE_ALIGN 64
+#else
+    #define BYTE_ALIGN 32
+#endif
+\end{lstlisting}
+
+\noindent This conditional definition is to account for the different preferred byte alignment of the Node (Xeon) and the Device (Phi).  We need to more carefully inspect the legitimacy of this tactic, because what this will do currently is the following:
+
+\begin{enumerate}[1.]
+  \item When the code is compiled for the Node, the byte alignment will be 32.
+  \item When the code is compiled for the Device, the byte alignment will be 64.
+\end{enumerate}
+
+\noindent This is because, where \texttt{\#pragma offload target(mic)} sections are concerned, the code is compiled in two passes by \texttt{icc} -- once for the Node and once for the Device.  Although the above specified alignments are the respective preferred alignments, we are breaking the rule of enforcement here and will have to revisit how to appropriately do this.  Since we aim to send the majority of the computation on the Phi's, we may elect to just define the byte alignment to be 64 to guarantee that the Phi gets its preferences.\\
+
+\noindent Regardless, offloading this algorithm to the Phi's will be straightforward enough.  As with \texttt{matmul-}, we don't actually need to know anything about our neighboring blocks to carry forward with the computation.  The key will be delegating work evenly, and ensuring that memory is re-used on the Phi as much as possible.  There will invariably be an overhead associated with the synchronization between the two Phi's at each step (e.g. while checking the \texttt{done} flag), however we feel that for sufficiently large problem sizes we will see a good increase in speed by wielding the Phi's to our advantage.\\
+
+\noindent We will employ these tactics after we have finished bringing in the \texttt{matmul-} style sub-blocking into our code.
 
 \section{Summary}
 
