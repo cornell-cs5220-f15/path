@@ -67,6 +67,7 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
+    free(ltrans);
     return done;
 }
 
