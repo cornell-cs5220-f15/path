@@ -301,7 +301,7 @@ int main(int argc, char** argv)
     double t0 =MPI_Wtime();
     shortest_paths(n, l,np,rank);
     double t1 = MPI_Wtime();
-    
+    printf("ok");
     if (rank ==0){
 
         printf("== MPI with %d processors\n", np);
