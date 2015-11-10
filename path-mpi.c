@@ -5,9 +5,34 @@
 #include <math.h>
 #include <unistd.h>
 #include <omp.h>
-#include <mpi.h>
 #include "mt19937p.h"
-#include "path-mpi.h"
+
+#include <xmmintrin.h>// _mm_malloc
+#include <string.h>   // memset
+#include <mpi.h> // To use MPI
+
+#ifdef __MIC__
+    #define BYTE_ALIGN 64
+#else
+    #define BYTE_ALIGN 32
+#endif
+
+#ifdef __INTEL_COMPILER
+    #define DEF_ALIGN(x) __declspec(align((x)))
+    #define USE_ALIGN(var, align) __assume_aligned((var), (align));
+
+    // // frankly, this article is very unclear as to what needs to happen, lets just see what happens?
+    // //     https://software.intel.com/en-us/articles/memcpy-memset-optimization-and-control
+    // #define memcpy _intel_fast_memcpy
+    // #define memset _intel_fast_memset
+#else // GCC
+    #define DEF_ALIGN(x) __attribute__ ((aligned((x))))
+    #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
+#endif
+
+// global timing constants
+double square_avg = 0.0;
+long   num_square = 0;
 
 //ldoc on
 /**
@@ -41,29 +66,34 @@
  * identical, and false otherwise.
  */
 
-int square(int irank, int imin_, int jmin_, int imax_, int jmax_,
+int square(int imin_, int jmin_, int imax_, int jmax_,
            int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
-    int done = 1;
-    for (int j = jmin_; j < jmax_; ++j) {
-      int jn = j*n;
-      for (int i = imin_; i < imax_; ++i) {
-        int lij = lnew[jn+i];
-        for (int k = 0; k < n; ++k) {
-          int lkj = l[jn+k];
-          int lik = l[k*n+i];
-          if (lik + lkj < lij) {
-            lij = lik+lkj;
-            done = 0;
-          }
+  
+  USE_ALIGN(l,    BYTE_ALIGN);
+  USE_ALIGN(lnew, BYTE_ALIGN);
+  
+  int done = 1;
+  for (int j = jmin_; j < jmax_; ++j) {
+    int jn = j*n;
+    for (int i = imin_; i < imax_; ++i) {
+      int lij = lnew[jn+i];
+      for (int k = 0; k < n; ++k) {
+        int lkj = l[jn+k];
+        int lik = l[k*n+i];
+        if (lik + lkj < lij) {
+          lij = lik+lkj;
+          done = 0;
         }
-            lnew[j*n+i] = lij;
       }
+      lnew[j*n+i] = lij;
     }
-    return done;
+  }
+  return done;
 }
+
 
 /**
  *
@@ -74,23 +104,25 @@ int square(int irank, int imin_, int jmin_, int imax_, int jmax_,
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back 
+ * The functions `infinitize` and `deinfinitize` convert back
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
 
-static inline void infinitize(int imin_, int jmin_, int imax_, int jmax_, int n, int* l)
-{
-    for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0)
-            l[i] = n+1;
+static inline void infinitize(int n, int * restrict l) {
+  USE_ALIGN(l, BYTE_ALIGN);
+  
+  for (int i = 0; i < n*n; ++i)
+    if (l[i] == 0)
+      l[i] = n+1;
 }
 
-static inline void deinfinitize(int imin_, int jmin_, int imax_, int jmax_, int n, int* l)
-{
-    for (int i = 0; i < n*n; ++i)
-        if (l[i] == n+1)
-            l[i] = 0;
+static inline void deinfinitize(int n, int * restrict l) {
+  USE_ALIGN(l, BYTE_ALIGN);
+  
+  for (int i = 0; i < n*n; ++i)
+    if (l[i] == n+1)
+      l[i] = 0;
 }
 
 /**
@@ -107,23 +139,61 @@ static inline void deinfinitize(int imin_, int jmin_, int imax_, int jmax_, int 
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(MPI_Comm cart_comm, int irank, int imin_, int imax_, int jmin_, int jmax_, int n, int* restrict l)
+void shortest_paths(MPI_Comm cart_comm, int imin_, int imax_, int jmin_, int jmax_, int n, int* restrict l)
 {
-    // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(imin_,jmin_,imax_,jmax_,n, l);
-    for (int i = 0; i < n*n; i += n+1)
-      l[i] = 0;
+  USE_ALIGN(l, BYTE_ALIGN);
   
-    // Create global lnew
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    MPI_Allreduce(l,lnew,n*n,MPI_INT,MPI_MAX,cart_comm);
-    for (int done = 0; !done; ) {
-        int mydone = square(irank,imin_,jmin_,imax_,jmax_,n, l, lnew);
-        MPI_Allreduce(&mydone,&done,1,MPI_INT,MPI_MIN,cart_comm);
-        MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,cart_comm);
-    }
-    free(lnew);
-    deinfinitize(imin_,imax_,jmin_,jmax_,n, l);
+  printf("-------------------------------------------\n");
+  printf("Individual Squares:\n");
+  
+  // Generate l_{ij}^0 from adjacency matrix representation
+  double to_inf_start = omp_get_wtime();
+  infinitize(n, l);
+  double to_inf_stop  = omp_get_wtime();
+  
+  for (int i = 0; i < n*n; i += n+1)
+    l[i] = 0;
+  
+  // Repeated squaring until nothing changes
+  // int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+  size_t num_bytes = n*n*sizeof(int);
+  DEF_ALIGN(BYTE_ALIGN) int * restrict lnew = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
+  // memset(lnew, 0, num_bytes);
+  USE_ALIGN(lnew, BYTE_ALIGN);
+  
+  MPI_Allreduce(l,lnew,n*n,MPI_INT,MPI_MAX,cart_comm);
+  for (int done = 0; !done; ) {
+    
+    double square_start = omp_get_wtime();
+    int mydone = square(imin_,jmin_,imax_,jmax_,n, l, lnew);
+    double square_stop  = omp_get_wtime();
+    // See if all subdomains are done
+    MPI_Allreduce(&mydone,&done,1,MPI_INT,MPI_MIN,cart_comm);
+    // Update l from n to n+1
+    MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,cart_comm);
+    
+    
+    //
+    // tmp just to make sure avg is legit
+    /////////////////////////////////////////
+    printf(" -- %.16g\n", square_stop - square_start);
+    /////////////////////////////////////////
+    //
+    //
+    
+    // don't want to printf in here.
+    square_avg += square_stop-square_start;
+    num_square++;
+  }
+  _mm_free(lnew);
+  
+  double de_inf_start = omp_get_wtime();
+  deinfinitize(n, l);
+  double de_inf_stop  = omp_get_wtime();
+  
+  printf("To Inf: %.16g\n", to_inf_stop - to_inf_start);
+  printf("De Inf: %.16g\n", de_inf_stop - de_inf_start);
+  printf("-------------------------------------------\n");
 }
 
 /**
@@ -137,17 +207,22 @@ void shortest_paths(MPI_Comm cart_comm, int irank, int imin_, int imax_, int jmi
  * random number generator in lieu of coin flips.
  */
 
-int* gen_graph(int n, double p)
+int * gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
-    struct mt19937p state;
-    sgenrand(10302011UL, &state);
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i)
-            l[j*n+i] = (genrand(&state) < p);
-        l[j*n+j] = 0;
-    }
-    return l;
+  // int* l = calloc(n*n, sizeof(int));
+  // 'calloc'
+  size_t num_bytes = n*n*sizeof(int);
+  DEF_ALIGN(BYTE_ALIGN) int *l = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
+  memset(l, 0, num_bytes);
+  
+  struct mt19937p state;
+  sgenrand(10302011UL, &state);
+  for (int j = 0; j < n; ++j) {
+    for (int i = 0; i < n; ++i)
+      l[j*n+i] = (genrand(&state) < p);
+    l[j*n+j] = 0;
+  }
+  return l;
 }
 
 /**
@@ -169,28 +244,28 @@ int* gen_graph(int n, double p)
 
 int fletcher16(int* data, int count)
 {
-    int sum1 = 0;
-    int sum2 = 0;
-    for(int index = 0; index < count; ++index) {
-          sum1 = (sum1 + data[index]) % 255;
-          sum2 = (sum2 + sum1) % 255;
-    }
-    return (sum2 << 8) | sum1;
+  int sum1 = 0;
+  int sum2 = 0;
+  for(int index = 0; index < count; ++index) {
+    sum1 = (sum1 + data[index]) % 255;
+    sum2 = (sum2 + sum1) % 255;
+  }
+  return (sum2 << 8) | sum1;
 }
 
 void write_matrix(const char* fname, int n, int* a)
 {
-    FILE* fp = fopen(fname, "w+");
-    if (fp == NULL) {
-        fprintf(stderr, "Could not open output file: %s\n", fname);
-        exit(-1);
-    }
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) 
-            fprintf(fp, "%d ", a[j*n+i]);
-        fprintf(fp, "\n");
-    }
-    fclose(fp);
+  FILE* fp = fopen(fname, "w+");
+  if (fp == NULL) {
+    fprintf(stderr, "Could not open output file: %s\n", fname);
+    exit(-1);
+  }
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j)
+      fprintf(fp, "%d ", a[j*n+i]);
+    fprintf(fp, "\n");
+  }
+  fclose(fp);
 }
 
 /**
@@ -209,60 +284,57 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
-    int n    = 200;            // Number of nodes
-    double p = 0.05;           // Edge probability
-    const char* ifname = NULL; // Adjacency matrix file name
-    const char* ofname = NULL; // Distance matrix file name
-    int npx; // Number of processors in horz. direction
-    int npy; // Number of processors in vert. direction
-
-    // Option processing
-    extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:x:y:";
-    int c;
-    while ((c = getopt(argc, argv, optstring)) != -1) {
-        switch (c) {
-        case 'h':
-            fprintf(stderr, "%s", usage);
-            return -1;
-        case 'n': n = atoi(optarg); break;
-        case 'p': p = atof(optarg); break;
-        case 'o': ofname = optarg;  break;
-        case 'i': ifname = optarg;  break;
-        case 'x': npx = atoi(optarg); break;
-        case 'y': npy = atoi(optarg); break;
-
-        }
+  double overall_start = omp_get_wtime();
+  
+  int n     = 200;                   // Number of nodes
+  double p  = 0.05;                  // Edge probability
+  const char* ifname = NULL;         // Adjacency matrix file name
+  const char* ofname = NULL;         // Distance matrix file name
+  int npx; // Number of processors in horz. direction
+  int npy; // Number of processors in vert. direction
+  
+  // Option processing
+  extern char* optarg;
+  const char* optstring = "hn:d:p:o:i:x:y:";
+  int c;
+  // int num_threads <-- defined at top for global scope
+  while ((c = getopt(argc, argv, optstring)) != -1) {
+    switch (c) {
+      case 'h':
+        fprintf(stderr, "%s", usage);
+        return -1;
+      case 'n': n         = atoi(optarg); break;
+      case 'p': p         = atof(optarg); break;
+      case 'o': ofname    = optarg;       break;
+      case 'i': ifname    = optarg;       break;
+      case 'x': npx = atoi(optarg); break;
+      case 'y': npy = atoi(optarg); break;
     }
-
-    // Graph generation + output
-    int* l = gen_graph(n, p);
-    if (ifname)
-        write_matrix(ifname,  n, l);
-    // Time the shortest paths code
-    double t0 = omp_get_wtime();
+  }
+  
+  // Graph generation + output
+  double gen_start = omp_get_wtime();
+  int* l = gen_graph(n, p);
+  double gen_stop  = omp_get_wtime();
+  
+  if (ifname)
+    write_matrix(ifname,  n, l);
+  
+  // Time the shortest paths code
+  double t0 = omp_get_wtime();
   
     /* Partitioning created with reference to NGA,
      * which is a research CFD code written by Olivier Desjardins,
      * Cornell MAE faculty.
      */
   
-    // Launch MPI Team
-    // Start ability to use MPI
-    MPI_Init(NULL,NULL);
-  
-    // Each processor learns it rank
     // Start the communicator, get number of procs
+    MPI_Init(NULL,NULL);
+    int world_size;
     MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   
     int irank;
     MPI_Comm_rank(MPI_COMM_WORLD, &irank);
-    int iroot = 0; // Master processor
-  
-    if(npx*npy != world_size && irank==iroot) {
-      printf("ERROR:  %d procs requested while only %d procs available \n",npx*npy,world_size);
-      exit(-1);
-    }
   
     int dim[2], period[2], reorder;
     dim[0] = npx; dim[1]=npy; // Size of proc rectangle
@@ -279,22 +351,24 @@ int main(int argc, char** argv)
     irank = irank + 1;
     iproc = iproc + 1;
     jproc = jproc + 1;
+    int iroot = 1; // Master processor
+  
+    if(npx*npy != world_size && irank==iroot) {
+      printf("ERROR:  %d procs requested while only %d procs available \n",npx*npy,world_size);
+      exit(-1);
+    }
   
     // Set up indexing for convenience and translation back to global l
     int nx = n;
     int ny = n;
-    int nx_, ny_; //, nxo_, nyo_;
+    int nx_, ny_;
     int imin, jmin, imax, jmax;
-//    int imino, jmino, imaxo, jmaxo;
     int imin_, jmin_, imax_, jmax_;
-//    int imino_, jmino_, imaxo_, jmaxo_;
     const int nghost = 2; //number of ghosts on both sides
   
   
     imin = 0;
-//    imax = nx;
     jmin = 0;
-//    jmax = ny;
 
     // Organize x (horiztonal)
     int q = floor(nx/npx);
@@ -307,10 +381,7 @@ int main(int argc, char** argv)
       nx_ = q;
       imin_ = imin + r*(q+1) + (iproc-r-1)*q;
     }
-//    nxo_ = nx_ + 2*nghost;
     imax_ = imin_ + nx_;
-//    imino_ = imin_ - nghost;
-//    imaxo_ = imax_ + nghost;
 
     // Organize y (vertical)
         q = floor(ny/npy);
@@ -323,28 +394,40 @@ int main(int argc, char** argv)
       ny_ = q;
       jmin_ = jmin + r*(q+1) + (jproc-r-1)*q;
     }
-//    nyo_ = ny_ + 2*nghost;
     jmax_ = jmin_ + ny_;
-//    jmino_ = jmin_ - nghost;
-//    jmaxo_ = jmax_ + nghost;
   
+  double t_sp_start = omp_get_wtime();
     // Each proc computes on its smaller square
-    shortest_paths(cart_comm,irank, imin_,imax_,jmin_,jmax_,n,l);
-  
-    double t1 = omp_get_wtime();
+    shortest_paths(cart_comm, imin_,imax_,jmin_,jmax_,n,l);
 
+  double t1 = omp_get_wtime();
+  
+  
+  // Generate output file
+  if (ofname)
+    write_matrix(ofname, n, l);
+  
+  // check solution
+  int check = fletcher16(l, n*n);
+  
+  // Clean up
+  _mm_free(l);
+  
+  double overall_stop = omp_get_wtime();
+  if(irank == iroot) {
     printf("== MPI with %d threads\n", world_size);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
-
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
-
-    // Clean up
-    MPI_Finalize();
-    free(l);
-    return 0;
+    printf("Check: %X\n", check);
+    printf("-------------------------------------------\n");
+    printf("Timings:\n");
+    printf("MPI Init:  %.16g\n", t_sp_start-t0);
+    printf("Shortest Paths:  %.16g\n", t1 - t_sp_start);
+    printf("Square Average:  %.16g\n", square_avg / ((double)num_square));
+    printf("Overall:         %.16g\n", overall_stop - overall_start);
+  }
+  // End MPI
+  MPI_Finalize();
+  return 0;
 }
+
