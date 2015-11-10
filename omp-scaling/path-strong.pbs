@@ -9,5 +9,5 @@ module load cs5220
 cd $PBS_O_WORKDIR
 for T in `seq 1 32`;
 do
-	./path.x -n 10000 -t $T
+	./path.x -n 2000 -t $T
 done
