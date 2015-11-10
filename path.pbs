@@ -5,6 +5,14 @@
 #PBS -N path
 #PBS -j oe
 
+# default args / control over what is submitted
+# usage example: qsub -v SIZE=900,THREADS=12 path.pbs
+P_SIZE=${SIZE:-2000}
+P_THREADS=${THREADS:-24} # aka omp max threads for node
+P_PROB=${PROB:-0.05}
+
+echo $PBS_JOBID >> $PBS_O_WORKDIR/out_files.txt
+
 module load cs5220
 cd $PBS_O_WORKDIR
-./path.x -n 2000
+./path.x -n $P_SIZE -t $P_THREADS -p $P_PROB
