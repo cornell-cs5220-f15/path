@@ -22,7 +22,9 @@
 \date{\textbf{September 2015}}
 
 \usepackage{natbib}
+\usepackage[miktex]{gnuplottex}
 \usepackage{graphicx}
+\usepackage{color}
 \usepackage{pdfpages}
 
 \usepackage{enumerate}
@@ -79,13 +81,48 @@ For the third assignment, we employ techniques we have learned in previous assig
   \item Recent trends in high performance computing fall more along the lines of ``first, use MPI to coordinate between multiple nodes, then use OpenMP on each node to further parallelize the work.''
 \end{enumerate}
 
-\noindent The following section describes the implementation of MPI, chosen for its ease of implementation and decent performance. Additionally, we have not been able to run on multiple nodes of Totient at once using MPI, preventing our implementation of a heterogeneous parallelization method mentioned above in statement~(2).
+\section{Optimizations}
 
 \section{Message Passing Interface (MPI)}
+The method of MPI parallelization was chosen for its ease of implementation and decent performance. To start, the Floyd-Warshall pathing algorithm, originally parallelized using OpenMP, was changed in order to make use of MPI. First, the parallelization and delegation of work was moved outside of the square function to the main function, in order to eliminate multiple parallel initialization costs. From this point, the pathing matrix is split into $\mathtt{npx}\times \mathtt{npy}$ subdomains, where \texttt{npx} and \texttt{npy} are the number of processors used to divide the matrix in the horizontal and vertical directions, respectively. \texttt{MPI\_CART} commands are used to organize these threads in an optimal orientation and provide coordinates for the responsibilities of each processor, which are then used to determine the starting and ending indices of each threads subdomain in relation to the global pathing matrix. At this point, each thread has its own copy of the entire pathing matrix and calls the \texttt{shortest\_paths} function. \\
 
-yo rob checkout the intro and make sure that is in line with what you were telling me.  i'll leave it to you with whether or not you want to include a statement about how MPI worked on the other cluster you have access to.  you may want to be vague to not incriminate yourself
+\noindent The functions \texttt{infinitize} and \texttt{deinfinitize}, as well as the diagonal zeroing loop, were not parallelized due to their relatively little computational expense. In doing so, the associated parallel communication costs were avoided. The values of \texttt{l} are then copied into \texttt{lnew} using \texttt{MPI\_ALLREDUCE} with the \texttt{MPI\_MIN} operator. In this way, consistency between processors is ensured. It would also be easily possible to parallelize \texttt{infinitize} and \texttt{deinfinitize} with this method of communication, if the problem size became large enough to warrant the additional communication costs associated with it. \\
 
-\section{Optimizations}
+\noindent In the main loop, the \texttt{square} function is called by each thread, where each thread determines the shortest paths for its subdomain. Once each thread is finished inside square, \texttt{MPI\_ALLREDUCE} is once again used with the \texttt{MPI\_MIN} operator to determine if all processors returned a value of 1, indicating all shortest paths have been found. The array \texttt{lnew} is then communicated and stored in \texttt{l}, once again using \texttt{MPI\_ALLREDUCE} with the \texttt{MPI\_MIN} operator. \\
+
+While this is not the most efficient MPI implementation, we believe it to be sufficient to show that shared memory OpenMP will be significantly faster than MPI for problem sizes that fit on one node. This is due to the nature of the pathing algorithm, where every point to the left, right, top, and bottom of the element of interest needs to be checked to determine if it provides a shorter path, making this more efficient with shared memory. If the problem sizes driven by an application scaled greatly so that they could no longer fit on one node, the MPI implementation could be rewritten to provide some marginal gains in performance and noticeable gains in memory efficiency, enabling the algorithm to be run on very large problem sizes. \\
+
+\noindent Due to the ability of MPI to utilize several nodes, we believe a heterogeneous parallelization strategy would be ideal, where MPI is used for inter-node communications and OpenMP is otherwise used to compute on the Xeon Phi cores. At this time, however, we have been unable to run on multiple nodes of Totient using MPI, preventing us from implementing this.
+
+\subsection{MPI Scaling Study}
+In order to understand the performance of the MPI-parallelized shortest paths algorithm, strong and weak scaling studies were run. For the strong scaling, six simulations were run for a problem size of $4000 \times 4000$ for four separate probabilities, 0.025, 0.05, 0.1, 0.3. The results are plotted in Figure~\ref{mpi_ss}.
+
+\begin{figure}
+	\begin{center}
+		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
+			#set key at 15.8,41
+			#set size 1.0,0.5              
+			unset log                          
+			unset label                          
+			#set xtic auto offset 0,-0.5 font ",10"                     
+			#set ytic 25 font ",10" 
+			#Set Info
+			set xlabel "Number of Threads"
+			#set xlabel offset 0,-0.5
+			set ylabel "Scaling Efficiency"
+			#set ylabel offset -1.25,0
+			#set xr [0.0:16.0]
+			#set yr [-50.0:50.0]
+			plot "./benchmarking/mpi/strong/p025strong.txt" u 1:(490.5691/$2/$1) t 'p = 0.025' w linespoints, \
+			"./benchmarking/mpi/strong/p05strong.txt" u 1:(538.9763960838318/$2/$1) t 'p = 0.050' w lp, \
+			"./benchmarking/mpi/strong/p10strong.txt" u 1:(325.8776059150/$2/$1) t 'p = 0.100' w lp, \
+			"./benchmarking/mpi/strong/p30strong.txt" u 1:(325.54634/$2/$1) t 'p = 0.300' w lp
+		\end{gnuplot}
+		\caption{Strong scaling for MPI parallelized path algorithm with $\mathtt{n} = 4000$.}
+		\label{mpi_ss}
+	\end{center}
+\end{figure}
+
 
 \section{Offloading to the Phi's}
 
