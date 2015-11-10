@@ -117,8 +117,8 @@ void shortest_paths(int n, int* restrict l)
         l = lnew;
         lnew = temp;
     }
-    if(loriginal != l) {
-        memcpy(loriginal, l, n*n * sizeof(int));
+    if(l_original != l) {
+        memcpy(l_original, l, n*n * sizeof(int));
         free(l);
     } else {
         free(lnew);
