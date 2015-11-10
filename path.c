@@ -29,6 +29,10 @@
     #define USE_ALIGN(var, align) ((void)0) /* __builtin_assume_align is unreliabale... */
 #endif
 
+#ifndef CHAR_BIT
+    #define CHAR_BIT 8
+#endif
+
 // how many threads?
 int n_threads = 1;
 
@@ -86,10 +90,20 @@ int square(int n,                 // Number of nodes
                 for (int k = 0; k < n; ++k) {
                     int lik = l[k*n+i];
                     int lkj = l[j*n+k];
-                    if (lik + lkj < lij) {
-                        lij = lik+lkj;
-                        done = 0;
-                    }
+
+                    // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+                    // If you know that INT_MIN <= x - y <= INT_MAX, then you can use the following,
+                    // which are faster because (x - y) only needs to be evaluated once.
+
+                    int summand = lik + lkj;
+                    lij = lij + ((summand - lij) & ((summand - lij) >> (sizeof(int) * CHAR_BIT - 1))); // min(summand, lij)
+                    done = lij == summand;
+
+
+                    // if (lik + lkj < lij) {
+                    //     lij = lik+lkj;
+                    //     done = 0;
+                    // }
                 }
                 lnew[j*n+i] = lij;
             }
