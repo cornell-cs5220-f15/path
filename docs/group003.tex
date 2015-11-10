@@ -269,7 +269,11 @@ The following compilation hint has been defined:
   \item When the code is compiled for the Device, the byte alignment will be 64.
 \end{enumerate}
 
-\noindent This is because, where \texttt{\#pragma offload target(mic)} sections are concerned, the code is compiled in two passes by \texttt{icc} -- once for the Node and once for the Device.  Although the above specified alignments are the respective preferred alignments, we are breaking the rule of enforcement here and will have to revisit how to appropriately do this.  Since we aim to send the majority of the computation on the Phi's, we may elect to just define the byte alignment to be 64 to guarantee that the Phi gets its preferences.
+\noindent This is because, where \texttt{\#pragma offload target(mic)} sections are concerned, the code is compiled in two passes by \texttt{icc} -- once for the Node and once for the Device.  Although the above specified alignments are the respective preferred alignments, we are breaking the rule of enforcement here and will have to revisit how to appropriately do this.  Since we aim to send the majority of the computation on the Phi's, we may elect to just define the byte alignment to be 64 to guarantee that the Phi gets its preferences.\\
+
+\noindent Regardless, offloading this algorithm to the Phi's will be straightforward enough.  As with \texttt{matmul-}, we don't actually need to know anything about our neighboring blocks to carry forward with the computation.  The key will be delegating work evenly, and ensuring that memory is re-used on the Phi as much as possible.  There will invariably be an overhead associated with the synchronization between the two Phi's at each step (e.g. while checking the \texttt{done} flag), however we feel that for sufficiently large problem sizes we will see a good increase in speed by wielding the Phi's to our advantage.\\
+
+\noindent We will employ these tactics after we have finished bringing in the \texttt{matmul-} style sub-blocking into our code.
 
 \section{Summary}
 
