@@ -211,7 +211,8 @@ int main(int argc, char** argv)
     const char* ofname = NULL; // Distance matrix file name
     int nprocs, irank;
     int imin, imax, jmin, jmax;
-    double t1, t2;
+    int npy, npx;
+    double t0, t1;
 
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
@@ -219,7 +220,7 @@ int main(int argc, char** argv)
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:npx:npy:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -235,7 +236,7 @@ int main(int argc, char** argv)
         }
     }
 
-    imin =  (mod(irank % npx))*n/npx;
+    imin =  (irank % npx)*n/npx;
     imax = imin + (n/npx) - 1;
     jmin = floor((irank)/npx)*(n/npy);
     jmax = jmin + (n/npy) - 1;
@@ -249,7 +250,7 @@ int main(int argc, char** argv)
     if(irank = 1) t0 = MPI_Wtime();
     //ok, now probably just each processor computes some shortest paths and then broadcasts 
     shortest_paths(n, l, irank, imin, imax, jmin, jmax);
-    t2 = MPI_Wtime();
+    t1 = MPI_Wtime();
 
     printf("== MPI with %d threads\n", nprocs);
     printf("n:     %d\n", n);
