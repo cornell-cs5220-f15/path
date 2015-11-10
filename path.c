@@ -79,7 +79,7 @@ int square(int n,               // Number of nodes
 static inline void infinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0)
+        if (l[i] == 0 && i % (n + 1) != 0)
             l[i] = n+1;
 }
 
@@ -108,8 +108,6 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
