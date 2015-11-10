@@ -68,9 +68,9 @@
 \maketitle
 
 \section{Introduction}
-For the third assignment, we employ techniques we have learned in previous assignments as well as explore the capabilities of the Message Passing Interface (MPI) in the context of the of the \href{https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm}{\textcolor{blue}{\underline{Floyd-Warshall}}} algorithm for computing all pairwise shortest paths.  As described in the assignment description, this assignment is very similar to the matrix multiplication algorithm we have studied previously in terms of overall problem setup, and only differs in the actual computations being performed.\\
+For the third assignment, we employ techniques we have learned in previous assignments as well as explore the capabilities of the Message Passing Interface (MPI) in the context of the \href{https://en.wikipedia.org/wiki/Floyd\%E2\%80\%93Warshall_algorithm}{\textcolor{blue}{\underline{Floyd-Warshall}}} algorithm for computing all pairwise shortest paths.  As described in the assignment description, this assignment is very similar to the matrix multiplication algorithm we have studied previously in terms of overall problem setup, and only differs in the actual computations being performed.\\
 
-\noindent We begin by focusing our efforts on using MPI to coordinate computation across multiple nodes on the \emph{totient} cluster, and then discuss optimizations of the algorithm to speedup the computation.  We end with a discussion of offloading the computation to the Xeon Phi's, and a summary of our tactics.\\
+\noindent We begin by focusing our efforts on using MPI to allow computation across multiple nodes on the \emph{totient} cluster, and then discuss optimizations of the algorithm to speedup the computation.  We end with a discussion of offloading the computation to the Xeon Phi's, and a summary of our tactics.\\
 
 \noindent It is worth mentioning at this point that the assignment asked us to implement a parallel MPI algorithm, and then choose between optimizing the given OpenMP implementation and our own MPI implementation.  We choose to do both for two reasons:
 
@@ -79,7 +79,7 @@ For the third assignment, we employ techniques we have learned in previous assig
   \item Recent trends in high performance computing fall more along the lines of ``first, use MPI to coordinate between multiple nodes, then use OpenMP on each node to further parallelize the work.''
 \end{enumerate}
 
-\noindent The following section, though, describes the reality of statement (2) with respect to the \emph{totient} cluster.
+\noindent The following section describes the implementation of MPI, chosen for its ease of implementation and decent performance. Additionally, we have not been able to run on multiple nodes of Totient at once using MPI, preventing our implementation of a heterogeneous parallelization method mentioned above in statement~(2).
 
 \section{Message Passing Interface (MPI)}
 
