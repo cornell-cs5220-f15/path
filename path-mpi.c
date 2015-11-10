@@ -133,7 +133,7 @@ void shortest_paths(int n, int* restrict l, int np, int rank)
 {
     int size1=((rank+1)*n/np)-((rank)*n/np);
     
-    int* restrict local=(int *) calloc(n*size1*sizeof(int));
+    int* local=(int *) calloc(n*size1*sizeof(int));
     
     int *countElements=(int *) calloc(np,sizeof(int));
     int *displs=(int *) calloc(np,sizeof(int));
