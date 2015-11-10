@@ -38,57 +38,33 @@
  * The return value for `square` is true if `l` and `lnew` are
  * identical, and false otherwise.
  */
-/*
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
-{
-    int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
-        }
-    }
-    return done;
-}
-*/
 
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
+int square(int n,              
+           int* restrict l,    
+           int* restrict lnew) 
 {
-  //Copy Optimization for better cache hits in the parallel for
+
   int* restrict l_copy = malloc(n*n*sizeof(int));
-  for (int j = 0; j < n; ++j) {
-    for (int i = 0; i < n; ++i) {
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
       l_copy[i*n + j] = l[j*n + i];
     }
   }
     
   int done = 1;
 #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-  for (int j = 0; j < n; ++j) {
-    for (int i = 0; i < n; ++i) {
-      int lij = l[j*n+i];
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      int lij = l[i*n+j];
       for (int k = 0; k < n; ++k) {
-	int lik = l_copy[i*n+k];
-	int lkj = l[j*n+k];
-	if (lik + lkj < lij) {
-	  lij = lik+lkj;
+	int ljk = l_copy[j*n+k];
+	int lki = l[i*n+k];
+	if (ljk + lki < lij) {
+	  lij = ljk+lki;
 	  done = 0;
 	}
       }
-      lnew[j*n+i] = lij;
+      lnew[i*n+j] = lij;
     }
   }
   free(l_copy);
