@@ -5,6 +5,44 @@
 \section{Tuning the Floyd-Warshall Algorithm}
 \label{sec-tune}
 
+\subsection{Copy Optimization}
+\label{sec-tune-copy}
+
+We implemented copy optimization to address the cache locality issue
+raised by the VTune profiler. At the beginning of each iteration of the
+function square, we create an additional transposed copy of the matrix,
+so that we can use this matrix when accessing the array in row-major
+order. We can see significant performance gains from doing so, especially
+as the number of nodes in the graph increases as shown in
+Figure~\ref{fig-tune-copy-0}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\tw]{fig-tune-copy-0.png}
+  \caption{\textbf{Performance of Copy Optimization --} Execution time of
+    the parallel implementation of the algorithm running with 24 threads
+    across a wide range of dataset sizes with and without copy
+    optimization.}
+  \label{fig-tune-copy-0}
+\end{figure}
+
+From this experiment, we can see that when n is small (< 1000), the
+overheads from copying outweighs the benefits of cache locality, but as
+the number of nodes increases past 1000, we see significant improvement
+gains.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\tw]{fig-tune-copy-1.png}
+  \caption{\textbf{VTune profiling output of Open MP with copy/transpose
+      optimization}}
+  \label{fig-tune-copy-1}
+\end{figure}
+
+The performance benefits of reading from a transposed copy of the matrix
+is also shown in the profiling output of the tuned code in
+Figure~\ref{fig-tune-copy-1}, as seen from the reduced CPU time.
+
 \subsection{Manual Vectorization}
 \label{sec-tune-vector}
 

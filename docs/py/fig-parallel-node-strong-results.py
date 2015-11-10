@@ -41,10 +41,8 @@ plt.rcParams['figure.figsize']     = fig_size
 # Benchmarks
 
 bmarks = [
-  'dam_break',
-  'pond',
-  'river',
-  'wave',
+  'MPI (auto-vec)',
+  'MPI (manual-vec)',
 ]
 
 num_bmarks = len( bmarks )
@@ -59,6 +57,8 @@ configs = [
   '8',
   '12',
   '16',
+  '20',
+  '24',
 ]
 
 num_configs = len( configs )
@@ -70,48 +70,60 @@ perf_data = [
   # serial
 
   [
-    4.43e-2, 2.91e-2, 3.60e-2, 4.40e-2,
+    5.76, 3.48,
   ],
 
   # parallel (2 threads)
 
   [
-    2.94e-2, 2.34e-2, 2.93e-2, 3.54e-2,
+    2.04, 1.31,
   ],
 
   # parallel (4 threads)
 
   [
-    1.32e-2, 8.67e-3, 1.10e-2, 1.31e-2,
+    1.06, 0.62
   ],
 
   # parallel (6 threads)
 
   [
-    1.03e-2, 8.33e-3, 1.06e-2, 1.04e-2,
+    0.71, 0.43,
   ],
 
   # parallel (8 threads)
 
   [
-    8.21e-3, 6.44e-3, 8.15e-3, 9.70e-3,
+    0.58, 0.55,
   ],
 
   # parallel (12 threads)
 
   [
-    1.06e-2, 4.97e-3, 1.07e-2, 7.33e-3,
+    0.39, 0.25,
   ],
 
   # parallel (16 threads)
 
   [
-    7.22e-3, 5.66e-3, 6.98e-3, 8.52e-3,
+    0.51, 0.29,
+  ],
+
+  # parallel (20 threads)
+
+  [
+    0.41, 0.24,
+  ],
+
+  # parallel (24 threads)
+
+  [
+    0.38, 0.22,
   ],
 
 ]
 
-perf_data = [ np.array( perf_data[0] ) / np.array( data ) for data in perf_data ]
+perf_data = [ np.array( data ) for data in perf_data ]
 
 #-------------------------------------------------------------------------
 # Plot parameters
@@ -124,7 +136,7 @@ mid = num_configs / 2.0
 
 # Bar widths
 
-width = 0.10
+width = 0.08
 
 # Colors
 
@@ -165,8 +177,8 @@ ax  = fig.add_subplot(111)
 ax.set_xticks( ind+mid*width+width )
 ax.set_xticklabels( bmarks )
 
-ax.set_xlabel( 'Initial Conditions', fontsize=16 )
-ax.set_ylabel( 'Speedup',            fontsize=16 )
+#ax.set_xlabel( 'Configurations', fontsize=16 )
+ax.set_ylabel( 'Execution Time (s)', fontsize=16 )
 
 ax.grid(True)
 
@@ -188,12 +200,12 @@ ax.yaxis.set_ticks_position('left')
 
 # Add horizontal line for baseline
 
-plt.axhline( y=1, color='k', linewidth=1.5 )
+#plt.axhline( y=1, color='k', linewidth=1.5 )
 
 # Legend
 
 ax.legend( rects, configs, loc=8, bbox_to_anchor=(0.01,1.02,0.98,0.1),
-           ncol=4, borderaxespad=0, prop={'size':12}, frameon=False )
+           ncol=5, borderaxespad=0, prop={'size':12}, frameon=False )
 
 # Pretty layout
 

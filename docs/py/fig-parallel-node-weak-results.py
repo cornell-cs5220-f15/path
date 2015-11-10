@@ -41,10 +41,7 @@ plt.rcParams['figure.figsize']     = fig_size
 # Benchmarks
 
 bmarks = [
-  'dam_break',
-  'pond',
-  'river',
-  'wave',
+  'MPI (manual-vec)',
 ]
 
 num_bmarks = len( bmarks )
@@ -59,6 +56,8 @@ configs = [
   '8',
   '12',
   '16',
+  '20',
+  '24',
 ]
 
 num_configs = len( configs )
@@ -70,43 +69,55 @@ perf_data = [
   # serial
 
   [
-    4.43e-2, 2.91e-2, 3.60e-2, 4.40e-2,
+    0.0022,
   ],
 
   # parallel (2 threads)
 
   [
-    5.80e-2, 4.92e-2, 5.78e-2, 6.58e-2,
+    0.011,
   ],
 
   # parallel (4 threads)
 
   [
-    1.02e-1, 5.87e-2, 1.00e-1, 1.11e-1,
+    0.044,
   ],
 
   # parallel (6 threads)
 
   [
-    1.08e-1, 8.76e-2, 1.14e-1, 1.27e-1,
+    0.098,
   ],
 
   # parallel (8 threads)
 
   [
-    2.47e-1, 1.70e-1, 2.21e-1, 2.44e-1,
+    0.17,
   ],
 
   # parallel (12 threads)
 
   [
-    5.42e-1, 4.46e-1, 6.54e-1, 6.10e-1,
+    0.46
   ],
 
   # parallel (16 threads)
 
   [
-    9.82e-1, 6.86e-1, 9.40e-1, 1.10e0,
+    8.5,
+  ],
+
+  # parallel (20 threads)
+
+  [
+    21.0,
+  ],
+
+  # parallel (24 threads)
+
+  [
+    36.8,
   ],
 
 ]
@@ -124,7 +135,7 @@ mid = num_configs / 2.0
 
 # Bar widths
 
-width = 0.10
+width = 0.15
 
 # Colors
 
@@ -165,14 +176,14 @@ ax  = fig.add_subplot(111)
 ax.set_xticks( ind+mid*width+width )
 ax.set_xticklabels( bmarks )
 
-ax.set_xlabel( 'Initial Conditions', fontsize=16 )
-ax.set_ylabel( 'Speedup',            fontsize=16 )
+#ax.set_xlabel( 'Initial Conditions', fontsize=16 )
+ax.set_ylabel( 'Speedup', fontsize=16 )
 
 ax.grid(True)
 
 # Set axis limits
 
-plt.axis( xmax=num_bmarks-1+(num_configs+2)*width )
+plt.axis( xmax=num_bmarks-1+(num_configs+2)*width, ymax=0.2 )
 
 # Add bars for each configuration
 
@@ -188,11 +199,11 @@ ax.yaxis.set_ticks_position('left')
 
 # Add horizontal line for baseline
 
-plt.axhline( y=1, color='k', linewidth=1.5 )
+#plt.axhline( y=1, color='k', linewidth=1.5 )
 
 # Legend
 
-ax.legend( rects, configs, loc=8, bbox_to_anchor=(0.01,1.02,0.98,0.1), ncol=4,
+ax.legend( rects, configs, loc=8, bbox_to_anchor=(0.01,1.02,0.98,0.1), ncol=5,
            borderaxespad=0, prop={'size':12}, frameon=False )
 
 # Pretty layout

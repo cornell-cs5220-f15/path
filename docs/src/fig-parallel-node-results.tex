@@ -30,8 +30,12 @@
       Floyd-Warshall Algorithm Running on Compute Nodes --} Performance
     of the parallel implementation of the Floyd-Warshall algorithm
     running on the Totient compute nodes compared against the provided
-    serial implementation. All speedups are the execution time normalized
-    to the serial implementation. }
+    serial implementation. For the strong scaling study, a dataset with
+    2000 nodes is used, and absolute execution time is shown for both the
+    auto-vectorized and manually vectorized code. For the weak scaling
+    study, the dataset is increased at the same rate as the number of
+    ranks, and all speedups are normalized to the serial
+    implementation using manually vectorized code. }
 
   \label{fig-parallel-node-results}
 
