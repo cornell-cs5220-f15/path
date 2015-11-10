@@ -108,20 +108,15 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
-    int* l_original = l;
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int flag = 1;
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        int* temp = l;
-        l = lnew;
-        lnew = temp;
+        done = flag ? square(n, l, lnew) : square(n, lnew, l);
+        flag = !flag;
     }
-    if(l_original != l) {
-        memcpy(l_original, l, n*n * sizeof(int));
-        free(l);
-    } else {
-        free(lnew);
+    if(!flag) {
+        memcpy(l, lnew, n*n * sizeof(int));
     }
     deinfinitize(n, l);
 }
