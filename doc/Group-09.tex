@@ -1,5 +1,11 @@
 \documentclass{scrartcl}
 \usepackage{dominatrix}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{
+  every axis/.append style={font=\small},
+  compat=newest
+}
 
 \begin{document}
   \begin{framed}
@@ -15,7 +21,7 @@
   Issues with the Intel's VTune Amplifier prevented advanced hotspots analysis up till the time of submission. As a result, the timings reported in subsequent sections are either wall-clock times obtained via \texttt{omp\_get\_time} encapsulation of function calls, or CPU times obtained from VTune Amplifier's concurrency analysis mode.
 
   \section{Parallelism}
-  The codebase ships by default with good OpenMP annotations that are difficult to beat. \autoref{table:base-conc} shows a breakdown of the time spent per function for the untuned code when run on 2000 nodes generated with an edge inclusion probability of 0.05. 86\% of the CPU time spend by \texttt{square} kernel is ideal, and the bottleneck appears to be the implicit barrier at the end of the parallel region collating the shared and reduced variables. To some extent, this is an unavoidable overhead.
+  The codebase ships by default with good OpenMP annotations that are difficult to beat. \autoref{table:base-conc} shows a breakdown of the time spent per function for the untuned code when run on 2000 nodes generated with an edge inclusion probability of 0.05. Up to 86\% of the CPU time spend by \texttt{square} kernel is ideal, and the bottleneck appears to be the implicit barrier at the end of the parallel region collating the shared and reduced variables. To some extent, this is an unavoidable overhead.
 
   Note that the \texttt{memcpy} operation executed at the end of every iteration of the while-loop does not constitute a significant portion of the CPU time because the problem size is small. Instead, the difference in execution time for each iteration of the for-loop within \texttt{square} dominates. However, when the problem size is increased significantly, serial-bound operations takes up a larger proportion of the CPU time in comparison to the spinwait of the barrier because threading economies of scale apply. \autoref{table:large-conc} shows a breakdown similar to that of \autoref{table:base-conc} for 16,000 nodes, and attention is drawn to the difference in time contribution from \texttt{\_intel\_ssse3\_memcpy} and \texttt{\_\_kmpc\_fork\_barrier}. Unfortunately, the \texttt{memcpy} call is difficult to optimize as no parallelized version exists. In theory, it should be possible to either perform the copy operation using AVX instructions (where the grid is a multiple of 4, or padding to that end), or modify the values in place. However, since the main bottleneck is still the \texttt{square} kernel, we ignore these minor optimizations in-lieu of focusing our efforts where there is larger room for improvement.
 
@@ -56,7 +62,46 @@
   \end{table}
 
   The loop structure for this problem is somewhat similar to that of the previous project---the termination condition is enforced by a while-loop which \emph{has} to run in a single-threaded environment, whereas the nested for-loop benefits from parallel execution.
+
+  In Project 2, our approach was as follows:
+  \begin{enumerate}[nosep]
+    \item Initialize the thread pool as early as possible, and outside any iteration scopes
+    \item Enforce a master thread that maintains the loop invariant
+    \item Allocate work via tasks created within the nested for-loop (from the master thread), and collate results using an implicit wait
+  \end{enumerate}
+
+  The challenge with Project 3 is that the producer-consumer model created by items (2) and (3) is incompatible with the reduction construct provided by a \texttt{\#pragma omp for} environment.
   \section{Vectorization}
   \section{Blocking}
+  \section{Scaling Studies}
+  \begin{figure}[ht!]
+    \centering
+    \resizebox{0.75\textwidth}{!}{%
+    \begin{tikzpicture}
+      \begin{axis}[axis lines=left,xlabel=$n$,ylabel=Wall Clock Time,xmin=500,xmax=8100,ymin=0,ymax=65]
+      \addplot[only marks] coordinates {
+        (500, 0.1395077) (1000, 0.2093694) (2000, 1.1027736) (4000, 10.261178) (8000, 59.45483)
+      };
+      \addplot[domain=500:8100,samples=1000] {0.008*x - 10.645};
+      \end{axis}
+    \end{tikzpicture}
+  }
+  \caption{Strong scaling study varying $n$ from 500 to 8000 with 24 OMP threads. The best-fit line is linear with $R^2 = 0.912$\label{graph:strong-scaling}}
+  \end{figure}
+
+  \begin{figure}[ht!]
+    \centering
+    \resizebox{0.75\textwidth}{!}{%
+    \begin{tikzpicture}
+      \begin{axis}[axis lines=left,xlabel=Number of Threads,ylabel=Wall Clock Time,xmin=1,xmax=24,ymin=0,ymax=140]
+      \addplot[only marks] coordinates {
+        (1, 137.1031) (2, 80.45658) (4, 42.85352) (8, 21.5718) (16, 13.45326) (24, 10.261178)
+      };
+      \addplot[domain=1:24,samples=1000] {136*x^-0.836};
+      \end{axis}
+    \end{tikzpicture}
+  }
+  \caption{Weak scaling study varying the number of OMP threads from 2 to 24 with $n = 4000$. The best-fit line is exponential with $R^2 = 0.996$\label{graph:strong-scaling}}
+  \end{figure}
   \section{Ongoing Work}
 \end{document}
