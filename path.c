@@ -252,8 +252,8 @@ void shortest_paths(int n, int* restrict l)
     for (int done = 0; !done; ) {
         //done = square(n, l, lnew);
         //memcpy(l, lnew, n*n * sizeof(int));
-        done = square(n, lnew, l);
-        //done = square_block(n, lnew, l);
+        //done = square(n, lnew, l);
+        done = square_block(n, lnew, l);
     }
     //free(lnew);
     _mm_free(lnew);
