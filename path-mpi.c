@@ -59,6 +59,7 @@ int square(int irank, int imin,int imax,
             lnew[j*n+i] = lij;
         }
     }
+    printf("done:%d\n", done);
     return done;
 }
 
