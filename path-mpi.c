@@ -113,12 +113,14 @@ void shortest_paths(int n, int* restrict l, int irank, int imin, int imax, int j
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int ct = 0;
     for (int done = 0; !done; ) {
       int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
         MPI_Allreduce(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
         MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+        printf("iteration, %d\n", ct);
+        ct += 1;
     }
-    printf("Post MPI_ALLREDUCE \n");
 
     free(lnew);
     deinfinitize(n, l);
