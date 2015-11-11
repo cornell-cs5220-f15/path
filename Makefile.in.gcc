@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
-OPTFLAGS=-O3 -march=native
+OPTFLAGS=-O3 -mtune=intel
 
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS)

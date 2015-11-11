@@ -1,0 +1,7 @@
+Function         Module          CPU Time  CPU Time:Idle  CPU Time:Poor  CPU Time:Ok  CPU Time:Ideal  CPU Time:Over  Spin Time  Overhead Time
+---------------  --------------  --------  -------------  -------------  -----------  --------------  -------------  ---------  -------------
+square           path-mpi.x       23.223s             0s        23.223s           0s              0s             0s         0s             0s
+fletcher16       path-mpi.x        0.020s             0s         0.020s           0s              0s             0s         0s             0s
+gen_graph        path-mpi.x        0.010s             0s         0.010s           0s              0s             0s         0s             0s
+genrand          path-mpi.x        0.010s             0s         0.010s           0s              0s             0s         0s             0s
+PMPI_Allgatherv  libmpi.so.12.0    0.010s             0s         0.010s           0s              0s             0s         0s             0s
