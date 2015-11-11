@@ -12,4 +12,28 @@
 
 \section*{Introduction}
 
+\section*{MPI Implementation}
+
+We implemented a parallel version of the shortest path algorithm using the
+Message Passing Interface (MPI).
+In our implementation, each processor is responsible for updating a portion of 
+the shortest path matrix $l$.  Specifically, we partition by column, so that 
+the processor labelled $k$ (for $k = 1, \ldots, p$), updates $l_{ij}$ for 
+$j \in J_k$, where the $(J_k)_{1 \leq k \leq p}$ define a partion of 
+$\{1, 2, \ldots, n\}$.
+With this strategy the computation pattern for updating the shortest path matrix
+remains the same, we are simply looping over a smaller sets of columns.
+
+After each processor has finished updating it's corresponding columns in
+the update $l_{ij}^{s+1} = \min_k \{ l^s_{ik} + l^s_{jk} \}$, we call
+\emph{MPI\_Allgather} so that each processor gets the fully updated $l^{s+1}$
+for the next step.  Each processor also keeps a local ``done'' flag that will
+be true if nothing was updated.  In order to determine whether to terminate
+or not, we call \emph{MPI\_Allreduce} with a logical AND operator on the local
+done flags.
+
+\subsection*{Strong Scaling}
+
+\subsection*{Weak Scaling}
+
 \end{document}
