@@ -4,6 +4,7 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{float}
+\usepackage{inconsolata}
 \usepackage{url}
 \usepackage{titlesec}
 \setcounter{secnumdepth}{4}
@@ -86,19 +87,26 @@ The MPI implementation can be found in \texttt{path-mpi.c}. We are still in the 
 \section{Analysis}
 
 \subsection{Original Implementation}
-\subsubsection{Profiling} \label{sec:prof}
-\subsubsection{Scaling Study} \label{sec:speedup}
+\subsubsection{Profiling} \label{sec:prof_orig}
+
+Profiling the original solution shows that the most CPU time goes into the square function and significant portion of that time is considered by VTune to be ideal. The next most expensive functions in terms of CPU time is the barrier and the reduction in OpenMP due to the high spin times. 
+
+\lstinputlisting[basicstyle=\tiny\ttfamily]{./profiling/path_original.txt}
+
+\subsubsection{Scaling Study} \label{sec:speedup_orig}
+
+The speedup plots of the original solution shows linear improvement in performance
 \paragraph{Strong Scaling Study}
 \begin{figure}[H]
 \centering
-\includegraphics[scale=0.8]{./scaling_studies/strong_scaling_original.png}
+\includegraphics[scale=0.5]{./scaling_studies/strong_scaling_original.png}
 \caption{Strong scaling study of the original solution}
 \label{fig:ss_orig}
 \end{figure}
 \paragraph{Weak Scaling Study}
 \begin{figure}[H]
 \centering
-\includegraphics[scale=0.8]{./scaling_studies/weak_scaling_original.png}
+\includegraphics[scale=0.5]{./scaling_studies/weak_scaling_original.png}
 \caption{Weak scaling study of the original solution}
 \label{fig:ss_orig}
 \end{figure}
