@@ -6,6 +6,7 @@
 #include <omp.h>
 #include "mt19937p.h"
 
+#define BLOCK_SIZE 64
 //ldoc on
 /**
  * # The basic recurrence
@@ -38,26 +39,121 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
-{
+
+int basic_square(const int * restrict A, const int * restrict B, int * restrict C) {
+    __assume_aligned(A, 64);
+    __assume_aligned(B, 64);
+    __assume_aligned(C, 64);
+    
+    int oi, oj, ok;
+    int ta, tb, tc;
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
+    
+    for (int j = 0; j < BLOCK_SIZE; ++j) {
+        oj = j * BLOCK_SIZE;
+        for (int k = 0; k < BLOCK_SIZE; ++k) {
+            ok = k * BLOCK_SIZE;
+            tb = B[oj+k];
+            for (int i = 0; i < BLOCK_SIZE; ++i) {
+                if (A[ok+i] + tb < C[oj+i]) {
+                    C[oj+i] = A[ok+i] + tb;
                     done = 0;
                 }
             }
-            lnew[j*n+i] = lij;
         }
     }
+    
+    return done;
+}
+
+
+int square(int n,               // Number of nodes
+           int* restrict l,     // Partial distance at step s
+           int* restrict lnew,  // Partial distance at step s+1
+	   int nthr)  		// Number of threads
+{
+    int done = 1;
+    int blocks = n / BLOCK_SIZE + (n % BLOCK_SIZE ? 1 : 0);
+    int totalblocks = blocks * blocks;
+    int totalblocksize = BLOCK_SIZE * BLOCK_SIZE;
+
+    // copied l matrix
+    int * CL __attribute__((aligned(64))) =
+        (int *) malloc(totalblocks * totalblocksize * sizeof(int));
+    // Copied lnew matrix
+    int * CN __attribute__((aligned(64))) =
+        (int *) malloc(totalblocks * totalblocksize * sizeof(int));
+    
+    int copyoffset = 0;
+    for (int bi = 0; bi < blocks; ++bi) {
+	for (int bj = 0; bj < blocks; ++bj) {
+	    int oi = bi * BLOCK_SIZE;
+	    int oj = bj * BLOCK_SIZE;
+	    copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
+	    for (int j = 0; j < BLOCK_SIZE; ++j) {
+		for (int i = 0; i < BLOCK_SIZE; ++i) {
+			int offset = (oi + i) + (oj + j) * n;
+			// Check bounds
+			if (oi + i < n && oj + j < n) {
+				CL[copyoffset] = l[offset];
+			}
+			else {
+				CL[copyoffset] = n + 1;
+			}
+			copyoffset++;
+		}
+	    }
+	}
+    }
+
+    memcpy(CN, CL, totalblocks * totalblocksize * sizeof(int));
+
+    omp_set_dynamic(0);     // Explicitly disable dynamic teams
+    omp_set_num_threads(nthr); // Set number of threads used in Openmp
+#pragma omp parallel shared(CL, CN, done)
+    {
+#pragma omp for
+	    for (int bc = 0; bc < blocks * blocks; ++bc) {
+		    // Compute block position
+		    int bi = bc / blocks;
+		    int bj = bc % blocks;
+
+		    for (int bk = 0; bk < blocks; ++bk) {
+			    int td = basic_square(
+					    CL + (bi + bk * blocks) * BLOCK_SIZE * BLOCK_SIZE,
+					    CL + (bk + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE,
+					    CN + (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE
+					    );
+
+			    if (done == 1 && td == 0) {
+#pragma omp critical
+				    done = 0;
+			    }
+		    }
+	    }
+    }
+
+
+
+    //Copy back
+    copyoffset = 0;
+    for (int bi = 0; bi < blocks; ++bi) {
+	    for (int bj = 0; bj < blocks; ++bj) {
+		    int oi = bi * BLOCK_SIZE;
+		    int oj = bj * BLOCK_SIZE;
+		    copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
+		    for (int j = 0; j < BLOCK_SIZE; ++j) {
+			    for (int i = 0; i < BLOCK_SIZE; ++i) {
+				    int offset = (oi + i) + (oj + j) * n;
+				    if (oi + i < n && oj + j < n) {
+					    lnew[offset] = CN[copyoffset];
+				    }
+				    copyoffset++;
+			    }
+		    }
+	    }
+    }
+
     return done;
 }
 
@@ -103,7 +199,7 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+void shortest_paths(int n, int* restrict l, int nthr)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
@@ -114,7 +210,7 @@ void shortest_paths(int n, int* restrict l)
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
+        done = square(n, l, lnew, nthr);
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);
@@ -198,7 +294,9 @@ const char* usage =
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  - o -- file name where output matrix should be stored (none)\n"
+    "  - t -- number of threads used in OpenMP (10)\n"
+    "  - s -- scaling: strong or weak \n";
 
 int main(int argc, char** argv)
 {
@@ -207,9 +305,12 @@ int main(int argc, char** argv)
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
 
+    const char* scale = NULL;   // Scaling option
+    int nthr = 10;	       // Number of Threads
+
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "h:n:d:p:o:i:t:s:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -220,6 +321,8 @@ int main(int argc, char** argv)
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
+	case 't': nthr   = atoi(optarg);  break;
+	case 's': scale  = optarg;	break; 
         }
     }
 
@@ -230,7 +333,7 @@ int main(int argc, char** argv)
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
-    shortest_paths(n, l);
+    shortest_paths(n, l, nthr);
     double t1 = omp_get_wtime();
 
     printf("== OpenMP with %d threads\n", omp_get_max_threads());
@@ -239,11 +342,27 @@ int main(int argc, char** argv)
     printf("Time:  %g\n", t1-t0);
     printf("Check: %X\n", fletcher16(l, n*n));
 
-    // Generate output file
+    // Print out the result into a .csv file
+    char* fs = (char*) malloc(30);
+    strcpy(fs, "timing_");
+    strcat(fs, scale);
+    strcat(fs, "_");
+    char tmpstr[15];  
+    sprintf(tmpstr, "%d", nthr);
+    strcat(fs, tmpstr);
+    strcat(fs, ".csv");
+
+    FILE* fp;
+    fp = fopen(fs, "w");
+    fprintf(fp, "nthreads,n,time\n");
+    fprintf(fp, "%d,%d,%f\n", nthr, n, t1-t0);    
+
+    // Generate outiut file
     if (ofname)
-        write_matrix(ofname, n, l);
+	    write_matrix(ofname, n, l);
 
     // Clean up
     free(l);
+    free(fs);
     return 0;
 }
