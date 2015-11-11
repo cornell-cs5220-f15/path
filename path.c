@@ -127,6 +127,7 @@ void shortest_paths(int n, int* restrict l)
     if(!flag) {
         memcpy(l, lnew, n*n * sizeof(int));
     }
+    free(lnew);
     deinfinitize(n, l);
 }
 
