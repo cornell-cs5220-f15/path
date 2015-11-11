@@ -25,7 +25,7 @@ Our task is to profile and optimize an implementation of the all-pairs-shortest-
 
 We first profiled the given code using VTune Amplifier to discover hotspots in the code. Due to license limitations we were only able to profile the code on the Totient head node, but we believe similar results would have been obtained if we were able to perform profiling on the compute nodes. The relevant sections of the report is shown in Table~\ref{vtune}.
 
-\begin{table}[here]
+\begin{table}[h]
  \centering
   \begin{tabular}{ | l | r | r | r | r | }
  \hline
@@ -47,14 +47,14 @@ The results are for the default $2000 \times 2000$ matrix, and we have omitted c
 
 We also performed strong and weak scaling studies on the original code, and the performance varying with number of threads is shown in graphs of figures~\ref{strong-orig} and~\ref{weak-orig} respectively. Since the original code was parallelized using OpenMP, we expect some performance gains if more worker threads are available.
 
- \begin{figure}[here]
+ \begin{figure}[h]
   \centering
   \includegraphics[width=0.7\linewidth]{strong-orig.png}
   \caption{Time taken for original algorithm on a fixed $2000 \times 2000$ matrix varying with number of threads}
   \label{strong-orig}
 \end{figure}
 
- \begin{figure}[here]
+ \begin{figure}[h]
   \centering
   \includegraphics[width=0.7\linewidth]{weak-orig.png}
   \caption{Time taken for original algorithm on varying with number of threads with workload of each thread held constant}
@@ -75,13 +75,14 @@ The order of the \texttt{for} loops is such that every block of the resulting ma
 
 This blocking strategy worked well and we got up to 12x speed up. 
 
- \begin{figure}[here]
+ \begin{figure}[h]
   \centering
   \includegraphics[width=0.7\linewidth]{tunedPerformance.png}
   \caption{Speed up by tuning the OpenMP implementation with blocked load partitioning.}
   \label{tunedPerformance}
 \end{figure}
 
-%\section{Strategy for Implementation with MPI}
+\section{Strategy for Implementation with MPI}
+For our MPI implementation, we can divide the workload for multiple compute nodes as follows. Each node is assigned a region of the matrix to optimize, and all the nodes have the same read-only copy of the whole matrix. The nodes independently find the best values for the elements within its assigned region based on its view of the matrix. Here thread-level parallelization can be utilized to find the optimal values for multiple elements in the assigned region simultaneously. The finished regions from each node is then sent to a single place to be combined into a large matrix again. This process repeats until none of the nodes report that they have made a change to their assigned regions. We are aiming to implement this strategy and also perhaps explore others for our final report.
 
 \end{document}
