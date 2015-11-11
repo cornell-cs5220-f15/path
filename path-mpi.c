@@ -116,7 +116,8 @@ void shortest_paths(int n, int* restrict l, int irank, int imin, int imax, int j
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     int ct = 0;
     for (int done = 0; !done; ) {
-      int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
+        memcpy(lnew, l, n*n * sizeof(int));
+        int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
         MPI_Allreduce(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
         MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
         printf("iteration, %d\n", ct);
@@ -217,10 +218,6 @@ int main(int argc, char** argv)
     int npy, npx;
     double t0, t1;
 
-    MPI_Init(&argc,&argv);
-    MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
-    MPI_Comm_rank(MPI_COMM_WORLD,&irank);
-
     // Option processing
     extern char* optarg;
     const char* optstring = "hn:d:p:o:i:x:y:";
@@ -239,15 +236,19 @@ int main(int argc, char** argv)
         }
     }
 
-    imin =  (irank % npx)*n/npx;
-    imax = imin + (n/npx) - 1;
-    jmin = floor((irank)/npx)*(n/npy);
-    jmax = jmin + (n/npy) - 1;
-
     // Graph generation + output
     int* l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
+
+    MPI_Init(&argc,&argv);
+    MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD,&irank);
+
+    imin =  (irank % npx)*n/npx;
+    imax = imin + (n/npx) - 1;
+    jmin = floor((irank)/npx)*(n/npy);
+    jmax = jmin + (n/npy) - 1;
 
     // Time the shortest paths code
     if(irank == 1) t0 = MPI_Wtime();
