@@ -51,7 +51,7 @@ In the MPI implementation, each process handles a certain region of the graph. T
 \label{fig:init_part}
 \end{figure}
 
-Now each sequence of columns owned by a processor
+Now each sequence of columns owned by a processor can be decomposed into square blocks.
 
 \section{Analysis}
 
@@ -59,6 +59,12 @@ Now each sequence of columns owned by a processor
 \subsubsection{Profiling} \label{sec:prof}
 \subsubsection{Scaling Study} \label{sec:speedup}
 \subsubsection{Strong Scaling Study}
+\begin{figure}
+\centering
+\includegraphics[scale=0.2]{./scaling_studies/strong_scaling.png}
+\caption{Initial partition of the graph where each $C_i$ is a sequence of columns}
+\label{fig:init_part}
+\end{figure}
 \subsubsection{Weak Scaling Study}
 
 \subsection{Tuned Parallel Implementation}
