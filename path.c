@@ -78,7 +78,7 @@ int square_block(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
-    int* restrict l_transpose = (int*) _mm_malloc(n*n*sizeof(int),16);
+    int* restrict l_transpose __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
 
     for( int i = 0; i < n; i++)
       for( int j = 0; j < n; j++){
@@ -93,13 +93,13 @@ int square_block(int n,               // Number of nodes
     const int n_area = BLOCK_SIZE * BLOCK_SIZE;
     const int n_mem = n_size * n_size * sizeof(int);
     // Copied A matrix
-    int * restrict L = (int *) _mm_malloc(n_mem*sizeof(int),16);
+    int * restrict L __attribute__((aligned(64)))= (int *) _mm_malloc(n_mem*sizeof(int),64);
     memset(L, 0, n_mem);
     // Copied B matrix
-    int * restrict Lt = (int *) _mm_malloc(n_mem*sizeof(int),16);
+    int * restrict Lt __attribute__((aligned(64)))= (int *) _mm_malloc(n_mem*sizeof(int),64);
     memset(Lt, 0, n_mem);
     // Copied C matrix
-    int * restrict Ln = (int *) _mm_malloc(n_mem*sizeof(int),16);
+    int * restrict Ln __attribute__((aligned(64)))= (int *) _mm_malloc(n_mem*sizeof(int),64);
     memset(Ln, 0, n_mem);
 
     // Initialize matrices
@@ -178,7 +178,7 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
     // Make a copy of transposed matrix to speed up vectorization
-    int* restrict l_transpose = (int*) _mm_malloc(n*n*sizeof(int),16);
+    int* restrict l_transpose __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
     for( int i = 0; i < n; i++){
       for( int j = 0; j < n; j++){
         l_transpose[j*n+i] = l[i*n+j];
@@ -186,9 +186,9 @@ int square(int n,               // Number of nodes
     }
 
     
-    __assume_aligned(l, 16);
-    __assume_aligned(l_transpose, 16);
-    __assume_aligned(lnew, 16);
+    __assume_aligned(l, 64);
+    __assume_aligned(l_transpose, 64);
+    __assume_aligned(lnew, 64);
 
     int done = 1;
     #pragma omp parallel for shared(l, lnew, l_transpose) reduction(&& : done)
@@ -261,12 +261,12 @@ void shortest_paths(int n, int* restrict l)
 
     // Repeated squaring until nothing changes
     //int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    int* restrict lnew = (int*) _mm_malloc(n*n*sizeof(int),16);
+    int* restrict lnew __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         //done = square(n, l, lnew);
         //memcpy(l, lnew, n*n * sizeof(int));
-        if ( n > 1800) done = square(n, lnew, l);
+        if ( n < 1801) done = square(n, lnew, l);
         else done = square_block(n, lnew, l);
     }
     //free(lnew);
@@ -288,7 +288,7 @@ void shortest_paths(int n, int* restrict l)
 int* restrict gen_graph(int n, double p)
 {
     //int* l = calloc(n*n, sizeof(int));
-    int* l = (int*) _mm_malloc(n*n*sizeof(int),16);
+    int* l __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
