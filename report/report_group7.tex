@@ -33,11 +33,11 @@
 \maketitle
 
 \section{Introduction}
-The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given a graph with a metric. The computational pattern of this algorithm is very much akin to matrix multiplication. If $l_{ij}^s$ represents the the length of the shortest path from node $i$ to $j$ in at most $2^s$ steps, \cite{writeup} then
+The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given a graph with a metric. The computational pattern of this algorithm is very much akin to matrix multiplication. If $l_{ij}^s$ represents the the length of the shortest path from node $i$ to $j$ in at most $2^s$ steps, then
 \begin{equation}
 	l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}
 \end{equation} 
-
+ represents the shortest path from $i$ to $j$ of at most $2^{j+1}$ hops. \cite{writeup} 
 \section{Design Decisions}
  
 \subsection{Parallel Tuning}
