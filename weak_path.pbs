@@ -1,0 +1,49 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+export OMP_NUM_THREADS=1
+./path.x -n 2000
+export OMP_NUM_THREADS=2
+./path.x -n 2496
+export OMP_NUM_THREADS=3
+./path.x -n 2841
+export OMP_NUM_THREADS=4
+./path.x -n 3115
+export OMP_NUM_THREADS=5
+./path.x -n 3346
+export OMP_NUM_THREADS=6
+./path.x -n 3547
+export OMP_NUM_THREADS=7
+./path.x -n 3726
+export OMP_NUM_THREADS=8
+./path.x -n 3890
+export OMP_NUM_THREADS=9
+./path.x -n 4039
+export OMP_NUM_THREADS=10
+./path.x -n 4178
+export OMP_NUM_THREADS=11
+./path.x -n 4308
+export OMP_NUM_THREADS=12
+./path.x -n 4429
+export OMP_NUM_THREADS=13
+./path.x -n 4545
+export OMP_NUM_THREADS=14
+./path.x -n 4654
+export OMP_NUM_THREADS=15
+./path.x -n 4758
+export OMP_NUM_THREADS=16
+./path.x -n 4858
+export OMP_NUM_THREADS=17
+./path.x -n 4953
+export OMP_NUM_THREADS=18
+./path.x -n 5045
+export OMP_NUM_THREADS=19
+./path.x -n 5132
+export OMP_NUM_THREADS=20
+./path.x -n 5218
