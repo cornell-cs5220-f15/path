@@ -7,38 +7,6 @@
 #include <omp.h>
 #include "mt19937p.h"
 
-//ldoc on
-/**
- * # The basic recurrence
- *
- * At the heart of the method is the following basic recurrence.
- * If $l_{ij}^s$ represents the length of the shortest path from
- * $i$ to $j$ that can be attained in at most $2^s$ steps, then
- * $$
- *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}.
- * $$
- * That is, the shortest path of at most $2^{s+1}$ hops that connects
- * $i$ to $j$ consists of two segments of length at most $2^s$, one
- * from $i$ to $k$ and one from $k$ to $j$.  Compare this with the
- * following formula to compute the entries of the square of a
- * matrix $A$:
- * $$
- *   a_{ij}^2 = \sum_k a_{ik} a_{kj}.
- * $$
- * These two formulas are identical, save for the niggling detail that
- * the latter has addition and multiplication where the former has min
- * and addition.  But the basic pattern is the same, and all the
- * tricks we learned when discussing matrix multiplication apply -- or
- * at least, they apply in principle.  I'm actually going to be lazy
- * in the implementation of `square`, which computes one step of
- * this basic recurrence.  I'm not trying to do any clever blocking.
- * You may choose to be more clever in your assignment, but it is not
- * required.
- *
- * The return value for `square` is true if `l` and `lnew` are
- * identical, and false otherwise.
- */
-
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
@@ -62,19 +30,23 @@ int square(int n,               // Number of nodes
     return done;
 }
 
-/**
- *
- * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
- * the adjacency matrix, except for one thing: by convention, the
- * $(i,j)$ entry of the adjacency matrix is zero when there is no
- * edge between $i$ and $j$; but in this case, we want $l_{ij}^0$
- * to be "infinite".  It turns out that it is adequate to make
- * $l_{ij}^0$ longer than the longest possible shortest path; if
- * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back 
- * and forth between the zero-for-no-edge and $n+1$-for-no-edge
- * conventions.
- */
+void square(int n1, int n2, int* restrict l, int* restrict lnew) {
+    int done = 1;
+    int j = threadnum;
+    for (int i = 0; i < n; ++i) {
+        int lij = lnew[j*n+i];
+        for (int k = 0; k < n; ++k) {
+            int lik = l[k*n+i];
+            int lkj = l[j*n+k];
+            if (lik + lkj < lij) {
+                lij = lik+lkj;
+                done = 0;
+            }
+        }
+        lnew[j*n+i] = lij;
+    }
+    return done;
+}
 
 static inline void infinitize(int n, int* l)
 {
@@ -90,23 +62,10 @@ static inline void deinfinitize(int n, int* l)
             l[i] = 0;
 }
 
-/**
- *
- * Of course, any loop-free path in a graph with $n$ nodes can
- * at most pass through every node in the graph.  Therefore,
- * once $2^s \geq n$, the quantity $l_{ij}^s$ is actually
- * the length of the shortest path of any number of hops.  This means
- * we can compute the shortest path lengths for all pairs of nodes
- * in the graph by $\lceil \lg n \rceil$ repeated squaring operations.
- *
- * The `shortest_path` routine attempts to save a little bit of work
- * by only repeatedly squaring until two successive matrices are the
- * same (as indicated by the return value of the `square` routine).
- */
-
-void shortest_paths(int n, int* restrict l)
+void shortest_paths(int n1, int n2, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
+    int n = n2;
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
@@ -115,53 +74,25 @@ void shortest_paths(int n, int* restrict l)
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
+        MPI_Barrier(MPI_COMM_WORLD);
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     free(lnew);
     deinfinitize(n, l);
 }
 
-/**
- * # The random graph model
- *
- * Of course, we need to run the shortest path algorithm on something!
- * For the sake of keeping things interesting, let's use a simple random graph
- * model to generate the input data.  The $G(n,p)$ model simply includes each
- * possible edge with probability $p$, drops it otherwise -- doesn't get much
- * simpler than that.  We use a thread-safe version of the Mersenne twister
- * random number generator in lieu of coin flips.
- */
-
-int* gen_graph(int n, double p)
+void gen_graph(int* l, int n1, int n2, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
     struct mt19937p state;
     sgenrand(10302011UL, &state);
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i)
-            l[j*n+i] = (genrand(&state) < p);
-        l[j*n+j] = 0;
-    }
-    return l;
+    int j = n1;
+    int n = n2;
+    for (int i = 0; i < n; ++i)
+        l[j*n+i] = (genrand(&state) < p);
+    l[j*n+j] = 0;
 }
-
-/**
- * # Result checks
- *
- * Simple tests are always useful when tuning code, so I have included
- * two of them.  Since this computation doesn't involve floating point
- * arithmetic, we should get bitwise identical results from run to
- * run, even if we do optimizations that change the associativity of
- * our computations.  The function `fletcher16` computes a simple
- * [simple checksum][wiki-fletcher] over the output of the
- * `shortest_paths` routine, which we can then use to quickly tell
- * whether something has gone wrong.  The `write_matrix` routine
- * actually writes out a text representation of the matrix, in case we
- * want to load it into MATLAB to compare results.
- *
- * [wiki-fletcher]: http://en.wikipedia.org/wiki/Fletcher's_checksum
- */
 
 int fletcher16(int* data, int count)
 {
@@ -174,24 +105,21 @@ int fletcher16(int* data, int count)
     return (sum2 << 8) | sum1;
 }
 
-void write_matrix(const char* fname, int n, int* a)
+void write_matrix(const char* fname, int n1, int n2, int* a)
 {
     FILE* fp = fopen(fname, "w+");
     if (fp == NULL) {
         fprintf(stderr, "Could not open output file: %s\n", fname);
         exit(-1);
     }
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) 
+    int i = n1;
+    int n = n2;
+    for (int j = 0; j < n; ++j) 
             fprintf(fp, "%d ", a[j*n+i]);
         fprintf(fp, "\n");
     }
     fclose(fp);
 }
-
-/**
- * # The `main` event
- */
 
 const char* usage =
     "path.x -- Parallel all-pairs shortest path on a random graph\n"
@@ -224,14 +152,22 @@ int main(int argc, char** argv)
         }
     }
 
+    #define MAX_SZ 262144
+    static int buf[MAX_SZ];
+
+    MPI_Init(&argc,&argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    memset(buf + sizeof(int)*n*rank, 0, sizeof(int)*n);
     // Graph generation + output
-    int* l = gen_graph(n, p);
+    gen_graph(buf, rank, n, p);
+    MPI_Barrier(MPI_COMM_WORLD);
     if (ifname)
-        write_matrix(ifname,  n, l);
+        write_matrix(ifname, rank, n, l);
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
-    shortest_paths(n, l);
+    shortest_paths(rank, n, l);
     double t1 = omp_get_wtime();
 
     printf("== OpenMP with %d threads\n", omp_get_max_threads());
