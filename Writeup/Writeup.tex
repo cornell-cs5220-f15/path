@@ -23,6 +23,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
+This goal of this project is to optimize the parallelization of the Floyd-Warshall algorithm for finding the shortest path between two nodes in a graph. \\
+
+A base parallelized C code using openMP was provided. From this, the objectives are to profile and tune the existing code, and to implement the parallelization of the algorithm using MPI.  
+
 \section{Base OpenMP Code}
 
 \subsection{Profiling}
@@ -35,11 +39,13 @@ A look into performance of the code was conducted by using Intel's VTUNE on Toti
 		\end{center}
 	\end{figure}
 	
-From looking at VTUNE, it appears that the most time spent in the program was done on the square function. This is not surprising, as there are plenty of nested for loops in the code, which undoubtedly takes a while to run through.
+From looking at VTUNE, it appears that the most time spent in the program was done on the square function which finds the minimum path between the nodes. This is not surprising, as there are plenty of nested for loops in the code, which undoubtedly takes a while to run through.
 
 \subsection{Scaling}
 
 \section{OpenMPI}
+
+OpenMPI was used in place of OpenMP in the square routine to compare the efficiency of both methods. To use openMPI, the graph was split into equally sized sections, with each processor assigned a section. The minimum distance between locations within each section was computed, and then gathered and saved for the overall graph by using the command MPI\_ALLREDUCE and operation MPI\_MIN during the computation.  
 
 \subsection{Profiling}
 After attempting to implement OpenMPI, we once again look into performance of the code through profiling. 
@@ -53,10 +59,8 @@ After attempting to implement OpenMPI, we once again look into performance of th
 
 \subsection{Scaling}
 
-\section{Processor Offloading}
-
 \section{Additional Changes}
-For the future, there are many different things we can try. As evidenced in the past, proper usage of compiler flags should be able to provide some speedups for the process. Additionally, another option we plan to try is blocking. On a conceptual level, for each block, the fastest paths would be calculated given each potential entry and exit point, which would be the ghost cells around each block. From there, one aggregated faster path through would be calculated from the combination of smaller paths. 
+For the future, there are many different things we can try. As evidenced in the past, proper usage of compiler flags should be able to provide some speedups for the process. Additionally, another option we plan to try is blocking. On a conceptual level, for each block, the fastest paths would be calculated given each potential entry and exit point, which would be the ghost cells around each block. From there, one aggregated faster path through would be calculated from the combination of smaller paths. Finally, we hope to test the use of running the code on the Xeon Phis, for both the openMP and openMPI cases.
 
 \section{Overview}
 
