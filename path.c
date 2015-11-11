@@ -43,6 +43,15 @@ int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
+
+    //Copying the l matrix for better cache hits in the inner most loop
+    int* restrict ltrans = malloc(n*n*sizeof(int));
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i < n; ++i) {
+            ltrans[i*n + j] = l[j*n + i];
+        }
+    }
+
     int done = 1;
 	omp_set_num_threads(n_threads);
     #pragma omp parallel for shared(l, lnew) reduction(&& : done)
@@ -50,7 +59,7 @@ int square(int n,               // Number of nodes
         for (int i = 0; i < n; ++i) {
             int lij = l[j*n+i];
             for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
+                int lik = ltrans[k*n+i];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
@@ -60,6 +69,7 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
+    free(ltrans);
     return done;
 }
 
