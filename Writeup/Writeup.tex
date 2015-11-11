@@ -39,9 +39,28 @@ A look into performance of the code was conducted by using Intel's VTUNE on Toti
 		\end{center}
 	\end{figure}
 	
-From looking at VTUNE, it appears that the most time spent in the program was done on the square function which finds the minimum path between the nodes. This is not surprising, as there are plenty of nested for loops in the code, which undoubtedly takes a while to run through.
+From looking at VTUNE, it appears that the most time spent in the program was done on the square function which finds the minimum path between the nodes. This is not surprising, as there are plenty of nested for loops in the code, which undoubtedly takes a while to run through, as can be seen in Figure~\ref{square}.
 
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.5\columnwidth]{square}
+			\caption{Square function}
+			\label{square}
+		\end{center}
+	\end{figure}
+		
 \subsection{Scaling}
+Strong scaling is defined as below, as the ratio of the time for a case to run in serial compared to a case with a given number of processors in parallel:
+\begin{equation}
+\textrm{Strong scaling} = \frac{t_{\textrm{serial}}}{t_{\textrm{parallel}}}
+\end{equation}
+Weak scaling is similarly defined as below as the ratio between serial and parallel case run times, although for weak scaling, the size of the computation on each processor is held constant. \\
+\begin{equation}
+\textrm{Weak scaling} = \frac{t_{\textrm{serial}}(n)}{t_{\textrm{parallel}}(n)}
+\end{equation}
+
+Both strong and weak scaling studies were performed for the openMP code.
+
 
 \section{OpenMPI}
 
@@ -58,6 +77,25 @@ After attempting to implement OpenMPI, we once again look into performance of th
 	\end{figure}
 
 \subsection{Scaling}
+Similarly, strong and weak scaling studies were performed with the MPI parallelization.
+
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.5\columnwidth]{st_table_mpi}
+			\caption{Strong Scaling for 200x200 Element Graph}
+			\label{amplxe}
+		\end{center}
+	\end{figure}
+	
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.7\columnwidth]{st_graph_mpi}
+			\caption{Strong Scaling Efficiency}
+			\label{amplxe}
+		\end{center}
+	\end{figure}
+	
+	
 
 \section{Additional Changes}
 For the future, there are many different things we can try. As evidenced in the past, proper usage of compiler flags should be able to provide some speedups for the process. Additionally, another option we plan to try is blocking. On a conceptual level, for each block, the fastest paths would be calculated given each potential entry and exit point, which would be the ghost cells around each block. From there, one aggregated faster path through would be calculated from the combination of smaller paths. Finally, we hope to test the use of running the code on the Xeon Phis, for both the openMP and openMPI cases.
