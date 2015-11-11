@@ -32,12 +32,26 @@
 \maketitle
 
 \section{Introduction}
-
+The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given a graph with a metric. The computational pattern of this algorithm is very much akin to matrix multiplication. If $l_{ij}^s$ represents the the length of the shortest path from node $i$ to $j$ in at most $2^s$ steps, \cite{writeup} then
+\begin{equation}
+	l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}
+\end{equation} 
 
 \section{Design Decisions}
  
- \subsection{Parallel Tuning}
- \subsection{MPI}
+\subsection{Parallel Tuning}
+\subsection{MPI}
+
+In the MPI implementation, each process handles a certain region of the graph. To prevent a master process orchestrating the distance computation, we ideally want each process to only wait for information from the relevant part of the graph. To that end, we take the adjacency matrix on which the Floyd-Warshall algorithm is run and partition the graph by chunks of columns. 
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.2]{initial_partition.png}
+\caption{Initial partition of the graph where each $C_i$ is a sequence of columns}
+\label{fig:init_part}
+\end{figure}
+
+Now each sequence of columns owned by a processor
 
 \section{Analysis}
 
@@ -61,11 +75,8 @@
 
 
 \begin{thebibliography}{9}
-\bibitem{vectorization} 
-Data Alignment to Assist Vectorization. (n.d.). Retrieved September 30, 2015, from \url{https://software.intel.com/en-us/articles/data-alignment-to-assist-vectorization}
-
-\bibitem{openmp}
-Yliluoma, J. (n.d.). Guide into OpenMP: Easy multithreading programming for C. Retrieved October 19, 2015, from \url{http://bisqwit.iki.fi/story/howto/openmp/}
+\bibitem{writeup}
+Bindel, D. All-Pairs Shortest Paths. Retrieved November 10, 2015, from \url{https://github.com/sheroze1123/path/blob/master/main.pdf}
 
 \end{thebibliography}
 
