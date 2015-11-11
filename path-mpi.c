@@ -59,7 +59,6 @@ int square(int irank, int imin,int imax,
             lnew[j*n+i] = lij;
         }
     }
-    printf("done:%d\n", done);
     return done;
 }
 
@@ -115,13 +114,11 @@ void shortest_paths(int n, int* restrict l, int irank, int imin, int imax, int j
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     MPI_Allreduce(l,lnew,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-    int ct = 0;
+
     for (int done = 0; !done; ) {
         int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
         MPI_Allreduce(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
         MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-        printf("iteration, %d\n", ct);
-        ct += 1;
     }
 
     free(lnew);
@@ -253,15 +250,16 @@ int main(int argc, char** argv)
     // Time the shortest paths code
     if(irank == 1) t0 = MPI_Wtime();
     //ok, now probably just each processor computes some shortest paths and then broadcasts 
-    printf("n:%d i:%d xmin:%d xmax:%d ymin:%d ymax:%d\n", n, irank, imin, imax, jmin, jmax);
     shortest_paths(n, l, irank, imin, imax, jmin, jmax);
-    t1 = MPI_Wtime();
 
-    printf("== MPI with %d threads\n", nprocs);
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    if(irank == 1) {
+    t1 = MPI_Wtime();
+        printf("== MPI with %d threads\n", nprocs);
+        printf("n:     %d\n", n);
+        printf("p:     %g\n", p);
+        printf("Time:  %g\n", t1-t0);
+        printf("Check: %X\n", fletcher16(l, n*n));
+    }
 
     // Generate output file
     if (ofname)
