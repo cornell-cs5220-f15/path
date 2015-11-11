@@ -1,4 +1,4 @@
-   
+
 \documentclass[11pt]{article}
 \usepackage{amsmath,amsthm,verbatim,amssymb,amsfonts,amscd, graphicx}
 \usepackage{graphicx}
@@ -127,7 +127,13 @@ The strong scaling study was performed on a graph with 2000 nodes. The weak scal
 
 \subsubsection{Profiling} \label{sec:prof}
 
+We had two version of the tuned parallel code in \texttt{OpenMP}. The output from the first version is shown here:
+
 \lstinputlisting[basicstyle=\tiny\ttfamily]{./profiling/profile_elliot.txt}
+
+The output from the second version is shown here. Note that this was run with 16 threads.
+\lstinputlisting[basicstyle=\tiny\ttfamily]{./profiling/profile_eric.txt}
+
 \subsubsection{Scaling Study} \label{sec:speedup}
 
 Although the scaling studies for the tuned parallel implementation times show similar speedup and efficiency patterns as the original solution, the overall time taken to achieve the solution is lower than the original OpenMP solution. 
@@ -146,6 +152,24 @@ Although the scaling studies for the tuned parallel implementation times show si
 \end{figure}
 
 The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. 
+
+We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, wheras the naive finished in 11.0959, which means we had roughly \textbf{11 times speedup}! 
+
+Looking at the vectorization report, the large majority of the computationally heavy calculations were being vectorized, resulting in a large speedup. However, we have not yet generalized this code and this can only run for some fixed problem sizes and fixed thread sizes. We plan to do this in the future. Therefore, we ran the strong scaling studying on a 2048 x 2048 graph. The weak scaling study varies the problem size but keeps the problem size per processor constant at a 512 x 512 board. We could only run it using a small number of threads: 1, 4, and 16 on the compute node.
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/strong_scaling_eric.png}
+\caption{Strong scaling study of the tuned parallel solution}
+\label{fig:ss_eric}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/weak_scaling_eric.png}
+\caption{Weak scaling study of the tuned parallel solution}
+\label{fig:ws_eric}
+\end{figure}
 
 \section{Future Work}
 
