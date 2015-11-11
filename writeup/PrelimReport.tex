@@ -49,14 +49,14 @@ We also performed strong and weak scaling studies on the original code, and the 
 
  \begin{figure}[here]
   \centering
-  \includegraphics[width=0.8\linewidth]{strong-orig.png}
+  \includegraphics[width=0.7\linewidth]{strong-orig.png}
   \caption{Time taken for original algorithm on a fixed $2000 \times 2000$ matrix varying with number of threads}
   \label{strong-orig}
 \end{figure}
 
  \begin{figure}[here]
   \centering
-  \includegraphics[width=0.8\linewidth]{weak-orig.png}
+  \includegraphics[width=0.7\linewidth]{weak-orig.png}
   \caption{Time taken for original algorithm on varying with number of threads with workload of each thread held constant}
   \label{weak-orig}
 \end{figure}
@@ -67,6 +67,21 @@ In the weak scaling study, we keep the workload of each thread constant as we in
 
 \section{Tuning}
 
-\section{Strategy for Implementation with MPI}
+The iteration order of this algorithm is exactly the same as matrix multiplication. Only difference is that we have one matrix and multiplying by its transpose. First step we take is to copy the transpose of the matrix into a separate array so that we get better locality. By doing so we were able to get approximately 4 times speed up. 
+
+As a second step we divide the matrix into blocks to split up the work among the threads. We use almost exact copy of \texttt{dgemm\_blocked.c}. We change the array accesses to the first matrix as now we use the transposed copy of it. We also change the inner kernel and replace the multiplication with path length comparison and update.
+
+The order of the \texttt{for} loops is such that every block of the resulting matrix is computed one by one. In other words, in the serial version, the outer loop iterates over the blocks of the resulting matrix so it does not go back to a previous block. This ordering is useful when we parallelize because we split up the work of the outer loop and each thread updates independent block of the result, reading the data from input matrices in a mixed order.
+
+This blocking strategy worked well and we got up to 12x speed up. 
+
+ \begin{figure}[here]
+  \centering
+  \includegraphics[width=0.7\linewidth]{tunedPerformance.png}
+  \caption{Speed up by tuning the OpenMP implementation with blocked load partitioning.}
+  \label{tunedPerformance}
+\end{figure}
+
+%\section{Strategy for Implementation with MPI}
 
 \end{document}
