@@ -137,6 +137,8 @@ int square_block(int n,               // Number of nodes
     #pragma omp for
     for (bi = 0; bi < n_blocks; ++bi) {
         for (bj = 0; bj < n_blocks; ++bj) {
+            // #pragma vector aligned learned from kenlimmj's code
+            #pragma vector aligned
             for (bk = 0; bk < n_blocks; ++bk) {
                 int td = basic_square(
                      L + (bi + bk * n_blocks) * n_area,
