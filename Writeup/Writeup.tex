@@ -77,7 +77,16 @@ Both strong and weak scaling studies were performed for the openMP code.
 		\end{center}
 	\end{figure}
 	
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.7\columnwidth]{wk_graph_mp}
+			\caption{Weak Scaling (\%), openMP}
+			\label{wk_mp_g}
+		\end{center}
+	\end{figure}
 	
+
+\clearpage
 \section{OpenMPI}
 
 OpenMPI was used in place of OpenMP in the square routine to compare the efficiency of both methods. To use openMPI, the graph was split into equally sized sections, with each processor assigned a section. The minimum distance between locations within each section was computed, and then gathered and saved for the overall graph by using the command MPI\_ALLREDUCE and operation MPI\_MIN during the computation.  
@@ -111,15 +120,18 @@ Similarly, strong and weak scaling studies were performed with the MPI paralleli
 		\end{center}
 	\end{figure}
 	
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.7\columnwidth]{wk_graph_mpi}
+			\caption{Weak Scaling (\%), openMPI}
+			\label{wk_mpi_g}
+		\end{center}
+	\end{figure}
+	
+Overall, the current MPI parallelization method has better strong scaling than the openMP parallelization, although a similar domain decomposition for the openMP method would likely improve its' strong scaling characteristics. Weak scaling (which can be used to investigate the cost of communications) in both cases is similar, with openMPI performing only slightly more poorly. Additional testing should be done to investigate scaling on multiple nodes, in which case openMPI is expected to outperform openMP significantly due to the cross-node communications.  
 	
 
 \section{Additional Changes}
 For the future, there are many different things we can try. As evidenced in the past, proper usage of compiler flags should be able to provide some speedups for the process. Additionally, another option we plan to try is blocking. On a conceptual level, for each block, the fastest paths would be calculated given each potential entry and exit point, which would be the ghost cells around each block. From there, one aggregated faster path through would be calculated from the combination of smaller paths. Finally, we hope to test the use of running the code on the Xeon Phis, for both the openMP and openMPI cases.
-
-\section{Overview}
-
-\begin{thebibliography}{1}
-
-\end{thebibliography}
 
 \end{document}
