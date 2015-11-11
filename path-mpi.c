@@ -251,6 +251,7 @@ int main(int argc, char** argv)
     // Time the shortest paths code
     if(irank = 1) t0 = MPI_Wtime();
     //ok, now probably just each processor computes some shortest paths and then broadcasts 
+    printf("n:%d i:%d xmin:%d xmax:%d ymin:%d ymax:%d\n", n, irank, imin, imax, jmin, jmax);
     shortest_paths(n, l, irank, imin, imax, jmin, jmax);
     t1 = MPI_Wtime();
 
