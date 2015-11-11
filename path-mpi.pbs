@@ -7,5 +7,4 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-amplxe-cl -collect hotspots \
-./path.x -n 2000
+mpirun -np 10 ./path-mpi.x -n 2000

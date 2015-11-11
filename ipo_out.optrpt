@@ -4,22 +4,22 @@ Begin optimization report for: main(int, char **)
     Report from: Vector optimizations [vec]
 
 
-LOOP BEGIN at mt19937p.c(59,5) inlined into path.c(230,14)
+LOOP BEGIN at mt19937p.c(59,5) inlined into path-mpi.c(241,14)
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
    remark #15346: vector dependence: assumed FLOW dependence between mt line 60 and mt line 60
 LOOP END
 
-LOOP BEGIN at mt19937p.c(59,5) inlined into path.c(230,14)
+LOOP BEGIN at mt19937p.c(59,5) inlined into path-mpi.c(241,14)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at path.c(142,5) inlined into path.c(230,14)
+LOOP BEGIN at path-mpi.c(153,5) inlined into path-mpi.c(241,14)
    remark #15542: loop was not vectorized: inner loop was already vectorized
 
-   LOOP BEGIN at path.c(143,9) inlined into path.c(230,14)
+   LOOP BEGIN at path-mpi.c(154,9) inlined into path-mpi.c(241,14)
       remark #15542: loop was not vectorized: inner loop was already vectorized
 
-      LOOP BEGIN at mt19937p.c(77,9) inlined into path.c(230,14)
+      LOOP BEGIN at mt19937p.c(77,9) inlined into path-mpi.c(241,14)
          remark #15388: vectorization support: reference mt has aligned access   [ mt19937p.c(78,13) ]
          remark #15389: vectorization support: reference mt has unaligned access   [ mt19937p.c(78,13) ]
          remark #15388: vectorization support: reference mt has aligned access   [ mt19937p.c(79,13) ]
@@ -41,11 +41,11 @@ LOOP BEGIN at path.c(142,5) inlined into path.c(230,14)
          remark #15488: --- end vector loop cost summary ---
       LOOP END
 
-      LOOP BEGIN at mt19937p.c(81,9) inlined into path.c(230,14)
+      LOOP BEGIN at mt19937p.c(81,9) inlined into path-mpi.c(241,14)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at mt19937p.c(81,9) inlined into path.c(230,14)
+      LOOP BEGIN at mt19937p.c(81,9) inlined into path-mpi.c(241,14)
          remark #15388: vectorization support: reference mt has aligned access   [ mt19937p.c(82,13) ]
          remark #15389: vectorization support: reference mt has unaligned access   [ mt19937p.c(82,13) ]
          remark #15388: vectorization support: reference mt has aligned access   [ mt19937p.c(83,13) ]
@@ -66,35 +66,35 @@ LOOP BEGIN at path.c(142,5) inlined into path.c(230,14)
          remark #15488: --- end vector loop cost summary ---
       LOOP END
 
-      LOOP BEGIN at mt19937p.c(81,9) inlined into path.c(230,14)
+      LOOP BEGIN at mt19937p.c(81,9) inlined into path-mpi.c(241,14)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at mt19937p.c(77,9) inlined into path.c(230,14)
+      LOOP BEGIN at mt19937p.c(77,9) inlined into path-mpi.c(241,14)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at path.c(185,5) inlined into path.c(232,9)
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path.c(187,13) ]
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path.c(188,9) ]
+LOOP BEGIN at path-mpi.c(196,5) inlined into path-mpi.c(243,9)
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-mpi.c(198,13) ]
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-mpi.c(199,9) ]
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 187 and  line 188
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 188 and  line 187
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 198 and  line 199
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 199 and  line 198
 
-   LOOP BEGIN at path.c(186,9) inlined into path.c(232,9)
-      remark #15527: loop was not vectorized: function call to fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path.c(187,13) ]
+   LOOP BEGIN at path-mpi.c(197,9) inlined into path-mpi.c(243,9)
+      remark #15527: loop was not vectorized: function call to fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-mpi.c(198,13) ]
    LOOP END
 LOOP END
 
-LOOP BEGIN at path.c(82,5) inlined into path.c(236,5)
+LOOP BEGIN at path-mpi.c(93,5) inlined into path-mpi.c(247,5)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at path.c(82,5) inlined into path.c(236,5)
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(84,13) ]
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(84,13) ]
+LOOP BEGIN at path-mpi.c(93,5) inlined into path-mpi.c(247,5)
+   remark #15389: vectorization support: reference l has unaligned access   [ path-mpi.c(95,13) ]
+   remark #15389: vectorization support: reference l has unaligned access   [ path-mpi.c(95,13) ]
    remark #15381: vectorization support: unaligned access used inside loop body
    remark #15300: LOOP WAS VECTORIZED
    remark #15442: entire loop may be executed in remainder
@@ -108,25 +108,58 @@ LOOP BEGIN at path.c(82,5) inlined into path.c(236,5)
    remark #15488: --- end vector loop cost summary ---
 LOOP END
 
-LOOP BEGIN at path.c(82,5) inlined into path.c(236,5)
+LOOP BEGIN at path-mpi.c(93,5) inlined into path-mpi.c(247,5)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at path.c(112,5) inlined into path.c(236,5)
+LOOP BEGIN at path-mpi.c(123,5) inlined into path-mpi.c(247,5)
    remark #15521: loop was not vectorized: explicitly compute the iteration count before executing the loop or try using canonical loop form
 LOOP END
 
-LOOP BEGIN at path.c(118,5) inlined into path.c(236,5)
-   remark #15521: loop was not vectorized: explicitly compute the iteration count before executing the loop or try using canonical loop form
+LOOP BEGIN at path-mpi.c(128,5) inlined into path-mpi.c(247,5)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at path-mpi.c(59,5) inlined into path-mpi.c(247,5)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at path-mpi.c(60,9) inlined into path-mpi.c(247,5)
+         remark #15542: loop was not vectorized: inner loop was already vectorized
+
+         LOOP BEGIN at path-mpi.c(62,13) inlined into path-mpi.c(247,5)
+         <Peeled>
+         LOOP END
+
+         LOOP BEGIN at path-mpi.c(62,13) inlined into path-mpi.c(247,5)
+            remark #15389: vectorization support: reference l has unaligned access   [ path-mpi.c(64,27) ]
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15415: vectorization support: gather was generated for the variable l:  strided by non-constant value   [ path-mpi.c(63,27) ]
+            remark #15300: LOOP WAS VECTORIZED
+            remark #15442: entire loop may be executed in remainder
+            remark #15450: unmasked unaligned unit stride loads: 1 
+            remark #15460: masked strided loads: 1 
+            remark #15475: --- begin vector loop cost summary ---
+            remark #15476: scalar loop cost: 21 
+            remark #15477: vector loop cost: 5.250 
+            remark #15478: estimated potential speedup: 3.490 
+            remark #15479: lightweight vector operations: 23 
+            remark #15481: heavy-overhead vector operations: 1 
+            remark #15488: --- end vector loop cost summary ---
+         LOOP END
+
+         LOOP BEGIN at path-mpi.c(62,13) inlined into path-mpi.c(247,5)
+         <Remainder>
+         LOOP END
+      LOOP END
+   LOOP END
 LOOP END
 
-LOOP BEGIN at path.c(89,5) inlined into path.c(236,5)
+LOOP BEGIN at path-mpi.c(100,5) inlined into path-mpi.c(247,5)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at path.c(89,5) inlined into path.c(236,5)
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(91,13) ]
-   remark #15389: vectorization support: reference l has unaligned access   [ path.c(91,13) ]
+LOOP BEGIN at path-mpi.c(100,5) inlined into path-mpi.c(247,5)
+   remark #15389: vectorization support: reference l has unaligned access   [ path-mpi.c(102,13) ]
+   remark #15389: vectorization support: reference l has unaligned access   [ path-mpi.c(102,13) ]
    remark #15381: vectorization support: unaligned access used inside loop body
    remark #15300: LOOP WAS VECTORIZED
    remark #15442: entire loop may be executed in remainder
@@ -140,58 +173,25 @@ LOOP BEGIN at path.c(89,5) inlined into path.c(236,5)
    remark #15488: --- end vector loop cost summary ---
 LOOP END
 
-LOOP BEGIN at path.c(89,5) inlined into path.c(236,5)
+LOOP BEGIN at path-mpi.c(100,5) inlined into path-mpi.c(247,5)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at path.c(171,5) inlined into path.c(243,27)
+LOOP BEGIN at path-mpi.c(182,5) inlined into path-mpi.c(254,27)
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed ANTI dependence between sum2 line 173 and sum2 line 173
-   remark #15346: vector dependence: assumed FLOW dependence between sum2 line 173 and sum2 line 173
+   remark #15346: vector dependence: assumed ANTI dependence between sum2 line 184 and sum2 line 184
+   remark #15346: vector dependence: assumed FLOW dependence between sum2 line 184 and sum2 line 184
 LOOP END
 
-LOOP BEGIN at path.c(185,5) inlined into path.c(247,9)
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path.c(187,13) ]
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path.c(188,9) ]
+LOOP BEGIN at path-mpi.c(196,5) inlined into path-mpi.c(258,9)
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-mpi.c(198,13) ]
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-mpi.c(199,9) ]
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 187 and  line 188
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 188 and  line 187
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 198 and  line 199
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 199 and  line 198
 
-   LOOP BEGIN at path.c(186,9) inlined into path.c(247,9)
-      remark #15527: loop was not vectorized: function call to fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path.c(187,13) ]
-   LOOP END
-LOOP END
-
-LOOP BEGIN at path.c(49,5) inlined into path.c(236,5)
-   remark #15542: loop was not vectorized: inner loop was already vectorized
-
-   LOOP BEGIN at path.c(50,9) inlined into path.c(236,5)
-      remark #15542: loop was not vectorized: inner loop was already vectorized
-
-      LOOP BEGIN at path.c(52,13) inlined into path.c(236,5)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at path.c(52,13) inlined into path.c(236,5)
-         remark #15389: vectorization support: reference l has unaligned access   [ path.c(54,27) ]
-         remark #15381: vectorization support: unaligned access used inside loop body
-         remark #15415: vectorization support: gather was generated for the variable l:  strided by non-constant value   [ path.c(53,27) ]
-         remark #15300: LOOP WAS VECTORIZED
-         remark #15442: entire loop may be executed in remainder
-         remark #15450: unmasked unaligned unit stride loads: 1 
-         remark #15460: masked strided loads: 1 
-         remark #15475: --- begin vector loop cost summary ---
-         remark #15476: scalar loop cost: 21 
-         remark #15477: vector loop cost: 5.250 
-         remark #15478: estimated potential speedup: 3.490 
-         remark #15479: lightweight vector operations: 23 
-         remark #15481: heavy-overhead vector operations: 1 
-         remark #15488: --- end vector loop cost summary ---
-      LOOP END
-
-      LOOP BEGIN at path.c(52,13) inlined into path.c(236,5)
-      <Remainder>
-      LOOP END
+   LOOP BEGIN at path-mpi.c(197,9) inlined into path-mpi.c(258,9)
+      remark #15527: loop was not vectorized: function call to fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-mpi.c(198,13) ]
    LOOP END
 LOOP END
 
@@ -199,7 +199,7 @@ LOOP END
 Non-optimizable loops:
 
 
-LOOP BEGIN at path.c(217,5)
-   remark #15535: loop was not vectorized: loop contains switch statement. Consider using if-else statement.   [ path.c(218,9) ]
+LOOP BEGIN at path-mpi.c(228,5)
+   remark #15535: loop was not vectorized: loop contains switch statement. Consider using if-else statement.   [ path-mpi.c(229,9) ]
 LOOP END
 ===========================================================================
