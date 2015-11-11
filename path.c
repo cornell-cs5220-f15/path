@@ -59,7 +59,7 @@ int square(int n,               // Number of nodes
         for (int i = 0; i < n; ++i) {
             int lij = l[j*n+i];
             for (int k = 0; k < n; ++k) {
-                int lik = ltrans[k*n+i];
+                int lik = ltrans[i*n + k];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
