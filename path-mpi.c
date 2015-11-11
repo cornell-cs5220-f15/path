@@ -242,13 +242,14 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD,&irank);
 
-    imin =  (irank % npx)*n/npx;
-    imax = imin + (n/npx) - 1;
-    jmin = floor((irank)/npx)*(n/npy);
-    jmax = jmin + (n/npy) - 1;
+    imin =  (irank % npx)*(n/npx + 1);
+    imax = min(imin + (n/npx), n - 1);
+    jmin = floor((irank)/npx)*(n/npy + 1);
+    jmax = min(jmin + (n/npy), n - 1);
 
     // Time the shortest paths code
     if(irank == 1) t0 = MPI_Wtime();
+    printf("x:%d-%d y:%d-%d\n", imin, imax, jmin, jmax);
     //ok, now probably just each processor computes some shortest paths and then broadcasts 
     shortest_paths(n, l, irank, imin, imax, jmin, jmax);
 
