@@ -1,0 +1,20 @@
+== OpenMP with 1 threads
+n:     200
+p:     0.05
+Time:  0.0118399
+Check: 9F8F
+== OpenMP with 4 threads
+n:     400
+p:     0.05
+Time:  0.03093
+Check: 4312
+== OpenMP with 9 threads
+n:     600
+p:     0.05
+Time:  0.0783401
+Check: 5FD6
+== OpenMP with 16 threads
+n:     800
+p:     0.05
+Time:  0.35244
+Check: C008
