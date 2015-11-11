@@ -1,0 +1,5 @@
+== OpenMP with 24 threads
+n:     2000
+p:     0.05
+Time:  2.5941
+Check: E16C

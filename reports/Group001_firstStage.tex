@@ -1,0 +1,135 @@
+\documentclass[12pt]{article}
+\linespread{1.45}
+
+\usepackage{amsmath}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{xcolor}
+
+\setlength{\topmargin}{-.5in}
+\setlength{\textheight}{9in}
+\setlength{\oddsidemargin}{.125in}
+\setlength{\textwidth}{6.25in}
+
+
+\begin{document}
+
+%\noindent
+\setlength{\parindent}{24pt}
+
+
+\section*{Project 3 - All-Pairs Shortest Paths}
+Team 1 \--- Bob Chen, Nimit Sohoni, Xiangyu Zhang
+
+\section{Introduction}
+In this project our object was to optimize an implementation of the \textit{Floyd-Warshall algorithm} to compute all pairwise shortest path lengths in a graph. 
+We were provided with a reference OpenMP implementation with naive approach for the core. We started with profiling the given code and analyzing the most significant bottleneck to be accessing individual elements in the matrix. From there we employed strategies from matrix computation project including blocking, vectorization and copy optimization to enhance the performance. \\
+By the end of the first stage we were able to significantly minimize the cost on accessing elements. However we did not intensively investigated the incoorporation of OpenMP or MPI, which in theory shall further optimize the performance. We plan to continue tuning the code with those approaches in the next stage of this project.
+
+\section{Profiling and Analysis}
+We used \texttt{amplxe} tool to profile the provided basic implementation of Floyd-Warshall algorithm. The hotspots report shows that the \texttt{square} function is the most expensive step in the computation
+
+\bigskip
+\begin{center}
+	\begin{tabular}{l|c}
+		Function & CPU Time (s) \\ \hline
+		\texttt{square} & 54.854 \\
+		\texttt{\_\_kmp\_barrier} & 10.136 \\       
+		\texttt{\_\_kmpc\_reduce\_nowait} & 4.940 \\  
+	\end{tabular}
+\end{center}
+
+\bigskip
+Here we only listed the slowest three functions, two of which are OpenMP calls. Looking at the detailed profiling of \texttt{square} function:
+
+\bigskip
+\begin{center}
+	\begin{tabular}{l|c}
+		Lines in \texttt{square} & CPU Time (s) \\ \hline
+		47 \texttt{\#pragma omp parallel for shared(l, lnew) reduction(\&\& : done)} &  \\
+		48 \texttt{for (int j = 0; j < n; ++j) \{} & \\       
+		49 \hspace{8 mm} \texttt{for (int i = 0; i < n; ++i) \{} &  \\  
+        50 \hspace{16 mm} \texttt{int lij = lnew[j*n+i];} & 0.040 \\  
+        51 \hspace{16 mm} \texttt{for (int k = 0; k < n; ++k) \{} & 8.249 \\  
+        52 \hspace{24 mm} \texttt{int lik = l[k*n+i];} & \textcolor{red}{25.808} \\  
+        53 \hspace{24 mm} \texttt{int lkj = l[j*n+k]} &  \\  
+        54 \hspace{24 mm} \texttt{if (lik + lkj < lij) \{} & 3.321 \\  
+        55 \hspace{32 mm} \texttt{lij = lik+lkj;} &  \\  
+        56 \hspace{32 mm} \texttt{done = 0;} & 4.437 \\  
+        57 \hspace{24 mm} \texttt{\}} &  \\  
+        58 \hspace{16 mm} \texttt{\}} & \\  
+        59 \hspace{16 mm} \texttt{lnew[j*n+i] = lij;} &  \\  
+        60 \hspace{8 mm} \texttt{\}} &  \\  
+        61 \texttt{\}} &  \\  
+	\end{tabular}
+\end{center}
+
+\bigskip
+Notabaly the most costly step is line 52 when retreiving the \texttt{lik} element from the matrix. We find this scenario quite falimiar as this happened in the matrix computation project. It can also be noticed that the cost on OpenMP should happen in this block as well since the barrier synchronization and reduction happen at the end of for loops. We suggest that after minimizing the computational cost within the core of this nested for loops, the cost of OpenMP should be ideally significantly reduced as well. \\
+
+\section{Matrix Access Strategies}
+In order to minimize the cost of accessing individual elements in a matrix, we bring up the strategies we used in the matrix computation project, namely blocking, vectorization and copy optimization. We have tried all three approaches in the first stage.
+\subsection{Blocking}
+The L1 cache of the computing nodes of the cluster is 64 KB large. So the largest matrix it can accommodate is
+$$ \sqrt{\frac{64 \text{KB}}{4 \text{B}}} = 128 $$
+Thus in our implementation, we divide the given matrix into blocks of 128 to reduce the cost of memory access.\\
+However we found that this implementation does not enhance the performance as much as we expected. On the contrary it slows down the computation due to communication between blocks. We believe this would be a good scenanio where either OpenMP or MPI should make contribution to, however due to time constraints we have not finished tuning yet.
+\subsection{Vectorization and Copy Optimization}
+Another important strategy we employed is the copy optimization and vectorization. Knowing that for the computing nodes on cluster, vector size for each register is 256 bits long and there are 4 vectors per core, we align columns of the matrix into vectors of 64 Bytes. To enforce the alignment and enforce the column access we first transpose the matrix then use the \texttt{\_\_assume\_aligned} function.\\
+With the copy optimization and pre-tuned OpenMP implementation, we are able to significantly accelerate the computation, signifying that this approach works well in this set-up.
+\subsection{Profiling for Different Approaches}
+We have profiled three experiments: the blocking approach which is not parallel with OpenMP; the copy optimization and vectorization on one thread; and the copy optimization and vectorization on 24 threads. In comparison, note that in the basic implementation, \texttt{square} function takes 54.9 seconds, in which the slowest step takes 25.8 seconds in total.\\
+The following are a few highlights from the performance analysis.\footnote{To access the full report, check the Github repository \texttt{report} folder.}
+\bigskip
+\begin{center}
+	Blocking Approach without OpenMP/MPI\footnote{See the code \texttt{path.c}, function \texttt{square\_block} and \texttt{basic\_square}} \\
+	\begin{tabular}{l|c}
+		Function & CPU Time (s) \\ \hline
+		\texttt{basic\_square} & 6.084 \\		
+        ----------\\
+        Slowest Steps\\
+        57 \texttt{int lik = l\_transpose[i*BLOCK\_SIZE + k];} & 3.298 \\
+        58 \texttt{int lkj = l[j*BLOCK\_SIZE + k];} & 2.337
+	\end{tabular}
+\end{center}
+
+\bigskip
+\begin{center}
+	Vectorization and Copy Optimization Using One Thread\footnote{See the code \texttt{path.c}, function \texttt{square}. To run the code, use flag "-t 1".}
+	\begin{tabular}{l|c}
+		Function & CPU Time (s) \\ \hline
+		\texttt{square} & 3.587 \\
+		-------- \\       
+		Slowest Steps \\
+        188 \texttt{lij = lik + lkj;} & 1.798
+	\end{tabular}
+\end{center}
+
+\bigskip
+\begin{center}
+	Vectorization and Copy Optimization Using 24 Threads\footnote{See the code \texttt{path.c}, function \texttt{square}. To run the code, use flag "-t 24".}
+	\begin{tabular}{l|c}
+		Function & CPU Time (s) \\ \hline
+		\texttt{square} & 6.675 \\
+        \texttt{\_\_kmp\_barrier} & 5.336 \\
+        \texttt{\_\_kmp\_fork\_barrier} & 2.108 \\
+		--------- \\       
+		Slowest Steps \\
+        188 \texttt{lij = lik + lkj;} & 3.784
+	\end{tabular}
+\end{center}
+It can be observed that both three approaches enhance the performance, while the vectorization and copy optimization have the best performance. Note that we still have not intensively tune the parallel portion of the code and we do expect to see better results once we have better tuned OpenMP and MPI implementation.
+\section{Future Work}
+There are a few of things we will be doing in the next stage.
+	\begin{enumerate}
+    	\item Further implement OpenMP and MPI in our code and tune it to give better performance.
+        \item Once the parallel is well set up, we will do the strong scaling and weak scaling experiment to examine the speedup of our code.
+        \item We only briefly adapted the copy optimization in our blocking approach without further polishing. We will introduce parallelism to this strategy.
+        \item We have tried a few compiler flags but did not observe significant change to the performance, but we are going to investigate that as well.
+   \end{enumerate}
+
+\section{Acknowledgement}
+Part of the work referenced our work in \textit{Project 1 - Matrix computation} shared by Sijia Ma (Xiangyu's partner in Project 1) and Amiraj Dhawan (Bob and Nimit's partner in Project 1). Scott Wu's Project 1 report also provided inspiring ideas to this work.
+
+\end{document}
