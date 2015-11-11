@@ -45,8 +45,8 @@ int square(int irank, int imin,int imax,
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    for (int j = jmin; j < jmax; ++j) {
-        for (int i = imin; i < imax; ++i) {
+    for (int j = jmin; j <= jmax; ++j) {
+        for (int i = imin; i <= imax; ++i) {
             int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
