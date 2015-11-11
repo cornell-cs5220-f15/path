@@ -61,7 +61,23 @@ Weak scaling is similarly defined as below as the ratio between serial and paral
 
 Both strong and weak scaling studies were performed for the openMP code.
 
-
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.5\columnwidth]{st_table_mp}
+			\caption{Strong Scaling for 200x200 Element Graph, openMP}
+			\label{mp_st_t}
+		\end{center}
+	\end{figure}
+	
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=0.7\columnwidth]{st_graph_mp}
+			\caption{Strong Scaling Efficiency, openMP}
+			\label{mp_st_g}
+		\end{center}
+	\end{figure}
+	
+	
 \section{OpenMPI}
 
 OpenMPI was used in place of OpenMP in the square routine to compare the efficiency of both methods. To use openMPI, the graph was split into equally sized sections, with each processor assigned a section. The minimum distance between locations within each section was computed, and then gathered and saved for the overall graph by using the command MPI\_ALLREDUCE and operation MPI\_MIN during the computation.  
@@ -82,16 +98,16 @@ Similarly, strong and weak scaling studies were performed with the MPI paralleli
 	\begin{figure}[h!]
 		\begin{center}
 			\includegraphics[width=0.5\columnwidth]{st_table_mpi}
-			\caption{Strong Scaling for 200x200 Element Graph}
-			\label{amplxe}
+			\caption{Strong Scaling for 200x200 Element Graph, openMPI}
+			\label{st_mpi_t}
 		\end{center}
 	\end{figure}
 	
 	\begin{figure}[h!]
 		\begin{center}
 			\includegraphics[width=0.7\columnwidth]{st_graph_mpi}
-			\caption{Strong Scaling Efficiency}
-			\label{amplxe}
+			\caption{Strong Scaling Efficiency, openMPI}
+			\label{st_mpi_g}
 		\end{center}
 	\end{figure}
 	
