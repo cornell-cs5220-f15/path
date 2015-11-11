@@ -26,6 +26,9 @@ threads, timings = np.loadtxt('weak_scaling.csv', delimiter=',', usecols=(0,1), 
 serial_time = timings[0];
 timings = np.divide(serial_time, timings)
 
+serial_time = timings[0];
+timings = np.divide(serial_time, timings)
+
 plt.plot(threads, timings)
 plt.xlim([1,20])
 plt.xlabel("Number of OMP threads")
