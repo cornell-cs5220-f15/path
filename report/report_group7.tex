@@ -41,6 +41,15 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 \section{Design Decisions}
  
 \subsection{Parallel Tuning}
+
+Since the Floyd-Warshall algorithm is structured very similarly to matrix multiplication, we decided to try taking some of the tuning methods used in the first project on matrix multiplication, and applying them to the Floyd-Warshall algorithm.
+
+The first of these methods is using a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon.
+
+The second method was to change the loop ordering, so that in the innermost loop, memory is being accessed with unit stride, which increases performance.
+
+As the project goes on, we also hope to add other optimizations attempted in the matrix multiplication project, such as copying the blocks into a contiguous chunk of memory.
+
 \subsection{Message Passing Interface}
 
 In addition to the tuned parallel implementations, we explored an approach that uses the Message Passing Interface to achieve parallelism. In the MPI implementation, each process handles a certain region of the graph. To prevent a master process orchestrating the distance computation, we ideally want each process to only wait for information from the relevant part of the graph. To that end, we take the adjacency matrix on which the Floyd-Warshall algorithm is run and partition the graph by chunks of columns. Then each processors is responsible for update a contiguous sequence of columns in the matrix.
@@ -116,6 +125,9 @@ The strong scaling study was performed on a graph with 2000 nodes. The weak scal
 \subsection{Tuned Parallel Implementation}
 
 \subsubsection{Profiling} \label{sec:prof}
+
+Unfortunately, we ran into some technical difficulties with VTune Amplifier XE, and were unable to profile our tuned OpenMP implementation in time for this intermediate report.
+
 \subsubsection{Scaling Study} \label{sec:speedup}
 
 Although the scaling studies for the tuned parallel implementation times show similar speedup and efficiency patterns as the original solution, the overall time taken to achieve the solution is lower than the original OpenMP solution. 
@@ -133,7 +145,7 @@ Although the scaling studies for the tuned parallel implementation times show si
 \label{fig:ws_elliot}
 \end{figure}
 
-The strong scaling study was performed on a graph with 2000 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 1000 nodes. 
+The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. 
 
 \begin{thebibliography}{9}
 \bibitem{writeup}
