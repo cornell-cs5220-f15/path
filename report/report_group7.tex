@@ -17,7 +17,7 @@
 \headheight0.0cm
 \headsep0.0cm
 \oddsidemargin0.0cm
-\textheight23.0cm
+\textheight23.5cm
 \textwidth16.5cm
 \footskip1.0cm
 
@@ -95,28 +95,45 @@ Profiling the original solution shows that the most CPU time goes into the squar
 
 \subsubsection{Scaling Study} \label{sec:speedup_orig}
 
-The speedup plots of the original solution shows linear improvement in performance
-\paragraph{Strong Scaling Study}
+The speedup plots of the original solution shows linear improvement in performance but an exponential decrease in efficiency as shown in figure~\ref{fig:ws_orig}. This can be attributed to the increased overhead in synchronization and spin time.
+
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.5]{./scaling_studies/strong_scaling_original.png}
 \caption{Strong scaling study of the original solution}
 \label{fig:ss_orig}
 \end{figure}
-\paragraph{Weak Scaling Study}
+
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.5]{./scaling_studies/weak_scaling_original.png}
 \caption{Weak scaling study of the original solution}
-\label{fig:ss_orig}
+\label{fig:ws_orig}
 \end{figure}
 
+The strong scaling study was performed on a graph with 2000 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 1000 nodes. 
+
 \subsection{Tuned Parallel Implementation}
+
 \subsubsection{Profiling} \label{sec:prof}
 \subsubsection{Scaling Study} \label{sec:speedup}
-\paragraph{Strong Scaling Study}
-\paragraph{Weak Scaling Study}
 
+Although the scaling studies for the tuned parallel implementation times show similar speedup and efficiency patterns as the original solution, the overall time taken to achieve the solution is lower than the original OpenMP solution. 
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/strong_scaling_elliot.png}
+\caption{Strong scaling study of the tuned parallel solution}
+\label{fig:ss_elliot}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/weak_scaling_elliot.png}
+\caption{Weak scaling study of the tuned parallel solution}
+\label{fig:ws_elliot}
+\end{figure}
+
+The strong scaling study was performed on a graph with 2000 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 1000 nodes. 
 
 \begin{thebibliography}{9}
 \bibitem{writeup}
