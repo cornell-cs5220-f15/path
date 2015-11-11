@@ -195,6 +195,7 @@ void write_matrix(const char* fname, int n, int* a)
 const char* usage =
     "path.x -- Parallel all-pairs shortest path on a random graph\n"
     "Flags:\n"
+	"  - t -- number of threads to use (all)\n"
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
@@ -206,16 +207,18 @@ int main(int argc, char** argv)
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
+	int nthreads = 0;
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "ht:n:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
         case 'h':
             fprintf(stderr, "%s", usage);
             return -1;
+		case 't': nthreads = atoi(optarg); break; 
         case 'n': n = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
@@ -228,6 +231,10 @@ int main(int argc, char** argv)
     if (ifname)
         write_matrix(ifname,  n, l);
 
+	// Set the number of threads
+	if(nthreads > 0) {
+		omp_set_num_threads(nthreads);
+	}
     // Time the shortest paths code
     double t0 = omp_get_wtime();
     shortest_paths(n, l);

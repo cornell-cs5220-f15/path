@@ -1,0 +1,12 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N time-path_1
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+for nval in {200..2600..200}; do
+	./path.x -t 1 -n $nval
+done

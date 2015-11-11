@@ -1,0 +1,12 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N time-path-mpi
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+for nval in {200..2600..200}; do
+	mpirun -np 1 ./path-mpi.x -n $nval
+done

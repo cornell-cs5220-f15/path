@@ -160,7 +160,7 @@ void block_to_column(int* old, int* blocked, int n, int block_size){
  * | 2 4 | 11 12 |
  * ------  ------
  * | 5 7 | 13 15 |
- * | 7 8 | 14 16 | 
+ * | 6 8 | 14 16 | 
  * ------ -------
  */
 void shortest_paths(int n, int* restrict l, int argc, char** argv)
@@ -181,13 +181,12 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
 	assert(n%n_block == 0 ); // throws error is n is not divisible by ratio, need to change this later
 	int block_size = n/n_block;
 	int* restrict bl = (int*) _mm_malloc(n*n*sizeof(int),64); // blocked version of l where blocks are n/4 * n/4 and
-	column_to_block(l,bl,n, block_size); // implement this function later
+	column_to_block(l,bl,n, block_size); 
 	
 
 	
 	//MPI Setup
 	
-//	MPI_Init(&argc, &argv); // probably wrong
 	MPI_Group* col_group= (MPI_Group*) _mm_malloc(n_block*sizeof(MPI_Group),64);// group ID of column groups
 	MPI_Group* row_group= (MPI_Group*) _mm_malloc(n_block*sizeof(MPI_Group),64);// group ID of row groups
 	MPI_Group World_Group; // group handle of World (main group) 
@@ -207,9 +206,6 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
 	
 	MPI_Comm_group(MPI_COMM_WORLD, &World_Group);
 	
-	if (myrank==0){
-		printf("Number of processes %d \n", nproc); 
-	}
 	mycolrank = myrank/n_block;
 	myrowrank = myrank%n_block;
 	
@@ -400,19 +396,21 @@ int main(int argc, char** argv)
     double t1 = MPI_Wtime();
     int myrank;
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-    if(myrank==0){
-    printf("== MPI with %d threads\n", 16);
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    if(myrank==0) {
+		int threads;
+		MPI_Comm_size(MPI_COMM_WORLD, &threads);  
+		printf("== MPI with %d threads\n", threads);
+		printf("n:     %d\n", n);
+		printf("p:     %g\n", p);
+		printf("Time:  %g\n", t1-t0);
+		printf("Check: %X\n", fletcher16(l, n*n));
 
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
-    
-    // Clean up
-    free(l);
+		// Generate output file
+		if (ofname)
+			write_matrix(ofname, n, l);
+		
+		// Clean up
+		free(l);
     }
     MPI_Finalize();  
     return 0;
