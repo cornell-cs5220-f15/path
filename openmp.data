@@ -1,0 +1,65 @@
+== OpenMP with 1 threads
+n:     200
+p:     0.05
+Time:  0.0116529
+Check: 9F8F
+== OpenMP with 2 threads
+n:     200
+p:     0.05
+Time:  0.00655317
+Check: 9F8F
+== OpenMP with 4 threads
+n:     200
+p:     0.05
+Time:  0.00718093
+Check: 9F8F
+== OpenMP with 6 threads
+n:     200
+p:     0.05
+Time:  0.00629187
+Check: 9F8F
+== OpenMP with 8 threads
+n:     200
+p:     0.05
+Time:  0.00600195
+Check: 9F8F
+== OpenMP with 10 threads
+n:     200
+p:     0.05
+Time:  0.068536
+Check: 9F8F
+== OpenMP with 12 threads
+n:     200
+p:     0.05
+Time:  0.102773
+Check: 9F8F
+== OpenMP with 14 threads
+n:     200
+p:     0.05
+Time:  0.0416851
+Check: 9F8F
+== OpenMP with 16 threads
+n:     200
+p:     0.05
+Time:  0.00977397
+Check: 9F8F
+== OpenMP with 18 threads
+n:     200
+p:     0.05
+Time:  0.012768
+Check: 9F8F
+== OpenMP with 20 threads
+n:     200
+p:     0.05
+Time:  0.00964308
+Check: 9F8F
+== OpenMP with 22 threads
+n:     200
+p:     0.05
+Time:  0.077235
+Check: 9F8F
+== OpenMP with 24 threads
+n:     200
+p:     0.05
+Time:  0.0777621
+Check: 9F8F

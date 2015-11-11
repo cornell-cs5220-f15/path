@@ -1,0 +1,5 @@
+== MPI with 20 threads
+n:     200
+p:     0.05
+Time:  0.0030179
+Check: 9F8F
