@@ -245,9 +245,9 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD,&irank);
 
-    imin =  (irank % npx)*(n/npx + 1);
+    imin =  (irank % npx)*(n/npx);
     imax = min(imin + (n/npx), n - 1);
-    jmin = floor((irank)/npx)*(n/npy + 1);
+    jmin = floor((irank)/npx)*(n/npy);
     jmax = min(jmin + (n/npy), n - 1);
 
     // Time the shortest paths code
