@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  10 NOV 2015 13:20
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  10 NOV 2015 22:49
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -352,30 +352,36 @@ File: amplxe.png Graphic file (type png)
 Package pdftex.def Info: amplxe.png used on input line 32.
 (pdftex.def)             Requested size: 349.06227pt x 66.45326pt.
 
-
-LaTeX Warning: Empty `thebibliography' environment on input line 54.
-
-[1
+<amplxe_mpi.png, id=3, 862.22125pt x 88.33pt>
+File: amplxe_mpi.png Graphic file (type png)
+ <use amplxe_mpi.png>
+Package pdftex.def Info: amplxe_mpi.png used on input line 48.
+(pdftex.def)             Requested size: 349.06227pt x 35.75862pt.
+ [1
 
 {/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./amplx
-e.png>] (./Writeup.aux) ) 
+e.png> <./amplxe_mpi.png>]
+
+LaTeX Warning: Empty `thebibliography' environment on input line 65.
+
+[2] (./Writeup.aux) ) 
 Here is how much of TeX's memory you used:
- 5218 strings out of 493089
- 77103 string characters out of 6134842
- 144187 words of memory out of 5000000
- 8640 multiletter control sequences out of 15000+600000
+ 5224 strings out of 493089
+ 77204 string characters out of 6134842
+ 146195 words of memory out of 5000000
+ 8645 multiletter control sequences out of 15000+600000
  9496 words of font info for 36 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 38i,7n,38p,240b,330s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/local/texlive/2015/texmf-dist/fonts/type1/public
-/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/
-amsfonts/cm/cmr10.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmr12.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsf
-onts/cm/cmr17.pfb>
-Output written on Writeup.pdf (1 page, 80285 bytes).
+ 38i,7n,38p,521b,330s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/local/texlive/2015/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmbx12.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmr10.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfon
+ts/cm/cmr12.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmr17.pfb>
+Output written on Writeup.pdf (2 pages, 90822 bytes).
 PDF statistics:
- 27 PDF objects out of 1000 (max. 8388607)
- 17 compressed objects within 1 object stream
+ 32 PDF objects out of 1000 (max. 8388607)
+ 19 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 11 words of extra memory for PDF output out of 10000 (max. 10000000)
 
