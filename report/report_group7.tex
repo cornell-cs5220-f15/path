@@ -40,13 +40,13 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 \section{Design Decisions}
  
 \subsection{Parallel Tuning}
-\subsection{MPI}
+\subsection{Message Passing Interface}
 
-In the MPI implementation, each process handles a certain region of the graph. To prevent a master process orchestrating the distance computation, we ideally want each process to only wait for information from the relevant part of the graph. To that end, we take the adjacency matrix on which the Floyd-Warshall algorithm is run and partition the graph by chunks of columns. 
+In addition to the tuned parallel implementations, we explored an approach that uses the Message Passing Interface to achieve parallelism. In the MPI implementation, each process handles a certain region of the graph. To prevent a master process orchestrating the distance computation, we ideally want each process to only wait for information from the relevant part of the graph. To that end, we take the adjacency matrix on which the Floyd-Warshall algorithm is run and partition the graph by chunks of columns. Then each processors is responsible for update a contiguous sequence of columns in the matrix.
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=0.2]{initial_partition.png}
+\includegraphics[scale=0.25]{initial_partition.png}
 \caption{Initial partition of the graph where each $C_i$ is a sequence of columns}
 \label{fig:init_part}
 \end{figure}
@@ -55,7 +55,7 @@ Now each sequence of columns owned by a processor can be decomposed into square 
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=0.2]{allgather.png}
+\includegraphics[scale=0.25]{allgather.png}
 \caption{For block $R_{i1}$ we need the $i^{th}$ block from all other processors}
 \label{fig:allgather}
 \end{figure}
@@ -64,26 +64,38 @@ Therefore, we do an \texttt{MPI\_Allgather} operation which gathers the $i^{th}$
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=0.2]{row_col.png}
+\includegraphics[scale=0.25]{row_col.png}
 \caption{Updating the $i^{th}$ square block by processor 1 using row chunk $i$}
 \label{fig:row_col}
 \end{figure}
 
 The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether any update was made across all processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached.
 
+\subsubsection{Advantages}
+
+The MPI approach improves upon a serial implementation of the algorithm due to its ability to compute updates to multiple regions of the graph in parallel.
+ 
+The MPI approach makes each processor be responsible of a contiguous sequence of columns in the graph. To update a a square block in this sequence of columns, the processor needs to recreate only the corresponding sequence of rows. Therefore, if the width of the sequence of columns is $d$ and the side length of the graph is $n$, each processor only needs to hold $2nd$ information in memory instead of $n^2$. On larger graphs, this decrease in memory footprint will prevent thrashing since the space scales as $O(n)$ instead of $O(n^2)$ and will show improvements in performance over the OpenMP version.
+
+\subsubsection{Disadvantages}
+On smaller graphs, the communication and synchronization overhead  of MPI may cause a decrease in performance.
+
+\subsubsection{Implementation}
+The MPI implementation can be found in \texttt{path-mpi.c}. We are still in the process of ironing out bugs in the implementation and hope to have a complete solution by the final report. Furthermore, if time permits, we aim to explore the Cannon's algorithm to improve upon the current MPI scheme. \cite{cannon}
+
 \section{Analysis}
 
 \subsection{Original Implementation}
 \subsubsection{Profiling} \label{sec:prof}
 \subsubsection{Scaling Study} \label{sec:speedup}
-\subsubsection{Strong Scaling Study}
+\paragraph{Strong Scaling Study}
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.8]{./scaling_studies/strong_scaling_original.png}
 \caption{Strong scaling study of the original solution}
 \label{fig:ss_orig}
 \end{figure}
-\subsubsection{Weak Scaling Study}
+\paragraph{Weak Scaling Study}
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.8]{./scaling_studies/weak_scaling_original.png}
@@ -94,19 +106,16 @@ The \texttt{MPI\_Allgather} is then repeated until all square blocks have comple
 \subsection{Tuned Parallel Implementation}
 \subsubsection{Profiling} \label{sec:prof}
 \subsubsection{Scaling Study} \label{sec:speedup}
-\subsubsection{Strong Scaling Study}
-\subsubsection{Weak Scaling Study}
-
-\subsection{MPI Implementation}
-\subsubsection{Profiling} \label{sec:prof}
-\subsubsection{Scaling Study} \label{sec:speedup}
-\subsubsection{Strong Scaling Study}
-\subsubsection{Weak Scaling Study}
+\paragraph{Strong Scaling Study}
+\paragraph{Weak Scaling Study}
 
 
 \begin{thebibliography}{9}
 \bibitem{writeup}
-Bindel, D. All-Pairs Shortest Paths. Retrieved November 10, 2015, from \url{https://github.com/sheroze1123/path/blob/master/main.pdf}
+Bindel, D. \textit{All-Pairs Shortest Paths}. Retrieved November 10, 2015, from \url{https://github.com/sheroze1123/path/blob/master/main.pdf}
+
+\bibitem{cannon}
+Hyuk-Jae Lee, James P. Robertson, and José A. B. Fortes. 1997. \textit{Generalized Cannon's algorithm for parallel matrix multiplication}. In Proceedings of the 11th international conference on Supercomputing (ICS '97). ACM, New York, NY, USA, 44-51. DOI=http://dx.doi.org/10.1145/263580.263591
 
 \end{thebibliography}
 
