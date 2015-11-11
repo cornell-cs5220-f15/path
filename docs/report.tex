@@ -1,6 +1,11 @@
 \documentclass[11pt]{article}
-\usepackage{amsmath, amssymb, amsthm, graphicx, enumerate}
+\usepackage{amsmath, amssymb, amsthm, graphicx, enumerate, listings}
 \usepackage[margin=1in]{geometry}
+
+\lstset{
+    language=bash,
+        keywordstyle=\ttfamily
+}
 
 \title{Parallelzing an All-Pairs Shortest Path Algorithm}
 
@@ -50,5 +55,35 @@ In the strong scaling, we compare parallel to serial time for a fixed size probl
 
 \subsection{Weak Scaling}
 In weak scaling, you need to increase both the number of processors and the amount of jobs such that each processor has the same amount of jobs. In this problem, the time complexity is O($n^3 \log n$) and we let each processor has approximately O($2000^3\log(2000)$) amount of work. The results are summarized in the right figure of Figure~\ref{scaling}. As can be seen from the right figure of Figure~\ref{scaling}, the speedup is actually decreasing when you increase the amount of work and the number of processors. This could due to the overheading and synchronization when the number of processors is large.
+
+\section{Profiling the given code}
+
+\subsection{VTune Amplifier}
+Given a working implementation of parallelized Floyd-Warshall algorithm, we can further increase the performance by profiling the computation. This will identify areas in the code that run much slower than the rest, giving opportunities to implement speedups. We used the VTune Amplifier to profile our code, calling our executable through the profiler with
+\begin{lstlisting}[language=bash]
+amplxe-cl -collect hotspots ./path.x
+\end{lstlisting}
+\begin{figure}[ht!]
+\centering
+\includegraphics{vtuneResults.jpg}
+\end{figure}
+The hotspots analysis results tell us that the most expensive compute-time occurs in $square()$. This is expected because $square()$ is the only method with nested loops carrying out the algorithm ($write\_matrix()$ only prints values before and after our algorithm has run).\newline\newline
+There are two other methods in our top CPU time list from path.c however any effort put towards optimizing those would not be well spent because they are orders of magnitude faster than $square()$.\newline\newline
+We can dig deeper into $square()$'s performance by running the command
+\begin{lstlisting}[language=bash]
+amplxe-cl -report hotspots -source-object function="square"
+\end{lstlisting}
+\begin{figure}[ht!]
+\centering
+\includegraphics{squareProfiled.jpg}
+\end{figure}
+This tells us the CPU time spent at many points within the method. We can see the majority of the time is spent retrieving a value from the array in the innermost loop. Observe that the matrix accesses are not optimized because we fetch non-contiguous memory each iteration and it is taking a long time. We can re-order the loops to better access our desired values and improve the runtime.\newline\newline
+
+\subsection{Vectorization Report}
+If we analyze the given code's vectorization report, we can try to adjust some code to take advantage of the compiler's vectorization capabilites. Compiling the code with flags
+\begin{lstlisting}[language=bash]
+-qopt-report=5 -qopt-report-phase=vec
+\end{lstlisting}
+will produce a report summarizing the compiler's ability to vectorize our code. In summary, the given code path.c is reported to be mostly vectorized. Most estimated potential speedup values were greater than 5, yielding a large factor of speedup. Some loops were not vectorizeable because they contained print statements. Another non-vectorizeable loop was in $fletcher16()$, but our profiling results show this method to be insignificant in runtime comparison to $square()$ so we will focus our efforts towards $square()$.
 
 \end{document}
