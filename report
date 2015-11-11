@@ -1,0 +1,24 @@
+Source Line  Source                                              CPU Time  CPU Time:Idle  CPU Time:Poor  CPU Time:Ok  CPU Time:Ideal  CPU Time:Over  Spin Time  Overhead Time
+-----------  --------------------------------------------------  --------  -------------  -------------  -----------  --------------  -------------  ---------  -------------
+54               __assume_aligned(l, 64);                                                                                                                                    
+55               __assume_aligned(l_transpose, 64);                                                                                                                          
+56               __assume_aligned(lnew, 64);                                                                                                                                 
+57                                                                                                                                                                           
+58               int oi, oj, ok;                                                                                                                                             
+59               int ta, tb, tc;                                                                                                                                             
+60               int temp_var;                                                                                                                                               
+61                                                                                                                                                                           
+62               for (int j = 0; j < BLOCK_SIZE; ++j) {                                                                                                                      
+63                   oj = j * BLOCK_SIZE;                                                                                                                                    
+64                   for (int k = 0; k < BLOCK_SIZE; ++k) {        0.010s             0s         0.010s           0s              0s             0s         0s             0s
+65                       ok = k * BLOCK_SIZE;                                                                                                                                
+66                       tb = l_transpose[oj+k];                                                                                                                             
+67                       for (int i = 0; i < BLOCK_SIZE; ++i) {    0.370s             0s         0.370s           0s              0s             0s         0s             0s
+68                           temp_var = l[ok+i] + tb;              0.010s             0s         0.010s           0s              0s             0s         0s             0s
+69                           if (temp_var < lnew[oj+i]) {          0.290s             0s         0.290s           0s              0s             0s         0s             0s
+70                               lnew[oj+i] = temp_var;            0.380s             0s         0.380s           0s              0s             0s         0s             0s
+71                               done = 0;                                                                                                                                   
+72                           }                                                                                                                                               
+73                           //if (l[ok+i] + tb < lnew[oj+i]) {                                                                                                              
+74                           //    lnew[oj+i] = l[ok+i] + tb;                                                                                                                
+75                           //    done = 0;                                                                                                                                 

@@ -8,7 +8,7 @@
 #include "mt19937p.h"
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE ((int) 64)
+#define BLOCK_SIZE ((int) 128)
 #endif
 //ldoc on
 /**
@@ -42,29 +42,36 @@
  * identical, and false otherwise.
  */
 
+/* 
+ * Credit to Scott_wu. The blocking code is adopted from Scott_wu's matrix
+ * multiplication work and modified for this assignment. The kernel function
+ * comes from Scott_wu's work on the same project
+ */
 int basic_square(const int* restrict l, const int* restrict l_transpose,
                        int* restrict lnew, int done){
     // Kernel routine to compute small problem that fits into memory
     
-    __assume_aligned(l, 16);
-    __assume_aligned(l_transpose, 16);
-    __assume_aligned(lnew, 16);
+    __assume_aligned(l, 64);
+    __assume_aligned(l_transpose, 64);
+    __assume_aligned(lnew, 64);
 
+    int oi, oj, ok;
+    int ta, tb, tc;
+    
     for (int j = 0; j < BLOCK_SIZE; ++j) {
-        for (int i = 0; i < BLOCK_SIZE; ++i) {
-            int lij = lnew[j*BLOCK_SIZE+i];
-            for (int k = 0; k < BLOCK_SIZE; ++k) {
-                int lik = l_transpose[i*BLOCK_SIZE+k];
-                int lkj = l[j*BLOCK_SIZE+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
+        oj = j * BLOCK_SIZE;
+        for (int k = 0; k < BLOCK_SIZE; ++k) {
+            ok = k * BLOCK_SIZE;
+            tb = l_transpose[oj+k];
+            for (int i = 0; i < BLOCK_SIZE; ++i) {
+                if (l[ok+i] + tb < lnew[oj+i]) {
+                    lnew[oj+i] = l[ok+i] + tb;
                     done = 0;
                 }
             }
-            lnew[j*BLOCK_SIZE+i] = lij;
         }
     }
-    return done;
+   return done;
 }
 
 int square_block(int n,               // Number of nodes
@@ -99,6 +106,7 @@ int square_block(int n,               // Number of nodes
     int bi, bj, bk, i, j, k;
     int copyoffset;
     int offset, offsetL, offsetLt;
+
     for (bi = 0; bi < n_blocks; ++bi) {
         for (bj = 0; bj < n_blocks; ++bj) {
             int oi = bi * BLOCK_SIZE;
@@ -123,20 +131,26 @@ int square_block(int n,               // Number of nodes
             }
         }
     }
-    // Do your stuffs
 
+#pragma omp parallel shared(L, Lt, Ln, done)
+{
+    #pragma omp for
     for (bi = 0; bi < n_blocks; ++bi) {
         for (bj = 0; bj < n_blocks; ++bj) {
             for (bk = 0; bk < n_blocks; ++bk) {
-            // INLINE THIS FUNCTION?
-                basic_square(
-                 L + (bi + bk * n_blocks) * n_area,
-                Lt + (bk + bj * n_blocks) * n_area,
-                Ln + (bi + bj * n_blocks) * n_area,
-                done);
+                int td = basic_square(
+                     L + (bi + bk * n_blocks) * n_area,
+                    Lt + (bk + bj * n_blocks) * n_area,
+                    Ln + (bi + bj * n_blocks) * n_area,
+                    done);
+                if (done == 1 && td == 0){
+                    #pragma omp critical
+                    done = 0;
+                }
             }
         }
     }
+}
 
      // Copy results back
      for (bi = 0; bi < n_blocks; ++bi) {
@@ -252,8 +266,8 @@ void shortest_paths(int n, int* restrict l)
     for (int done = 0; !done; ) {
         //done = square(n, l, lnew);
         //memcpy(l, lnew, n*n * sizeof(int));
-        //done = square(n, lnew, l);
-        done = square_block(n, lnew, l);
+        if ( n > 1800) done = square(n, lnew, l);
+        else done = square_block(n, lnew, l);
     }
     //free(lnew);
     _mm_free(lnew);
