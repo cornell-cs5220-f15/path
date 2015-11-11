@@ -8,5 +8,5 @@
 module load cs5220
 cd $PBS_O_WORKDIR
 
-mpirun -np 24 ./path-mpi.x -n 200 -npx 6 -npy 4
+mpirun -np 20 ./path-mpi.x -n 200 -x 5 -y 4 -o matrix.out -i matrix.in
 

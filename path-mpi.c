@@ -7,6 +7,9 @@
 #include <mpi.h>
 #include "mt19937p.h"
 
+//I hate c
+#define min(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -45,8 +48,8 @@ int square(int irank, int imin,int imax,
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    for (int j = jmin; j < jmax; ++j) {
-        for (int i = imin; i < imax; ++i) {
+    for (int j = jmin; j <= jmax; ++j) {
+        for (int i = imin; i <= imax; ++i) {
             int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
@@ -113,11 +116,12 @@ void shortest_paths(int n, int* restrict l, int irank, int imin, int imax, int j
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    MPI_Allreduce(l,lnew,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
 
     for (int done = 0; !done; ) {
-      int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
-        MPI_ALLREDUCE(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-        MPI_ALLREDUCE(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+        int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
+        MPI_Allreduce(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+        MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
     }
 
     free(lnew);
@@ -214,13 +218,9 @@ int main(int argc, char** argv)
     int npy, npx;
     double t0, t1;
 
-    MPI_Init(&argc,&argv);
-    MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
-    MPI_Comm_rank(MPI_COMM_WORLD,&irank);
-
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:npx:npy:";
+    const char* optstring = "hn:d:p:o:i:x:y:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -231,32 +231,39 @@ int main(int argc, char** argv)
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
-        case 'npx': npx = atoi(optarg); break;
-        case 'npy': npy = atof(optarg); break;
+        case 'x': npx = atoi(optarg); break;
+        case 'y': npy = atof(optarg); break;
         }
     }
-
-    imin =  (irank % npx)*n/npx;
-    imax = imin + (n/npx) - 1;
-    jmin = floor((irank)/npx)*(n/npy);
-    jmax = jmin + (n/npy) - 1;
 
     // Graph generation + output
     int* l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
 
+    MPI_Init(&argc,&argv);
+    MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD,&irank);
+
+    imin =  (irank % npx)*(n/npx);
+    imax = min(imin + (n/npx), n - 1);
+    jmin = floor((irank)/npx)*(n/npy);
+    jmax = min(jmin + (n/npy), n - 1);
+
     // Time the shortest paths code
-    if(irank = 1) t0 = MPI_Wtime();
+    if(irank == 1) t0 = MPI_Wtime();
+    printf("x:%d-%d y:%d-%d\n", imin, imax, jmin, jmax);
     //ok, now probably just each processor computes some shortest paths and then broadcasts 
     shortest_paths(n, l, irank, imin, imax, jmin, jmax);
-    t1 = MPI_Wtime();
 
-    printf("== MPI with %d threads\n", nprocs);
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    if(irank == 1) {
+    t1 = MPI_Wtime();
+        printf("== MPI with %d threads\n", nprocs);
+        printf("n:     %d\n", n);
+        printf("p:     %g\n", p);
+        printf("Time:  %g\n", t1-t0);
+        printf("Check: %X\n", fletcher16(l, n*n));
+    }
 
     // Generate output file
     if (ofname)
