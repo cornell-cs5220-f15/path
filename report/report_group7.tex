@@ -28,7 +28,7 @@
 
 
 \begin{document}
-\title{CS 5220\\ Project 3 - Floyd-Warshall Algorithm}
+\title{CS 5220\\ Project 3 - All-Pairs Shortest Path}
 \author{Eric Gao (emg222)\\ Elliot Cartee (evc34)\\ Sheroze Sheriffdeen(mss385)}
 \maketitle
 
@@ -41,7 +41,7 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 \section{Design Decisions}
  
 \subsection{Parallel Tuning}
-\subsection{Message Passing Interface}
+\subsection{Message Passing Interface}\label{sec:mpi}
 
 In addition to the tuned parallel implementations, we explored an approach that uses the Message Passing Interface to achieve parallelism. In the MPI implementation, each process handles a certain region of the graph. To prevent a master process orchestrating the distance computation, we ideally want each process to only wait for information from the relevant part of the graph. To that end, we take the adjacency matrix on which the Floyd-Warshall algorithm is run and partition the graph by chunks of columns. Then each processors is responsible for update a contiguous sequence of columns in the matrix.
 
@@ -134,6 +134,10 @@ Although the scaling studies for the tuned parallel implementation times show si
 \end{figure}
 
 The strong scaling study was performed on a graph with 2000 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 1000 nodes. 
+
+\section{Future Work}
+
+In addition to completing the MPI implementation outlined in Section~\ref{sec:mpi}, we aim to explore the Cannon's algorithm \cite{cannon} to further decrease the memory footprint in each processor and improve parallelization. 
 
 \begin{thebibliography}{9}
 \bibitem{writeup}
