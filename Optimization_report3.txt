@@ -1,0 +1,24 @@
+//After L board transpose
+
+-bash-4.1$ cat path.o26799 
+== OpenMP with 24 threads
+n:     2000
+p:     0.05
+Time:  0.841073
+Check: E16C
+
+
+-bash-4.1$ amplxe-cl --report hotspots -r r004hs/
+amplxe: Using result path `/home/ad867/cs5220/path_weici/path/r004hs'
+amplxe: Executing actions 50 % Generating a report                             Function              Module       CPU Time  CPU Time:Idle  CPU Time:Poor  CPU Time:Ok  CPU Time:Ideal  CPU Time:Over  Spin Time  Spin Time:Imbalance or Serial Spinning (OpenMP)  Spin Time:Lock Contention (OpenMP)  Spin Time:Communication (MPI)  Spin Time:Other  Overhead Time  Overhead Time:Creation (OpenMP)  Overhead Time:Scheduling (OpenMP)  Overhead Time:Reduction (OpenMP)  Overhead Time:Other
+--------------------  -----------  --------  -------------  -------------  -----------  --------------  -------------  ---------  -----------------------------------------------  ----------------------------------  -----------------------------  ---------------  -------------  -------------------------------  ---------------------------------  --------------------------------  -------------------
+square                path.x         6.953s             0s         1.168s       0.445s          5.340s             0s          0                                               0s                                  0s                                              0s              0                               0s                                 0s                                0s                   0s
+square                path.x         3.527s             0s         0.530s       0.160s          2.837s             0s          0                                               0s                                  0s                                              0s              0                               0s                                 0s                                0s                   0s
+__kmp_fork_barrier    libiomp5.so    3.049s         1.870s         0.960s       0.159s          0.060s             0s      3.049                                           2.108s                                  0s                                          0.941s              0                               0s                                 0s                                0s                   0s
+__kmp_barrier         libiomp5.so    1.270s         0.070s         1.190s       0.010s              0s             0s    1.26991                                           1.210s                                  0s                                          0.060s              0                               0s                                 0s                                0s                   0s
+__kmpc_reduce_nowait  libiomp5.so    0.510s         0.030s         0.470s       0.010s              0s             0s   0.489951                                           0.450s                                  0s                                          0.040s      0.0199978                               0s                                 0s                            0.020s                   0s
+fletcher16            path.x         0.030s             0s         0.030s           0s              0s             0s          0                                               0s                                  0s                                              0s              0                               0s                                 0s                                0s                   0s
+__svml_irem8_l9       path.x         0.020s             0s         0.020s           0s              0s             0s          0                                               0s                                  0s                                              0s              0                               0s                                 0s                                0s                   0s
+genrand               path.x         0.010s             0s         0.010s           0s              0s             0s          0                                               0s                                  0s                                              0s              0                               0s                                 0s                                0s                   0s
+__svml_irem8_mask_e9  path.x         0.010s             0s         0.010s           0s              0s             0s          0                                               0s                                  0s                                              0s              0                               0s                                 0s                                0s                   0s
+amplxe: Executing actions 100 % done                 
