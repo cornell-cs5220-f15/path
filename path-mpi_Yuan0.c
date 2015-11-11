@@ -118,55 +118,54 @@ void shortest_paths(int n, int* restrict l)
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    int width = (n+world_size-1)/world_size;
-    int mywidth=width;
-    if(world_rank==world_size-1){
-        mywidth=n-width*(world_size-1);
-    }
-    
-    int jlow=(width)*world_rank;
+    int width = n/world_size;
+	int mywidth=width;
+	if(world_rank==world_size-1){
+		mywidth=n-width*(world_size-1);
+	}
+	int jlow=(width)*world_rank;
     int* restrict lnew;
     
 
     if (world_rank == 0)
     {
-        infinitize(n, l);
-        for (int i = 0; i < n*n; i += n+1)
-            l[i] = 0;
-        lnew = (int*) calloc(n*n, sizeof(int));
-        
-    }
+		infinitize(n, l);
+		for (int i = 0; i < n*n; i += n+1)
+			l[i] = 0;
+		lnew = (int*) calloc(n*n, sizeof(int));
+		
+	}
     else{
-        lnew = (int*) calloc(n*mywidth, sizeof(int));
-    }
-    
+		lnew = (int*) calloc(n*mywidth, sizeof(int));
+	}
+	
 //    printf("Got here 3");
     
-    if (world_rank == 0)
+	if (world_rank == 0)
     {
-        memcpy(lnew, l, n*n * sizeof(int));    
-    }
+		memcpy(lnew, l, n*n * sizeof(int));	
+	}
     int placeelem[world_size];
     int cntelem[world_size];
-    for(int i=0;i<world_size-1;++i){
-        placeelem[i]=width*n*i;
-        cntelem[i]=width*n;
-    }
-    placeelem[world_size-1]=width*n*(world_size-1);
-    cntelem[world_size-1]=(n-width*(world_size-2))*n;
+	for(int i=0;i<world_size-1;++i){
+		placeelem[i]=width*n*i;
+		cntelem[i]=width*n;
+	}
+	placeelem[world_size-1]=width*n*(world_size-1);
+	cntelem[world_size-1]=(n-width*(world_size-1))*n;
     // Repeated squaring until nothing changes
     //MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
-    int nelem = mywidth*n;
+	int nelem = mywidth*n;
     for (int doneall = 0; !doneall; ) {
-        MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
-        if (world_rank != 0){
-            memcpy(lnew, l+jlow*n, nelem * sizeof(int));
-        }
+		MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
+		if (world_rank != 0){
+			memcpy(lnew, l+jlow*n, nelem * sizeof(int));
+		}
         int done = square(n, l, lnew, jlow, mywidth+jlow);
         MPI_Allreduce(&done, &doneall, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
-        if(doneall){
-            break;
-        }
+		if(doneall){
+			break;
+		}
         MPI_Gatherv(lnew, nelem, MPI_INT, l, cntelem, placeelem, MPI_INT, 0, MPI_COMM_WORLD);
     }
 //    printf("Got here 4");
@@ -289,15 +288,15 @@ int main(int argc, char** argv)
         case 'i': ifname = optarg;  break;
         }
     }
-    
+	
     // Graph generation + output
     if (world_rank == 0)
     {
-        
+		
         l = gen_graph(n, p);
         if (ifname)
             write_matrix(ifname,  n, l);
-        
+		
     }
     else
     {
@@ -308,24 +307,24 @@ int main(int argc, char** argv)
     // Time the shortest paths code
     
     double t0 = MPI_Wtime();
-    
+	
     shortest_paths(n, l);
     double t1 = MPI_Wtime();
     
     if (world_rank == 0)
     {
 
-        printf("== MPI with %d threads\n", world_size);
-        printf("n:     %d\n", n);
-        printf("p:     %g\n", p);
-        printf("Time:  %g\n", t1-t0);
-        printf("Check: %X\n", fletcher16(l, n*n));
+		printf("== MPI with %d threads\n", world_size);
+		printf("n:     %d\n", n);
+		printf("p:     %g\n", p);
+		printf("Time:  %g\n", t1-t0);
+		printf("Check: %X\n", fletcher16(l, n*n));
 
-        // Generate output file
-        if (ofname)
-            write_matrix(ofname, n, l);
+		// Generate output file
+		if (ofname)
+			write_matrix(ofname, n, l);
 
-        // Clean up
+		// Clean up
     }
 //    printf("I'm processor %d\n",world_rank);
     free(l);
