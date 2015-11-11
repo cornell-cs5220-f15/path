@@ -1,0 +1,24 @@
+Source Line  Source                                                  CPU Time  CPU Time:Idle  CPU Time:Poor  CPU Time:Ok  CPU Time:Ideal  CPU Time:Over  Spin Time  Overhead Time
+-----------  ------------------------------------------------------  --------  -------------  -------------  -----------  --------------  -------------  ---------  -------------
+48                                                                                                                                                                               
+49               __assume_aligned(l, 16);                                                                                                                                        
+50               __assume_aligned(l_transpose, 16);                                                                                                                              
+51               __assume_aligned(lnew, 16);                                                                                                                                     
+52                                                                                                                                                                               
+53               for (int j = 0; j < BLOCK_SIZE; ++j) {                                                                                                                          
+54                   for (int i = 0; i < BLOCK_SIZE; ++i) {            0.010s             0s         0.010s           0s              0s             0s         0s             0s
+55                       int lij = lnew[j*BLOCK_SIZE+i];               0.220s             0s         0.220s           0s              0s             0s         0s             0s
+56                       for (int k = 0; k < BLOCK_SIZE; ++k) {        0.400s             0s         0.400s           0s              0s             0s         0s             0s
+57                           int lik = l_transpose[i*BLOCK_SIZE+k];    3.298s             0s         3.298s           0s              0s             0s         0s             0s
+58                           int lkj = l[j*BLOCK_SIZE+k];              2.337s             0s         2.337s           0s              0s             0s         0s             0s
+59                           if (lik + lkj < lij) {                    0.210s             0s         0.210s           0s              0s             0s         0s             0s
+60                               lij = lik+lkj;                                                                                                                                  
+61                               done = 0;                                                                                                                                       
+62                           }                                                                                                                                                   
+63                       }                                                                                                                                                       
+64                       lnew[j*BLOCK_SIZE+i] = lij;                                                                                                                             
+65                   }                                                                                                                                                           
+66               }                                                                                                                                                               
+67               return done;                                                                                                                                                    
+68           }                                                                                                                                                                   
+69                                                                                                                                                                               

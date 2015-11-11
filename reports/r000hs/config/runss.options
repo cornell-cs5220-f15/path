@@ -1,0 +1,16 @@
+-r
+/home/kc853/path_mine/r000hs
+--data-limit-mb=500
+--stack-stitching
+--follow-child
+--itt-config=frame
+--stackwalk=offline
+--type=cpu:counters:nostack
+--type=cpu:stack
+--interval=10
+--
+./path.x
+-n
+2000
+-t
+24
