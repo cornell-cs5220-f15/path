@@ -44,14 +44,32 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 
 In the MPI implementation, each process handles a certain region of the graph. To prevent a master process orchestrating the distance computation, we ideally want each process to only wait for information from the relevant part of the graph. To that end, we take the adjacency matrix on which the Floyd-Warshall algorithm is run and partition the graph by chunks of columns. 
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \includegraphics[scale=0.2]{initial_partition.png}
 \caption{Initial partition of the graph where each $C_i$ is a sequence of columns}
 \label{fig:init_part}
 \end{figure}
 
-Now each sequence of columns owned by a processor can be decomposed into square blocks.
+Now each sequence of columns owned by a processor can be decomposed into square blocks. To compute the next iteration of the Floyd-Warshall algorithm for a single block, say block number $i$ in processor $2$, we need the $i^{th}$ block from all other processors.
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.2]{allgather.png}
+\caption{For block $R_{i1}$ we need the $i^{th}$ block from all other processors}
+\label{fig:allgather}
+\end{figure}
+
+Therefore, we do an \texttt{MPI\_Allgather} operation which gathers the $i^{th}$ block from all the processors and recreates the $i^{th}$ row chunk in all processors. Now, we can update block $R_{ij}$ for all $j$ processors. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.2]{row_col.png}
+\caption{Updating the $i^{th}$ square block by processor 1 using row chunk $i$}
+\label{fig:row_col}
+\end{figure}
+
+The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether any update was made across all processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached.
 
 \section{Analysis}
 
