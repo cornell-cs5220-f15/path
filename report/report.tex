@@ -45,7 +45,6 @@ This profiling leads us to believe that we should try to address two problems fo
  
 
 \section{MPI Implementation}
-\subsection{General setup}
 We assign each processor to a block of the the matrix instead of an entire column as the original code does.
 Note that to update one entry of the matrix for one step of the outer loop we need to read the whole column and row of that entry. Therefore, if we assign each processor to a column, then each processor needs to access each other column, and thus needs to communicate with all of the other processors. By assigning each processor to a block of the matrix instead, we allow each processor to have to communicate with only the blocks that share its row and its column.
 
@@ -55,5 +54,9 @@ The number of entries to be shared in this manner is $2 \cdot n \cdot blocksize$
 
 The MPI implementation runs in 3.2 seconds for n=2000, which is about $10 \%$ more than the original OMP implementation, which runs in 2.9 seconds.
  
+ 
+ 
+\section{To do next}
+Next we will to tune our MPI implementation as well as the OMP implementation provided to us. We will also incorporate the blocking strategy into our parallel code to increase the cache reuse.
  
 \end{document}
