@@ -8,7 +8,7 @@
 #include "mt19937p.h"
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE ((int) 128)
+#define BLOCK_SIZE ((int) 64)
 #endif
 //ldoc on
 /**
