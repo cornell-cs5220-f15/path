@@ -86,7 +86,7 @@ int square_stripe(int n,               // Number of nodes
 static inline void infinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0)
+        if (l[i] == 0 && (i % (n + 1)) != 0)
             l[i] = n+1;
 }
 
@@ -137,8 +137,8 @@ void shortest_paths_mpi(int n, int* restrict l, int myid, int nproc)
     if (myid == 0)
     {
     infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
+    /*for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;*/
     }
 
     // Repeated squaring until nothing changes
