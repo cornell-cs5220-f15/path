@@ -251,11 +251,11 @@ int main(int argc, char** argv)
     jmax = min(jmin + (n/npy), n - 1);
 
     // Time the shortest paths code
-    if(irank == 1) t0 = MPI_Wtime();
+    if(irank == 0) t0 = MPI_Wtime();
     //ok, now probably just each processor computes some shortest paths and then broadcasts 
     shortest_paths(n, l, irank, imin, imax, jmin, jmax);
 
-    if(irank == 1) {
+    if(irank == 0) {
     t1 = MPI_Wtime();
         printf("== MPI with %d threads\n", nprocs);
         printf("n:     %d\n", n);
