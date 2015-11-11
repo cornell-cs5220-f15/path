@@ -7,6 +7,9 @@
 #include <mpi.h>
 #include "mt19937p.h"
 
+//I hate c
+#define min(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 //ldoc on
 /**
  * # The basic recurrence
