@@ -57,17 +57,22 @@ int basic_square(const int* restrict l, const int* restrict l_transpose,
 
     int oi, oj, ok;
     int ta, tb, tc;
-    
+    int temp; 
     for (int j = 0; j < BLOCK_SIZE; ++j) {
         oj = j * BLOCK_SIZE;
+        #pragma vector aligned
         for (int k = 0; k < BLOCK_SIZE; ++k) {
             ok = k * BLOCK_SIZE;
             tb = l_transpose[oj+k];
+            #pragma vector aligned
             for (int i = 0; i < BLOCK_SIZE; ++i) {
-                if (l[ok+i] + tb < lnew[oj+i]) {
-                    lnew[oj+i] = l[ok+i] + tb;
-                    done = 0;
-                }
+                //if (l[ok+i] + tb < lnew[oj+i]) {
+                //    lnew[oj+i] = l[ok+i] + tb;
+                //    done = 0;
+                //}
+                temp = l[ok+i] + tb;
+                lnew[oj+i] = (lnew[oj+i] < temp)?temp:lnew[oj+i];
+                done = (lnew[oj+i] < temp)?0:done;
             }
         }
     }
