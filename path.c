@@ -136,7 +136,8 @@ int* gen_graph(int n, double p)
 {
     int* l = calloc(n*n, sizeof(int));
     struct mt19937p state;
-    sgenrand(10302011UL, &state);
+    sgenrand(omp_get_wtime(), &state)
+    // sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
