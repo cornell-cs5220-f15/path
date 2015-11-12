@@ -136,7 +136,7 @@ int* gen_graph(int n, double p)
 {
     int* l = calloc(n*n, sizeof(int));
     struct mt19937p state;
-    sgenrand(omp_get_wtime(), &state)
+    sgenrand(omp_get_wtime(), &state);
     // sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i)
@@ -234,7 +234,8 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    // printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    printf("== Serial implementation\n");
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);

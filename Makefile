@@ -10,7 +10,7 @@
 # Or create a Makefile.in.xxx of your own!
 #
 
-PLATFORM=brew
+PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
 .PHONY: exe clean realclean
