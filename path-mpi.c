@@ -142,7 +142,7 @@ void shortest_paths(int num_p, int rank, int n, int* restrict l)
     int j_min = num_columns*rank;
     int j_max = num_columns*(rank+1);
 
-    printf("[%d]: [%d,%d]\n", rank, j_min, j_max);
+    // printf("[%d]: [%d,%d]\n", rank, j_min, j_max);
 
     int* restrict partial_lnew = (int*) calloc((j_max - j_min)*n, sizeof(int));
     
@@ -178,7 +178,8 @@ void shortest_paths(int num_p, int rank, int n, int* restrict l)
 void gen_graph(int n, double p, int* l)
 {
     struct mt19937p state;
-    sgenrand(10302011UL, &state);
+    // sgenrand(10302011UL, &state);
+    sgenrand(omp_get_wtime(), &state);
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
