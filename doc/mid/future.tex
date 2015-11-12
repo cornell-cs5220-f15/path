@@ -1,7 +1,7 @@
 \section{Future Work}\label{sec:future}
 
 \begin{itemize}
-  \item \textbf{Vectorization.}
+  \item \textbf{Vectorization.} According to the vectorization report, we fixed most of the issues with loops not being properly vectorized. We still are having some issues with unaligned memory accesses, so we need to make sure that we're using the correct byte alignment and figure out how to properly make our indexing and memory accesses properly aligned. However, we are planning on focusing mainly on our MPI implementation.
 
   \item \textbf{Work Minimization.}
 

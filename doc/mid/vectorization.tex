@@ -1,3 +1,11 @@
 \section{Vectorization}\label{sec:vector}
 %Josh%
-Vect...
+In order to vectorize properly vectorize our code, we looked at the output of \texttt{ipo\_out.optrpt} after compiling with flags \texttt{-qopt-report=5 -qopt-report-phase=vec}. We first were able to vectorize our call to \texttt{square} within \texttt{shortest\_paths} within \texttt{path.c} by explicitly precomputing the transpose of \texttt{l} during each call to \texttt{square}, and then replacing the assignment of \texttt{lik} directly from \texttt{l}, as
+\begin{gather*}
+\texttt{int lik = l[k*n+i]}
+\end{gather*}
+to an assignment instead from the transpose, as
+\begin{gather*}
+\texttt{int lik = l\_T[i*n+k]}
+\end{gather*}
+We also attempted to solve the issue of unaligned memory access from within \texttt{l} and \texttt{l\_T} by replacing calls to \texttt{malloc} with \texttt{\_mm\_malloc} (and, correspondingly, calls to \texttt{free} with calls to \texttt{\_mm\_free}), using a byte alignment of 32 since we're compiling with AVX2 (using the flag \texttt{-xcore-avx2}). This solved some of the issues with unaligned access, according to the vectorization report, but there are still cases with unaligned access reported.
