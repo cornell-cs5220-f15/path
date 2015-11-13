@@ -161,7 +161,7 @@ for (...) {
   Unfornately, we were unable to get MPI to work because of issues with the cluster. We expect to periodically reattempt a study with MPI, and will report accordingly if successful. Offloading is currently a work-in-progress.
 
   \section{Scaling Studies}
-  We report strong and weak scaling studies for our current best attempt, which implements the vectorization and parallelism changes described above. To avoid spurious results at small values of $n$, we run each instance 10 times and average the result. \autoref{graph:strong-scaling} shows the results for a strong scaling study in which we vary the problem size from $n = 500$ to $n = 8000$, doubling at each tick. The number of OMP threads is clamped to the maximum available in the system. The regression line is linear, which confirms that we are scaling correctly with the problem size. \autoref{graph:weak-scaling} shows the results for a weak scaling study in which we hold the problem size constant at $n = 4000$ and vary the number of OMP threads from 1 to 24, doubling at each tick up to 16. The regression line demonstrates exponential decrease, which corroborates the speedup obtained from parallelizing the \texttt{square} kernel.
+  We report strong and weak scaling studies for our current best attempt, which implements the vectorization and parallelism changes described above. To avoid spurious results at small values of $n$, we run each instance 10 times and average the result. \autoref{graph:strong-scaling} shows the results for a weak scaling study in which we vary the problem size from $n = 500$ to $n = 8000$, doubling at each tick. The number of OMP threads is scaled accordingly from 1 to 24. The regression line is linear, which confirms that we are scaling correctly with the problem size. \autoref{graph:weak-scaling} shows the results for a strong scaling study in which we hold the problem size constant at $n = 4000$ and vary the number of OMP threads from 1 to 24, doubling at each tick up to 16. The regression line demonstrates exponential decrease, which corroborates the speedup obtained from parallelizing the \texttt{square} kernel.
 
   \begin{figure}[p]
     \centering
@@ -175,7 +175,7 @@ for (...) {
       \end{axis}
     \end{tikzpicture}
   }
-  \caption{Strong scaling study varying $n$ from 500 to 8000 with 24 OMP threads. The best-fit line is linear with $R^2 = 0.912$\label{graph:strong-scaling}}
+  \caption{Weak scaling study varying $n$ from 500 to 8000, and varying the number of OMP threads from 1 to 24. The best-fit line is linear with $R^2 = 0.912$\label{graph:weak-scaling}}
   \end{figure}
 
   \begin{figure}[p]
@@ -190,6 +190,6 @@ for (...) {
       \end{axis}
     \end{tikzpicture}
   }
-  \caption{Weak scaling study varying the number of OMP threads from 1 to 24 with $n = 4000$. The best-fit line is exponential with $R^2 = 0.996$\label{graph:weak-scaling}}
+  \caption{Strong scaling study varying the number of OMP threads from 1 to 24 with $n = 4000$. The best-fit line is exponential with $R^2 = 0.996$\label{graph:strong-scaling}}
   \end{figure}
 \end{document}
