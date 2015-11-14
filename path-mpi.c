@@ -4,8 +4,12 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include <omp.h>
 #include "mt19937p.h"
+#include <mpi.h>
+
+#define INIT_STAGE 66
+#define PARTITION_STAGE 77
+#define ROTATION_STAGE 88
 
 //ldoc on
 /**
@@ -44,7 +48,6 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
@@ -57,6 +60,37 @@ int square(int n,               // Number of nodes
                 }
             }
             lnew[j*n+i] = lij;
+        }
+    }
+    return done;
+}
+
+// Multiply the i^th block of rows and the j^th block of columns and store in the 
+// (i,j) square block in the column
+//
+// Input:
+//  n        -- Length of a row or a column
+//  side     -- Number of rows or columns in the rectangular block
+//  block_no -- Row block number (i)
+//  lr       -- Row block
+//  lc       -- Column block
+//
+// Output:
+//  Done flag if (i,j) block does not get updated
+int mult(int n, int side, int block_no, int* restrict lr, int* restrict lc) {
+    int done = 1;
+    for (int j = 0; j < side; ++j) {
+        for (int i = 0; i < side; ++i) {
+            int lij = lc[j*n + i + (block_no*side)];
+            for (int k = 0; k < n; ++k) {
+                int lik = lr[i*n+k];
+                int lkj = lc[j*n+k];
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
+                    done = 0;
+                }
+            }
+            lc[j*n+i+(block_no*side)] = lij;
         }
     }
     return done;
@@ -83,9 +117,23 @@ static inline void infinitize(int n, int* l)
             l[i] = n+1;
 }
 
+static inline void infinitize_rect(int n, int side, int* l)
+{
+    for (int i = 0; i < n*side; ++i)
+        if (l[i] == 0)
+            l[i] = n+1;
+}
+
 static inline void deinfinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
+        if (l[i] == n+1)
+            l[i] = 0;
+}
+
+static inline void deinfinitize_rect(int n, int side, int* l)
+{
+    for (int i = 0; i < n*side; ++i)
         if (l[i] == n+1)
             l[i] = 0;
 }
@@ -104,22 +152,42 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+void shortest_paths(int n, int side, int rank, int* restrict col, int* restrict row)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
+    infinitize_rect(n, side, col);
+    for (int i = 0; i < side; i++)
+            col[i*n+i+(rank*side)] = 0;
+
+    int* row_chunk = (int*) malloc (sizeof(int) * side * side);
+    int proc_done;
+    int done = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    memcpy(lnew, l, n*n * sizeof(int));
-    for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        memcpy(l, lnew, n*n * sizeof(int));
+    /* for (int done = 0; !done; ) { */
+    for (int d = 0; d < 100; d++) {
+
+        //For all rows
+        for (int r=0; r<(n/side); r++) {
+            //Make local row chunk in row major
+            for (int i=0; i<side; i++)
+                for (int j=0; j<side; j++)
+                    row_chunk[j*side+i] = col[(i*n)+(r*side)+j];
+
+            //Send your chunk of row and get row (Allgather)
+            MPI_Allgather(row_chunk, (side*side), MPI_INT, row, (side*side), MPI_INT, MPI_COMM_WORLD);
+
+            //Complete row-col operation
+            proc_done = mult(n, side, r, row, col);
+        }
+
+        //Reduce done flag across processors
+        MPI_Allreduce (&proc_done, &done, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        done = done > 0;
     }
-    free(lnew);
-    deinfinitize(n, l);
+
+    free (row_chunk);
+    deinfinitize_rect(n, side, col);
 }
 
 /**
@@ -142,6 +210,19 @@ int* gen_graph(int n, double p)
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
         l[j*n+j] = 0;
+    }
+    return l;
+}
+
+int* gen_graph_rect(int n, int m, int rank, double p)
+{
+    int* l = calloc(n*m, sizeof(int));
+    struct mt19937p state;
+    sgenrand(10302011UL, &state);
+    for (int j = 0; j < m; ++j) {
+        for (int i = 0; i < n; ++i)
+            l[j*n+i] = (genrand(&state) < p);
+        l[j*n+j+(rank*m)] = 0;
     }
     return l;
 }
@@ -174,9 +255,15 @@ int fletcher16(int* data, int count)
     return (sum2 << 8) | sum1;
 }
 
-void write_matrix(const char* fname, int n, int* a)
+void write_matrix_process(const char* fname, int n, int* a, int rank)
 {
-    FILE* fp = fopen(fname, "w+");
+    int namelen = strlen(fname);
+    char rank_str[3];
+    sprintf(str, "%d", rank);
+    char proc_fname[namelen + 3];
+    asprintf(proc_fname,"%s%s", fname, rank_str);
+
+    FILE* fp = fopen(proc_fname, "w+");
     if (fp == NULL) {
         fprintf(stderr, "Could not open output file: %s\n", fname);
         exit(-1);
@@ -201,100 +288,78 @@ const char* usage =
     "  - i -- file name where adjacency matrix should be stored (none)\n"
     "  - o -- file name where output matrix should be stored (none)\n";
 
-void strong_scaling(int n, int p) {
-    FILE *fp;
-    fp = fopen("strong_scaling.csv", "w+");
-    double t_start, t_end, t_threadrun;
-    int thread_max = 50, runs = 5, i, j, *l;
-
-    for (i = 1; i <= thread_max; i++) {
-        omp_set_num_threads(i);
-        t_threadrun = 0.0;
-        for (j=0; j < runs; j++) {
-            l = gen_graph(n, p);
-            t_start = omp_get_wtime();
-            shortest_paths(n, l);
-            t_end = omp_get_wtime();
-            t_threadrun += (t_end - t_start);
-            free(l);
-        }
-        fprintf(fp, "%d, %f\n", i, (t_threadrun / (double)runs));
-    } 
-    fclose(fp);
-}
-
-void weak_scaling(int n, int p) {
-    FILE *fp;
-    fp = fopen("weak_scaling.csv", "w+");
-    double t_start, t_end, t_threadrun;
-    int thread_max = 20, runs = 1, i, j, *l;
-    int problem_size = n * n;
-    int n_scaled;
-
-    for (i = 1; i <= thread_max; i++) {
-        omp_set_num_threads(i);
-        n_scaled = ceil(sqrt(problem_size * i));
-        t_threadrun = 0.0;
-        for (j=0; j < runs; j++) {
-            l = gen_graph(n_scaled, p);
-            t_start = omp_get_wtime();
-            shortest_paths(n_scaled, l);
-            t_end = omp_get_wtime();
-            t_threadrun += (t_end - t_start);
-            free(l);
-        }
-        fprintf(fp, "%d, %f\n", i, (t_threadrun / (double)runs));
-    } 
-    fclose(fp);
-}
-
 int main(int argc, char** argv)
 {
+
+    int rank, size, side, block_side;
+    MPI_Init(&argc, &argv);
+
+    // Assume size is a square number
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     int n    = 200;            // Number of nodes
-    double p = 0.05;           // Edge probability
-    const char* ifname = NULL; // Adjacency matrix file name
-    const char* ofname = NULL; // Distance matrix file name
+    int *l, *lc;
+    if (rank == 0) {
+        double p = 0.05;           // Edge probability
+        const char* ifname = NULL; // Adjacency matrix file name
+        const char* ofname = NULL; // Distance matrix file name
 
-    // Option processing
-    extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
-    int c;
-    while ((c = getopt(argc, argv, optstring)) != -1) {
-        switch (c) {
-        case 'h':
-            fprintf(stderr, "%s", usage);
-            return -1;
-        case 'n': n = atoi(optarg); break;
-        case 'p': p = atof(optarg); break;
-        case 'o': ofname = optarg;  break;
-        case 'i': ifname = optarg;  break;
+        // Option processing
+        extern char* optarg;
+        const char* optstring = "hn:d:p:o:i:";
+        int c;
+        while ((c = getopt(argc, argv, optstring)) != -1) {
+            switch (c) {
+            case 'h':
+                fprintf(stderr, "%s", usage);
+                return -1;
+            case 'n': n = atoi(optarg); break;
+            case 'p': p = atof(optarg); break;
+            case 'o': ofname = optarg;  break;
+            case 'i': ifname = optarg;  break;
+            }
         }
-    }
 
-    // Graph generation + output
-    int* l = gen_graph(n, p);
-    if (ifname)
-        write_matrix(ifname,  n, l);
+        l = gen_graph(n,p);
+        if (ifname)
+            write_matrix(ifname,  n, l);
+
+        // Send column chunks to processors
+        for (int r=1; r<size; r++) {
+            
+        } 
+    } else {
+        MPI_Recv(&n, 1, MPI_INT, 0, 
+        
+    }
+    side = (int) round(sqrt(size));
+    
+
+    // Assume n is divisible by processors per side
+    block_side = n / side;
+
+    printf("Processors per side: %d\n", side);
+    printf("Block side : %d\n", block_side);
+
+    // Each processor keeps a column of adjacency matrix of the graph
+    int* local_cols = gen_graph_rect (n, block_side, rank, p);
+    int* curr_row = (int*) malloc (sizeof(int) * n * block_side);
 
     // Time the shortest paths code
-    double t0 = omp_get_wtime();
-    shortest_paths(n, l);
-    double t1 = omp_get_wtime();
+    double t0 = MPI_Wtime();
+    shortest_paths(n, block_side, rank, local_cols, curr_row);
+    double t1 = MPI_Wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    printf("== MPI with %d processors\n", size);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    printf("Check: %X\n", fletcher16(local_cols, n*block_side));
 
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
+    free(local_cols);
+    free(curr_row);
 
-    // Clean up
-    free(l);
-
-    /* strong_scaling(n, p); */
-    weak_scaling(1000, p);
+    MPI_Finalize();
     return 0;
 }
