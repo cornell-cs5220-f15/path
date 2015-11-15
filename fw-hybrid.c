@@ -8,23 +8,9 @@
 #include <unistd.h>
 #include <omp.h>
 #include <immintrin.h>
+
+#include "mem.h"
 #include "mt19937p.h"
-
-/**
- *  based off: http://stackoverflow.com/questions/6352206/aligned-calloc-visual-studio
- */
-void* _mm_calloc(size_t nelem, size_t elsize, size_t alignment)
-{
-    // Watch out for overflow
-    if(elsize == 0)
-        return NULL;
-
-    size_t size = nelem * elsize;
-    void* memory = _mm_malloc(size, alignment);
-    if(memory != NULL)
-        memset(memory, 0, size);
-    return memory;
-}
 
 /**
  *
