@@ -43,14 +43,23 @@ int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
+
+    //Copying the l matrix for better cache hits in the inner most loop
+    int* restrict ltrans = malloc(n*n*sizeof(int));
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i < n; ++i) {
+            ltrans[i*n + j] = l[j*n + i];
+        }
+    }
+
     int done = 1;
 	//omp_set_num_threads(n_threads);
     //#pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
+            int lij = l[j*n+i];
             for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
+                int lik = ltrans[i*n + k];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
@@ -60,6 +69,7 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
+    free(ltrans);
     return done;
 }
 
@@ -80,7 +90,7 @@ int square(int n,               // Number of nodes
 static inline void infinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0)
+        if (l[i] == 0 && (i % (n + 1)) != 0)
             l[i] = n+1;
 }
 
@@ -109,14 +119,19 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
+    /*for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;*/
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    memcpy(lnew, l, n*n * sizeof(int));
+    int flag = 1;
+    //memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
+        done = flag ? square(n, l, lnew) : square(n, lnew, l);
+        flag = !flag;
+        //memcpy(l, lnew, n*n * sizeof(int));
+    }
+     if(!flag) {
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);

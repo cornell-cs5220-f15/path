@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[colorlinks=true]{hyperref}
+
+\title{CS 5220 Homework 3 Initial Report - Group 12}
+\author{Amiraj Dhawan (ad867)
+		Weici Hu (wh343)\\
+        Sijia Ma (sm2462)}
+
+\begin{document}
+\maketitle
+
+\section{Profiling of Serial Performance}
+The table below summarizes the profiling result of the serial code. As expected, function square takes up the most of the run-time.
+\begin{center}\label{t1}
+    \begin{tabular}{ | l | l | l |}
+    \hline
+    function & CPU time(s)  \\ \hline
+    square\_step & 27.519 \\ \hline
+    fletcher16 & 0.020 \\ \hline
+    \_\_intel\_ssse3\_rep\_memcpy & 0.01\\ \hline
+    gen\_graph & 0.01\\ \hline
+    genrand & 0.01\\ \hline
+    \end{tabular}
+\end{center}
+\section{Parallel using openMP}
+While the code is given by the instructor, we perform strong scaling and plot the result in figure \ref{f1}.
+\begin{figure}
+	\centering
+  \includegraphics[width=5cm]{strong_omp.png}
+  \caption{}\label{f1}
+\end{figure}
+\section{Parallel using MPI}
+We specify thread 0 as our root which alone runs all the functions except the shortest\_paths\_mpi and square\_stripe. We parallel the outermost loop in square\_stripe by distributing the work to all the non-root thread according to their thread ID. 
+ 
+We also run strong scaling on the mpi code. The result is summarized in figure \ref{2}
+\begin{figure}[h!]
+	\centering
+  \includegraphics[width=5cm]{strong_mpi.png}
+  \caption{}\label{2}
+\end{figure}
+
+\end{document}
