@@ -1,4 +1,4 @@
-CC=mpiicc
+CC=mpicc
 MPICC=mpiicc
 CFLAGS=-std=c99 -g
 
