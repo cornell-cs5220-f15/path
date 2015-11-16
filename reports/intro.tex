@@ -1,7 +1,11 @@
 \section{Introduction}\label{sec:intro}
-In this assignment we are optimizing an algorithm which determines the shortest
-path between all nodes in a graph in $O(\log(N)N^3)$. We focus on profiling,
-tuning, and parallelization with MPI. We were also interested in comparing this
-slower algorithm to Floyd$-$Warshall which can be done in $O(N^3)$, but has a
-larger number of synchronizations $O(N)$ rather than $O(\log(N))$ for parallel
-code.
+In this assignment we develop a set of optimized and parallelized programs to
+compute the shortest path between all pars of vertices in a directed graph. In
+\secref{profiling}, we profile the release implementation which uses a repeated
+squares $O(N^3 \log N)$ algorithm. In \secref{algo}, we describe the repeated
+squares algorithm in depth, and we present two additional algorithms that we
+implemented: a blocked repeated squares algorithm and the Floyd-Warshall
+algorithm. In \secref{parallelization}, we describe the three parallelization
+mechanisms we used: OpenMP, OpenMPI, and a hybrid of the two. Finally in
+\secref{eval} and \secref{conclusion}, we evaluate the performance of our
+implementations and conclude.
