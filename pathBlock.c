@@ -7,8 +7,8 @@
 #include <omp.h>
 #include "mt19937p.h"
 
-#ifndef BLOCK_SIZE
-#define BLOCK_SIZE ((int) 128)
+#ifndef SMALL_BLOCK_SIZE
+#define SMALL_BLOCK_SIZE ((int) 128)
 #endif
 #ifndef BYTE_ALIGNMENT
 #define BYTE_ALIGNMENT ((int) 64)
@@ -17,18 +17,18 @@
 
 int basic_square(const int *restrict l1, const int *restrict l2, int *restrict l3){
   int done=1;
-  for (int j = 0; j < BLOCK_SIZE; ++j) {
-    for (int i = 0; i < BLOCK_SIZE; ++i) {
-      int lij = l3[j*BLOCK_SIZE+i];
-      for (int k = 0; k < BLOCK_SIZE; ++k) {
-        int lik = l1[k*BLOCK_SIZE+i];
-        int lkj = l2[j*BLOCK_SIZE+k];
+  for (int j = 0; j < SMALL_BLOCK_SIZE; ++j) {
+    for (int i = 0; i < SMALL_BLOCK_SIZE; ++i) {
+      int lij = l3[j*SMALL_BLOCK_SIZE+i];
+      for (int k = 0; k < SMALL_BLOCK_SIZE; ++k) {
+        int lik = l1[k*SMALL_BLOCK_SIZE+i];
+        int lkj = l2[j*SMALL_BLOCK_SIZE+k];
         if (lik + lkj < lij) {
           lij = lik+lkj;
           done = 0;
         }
       }
-      l3[j*BLOCK_SIZE+i] = lij;
+      l3[j*SMALL_BLOCK_SIZE+i] = lij;
     }
   }
   return done;
@@ -39,19 +39,19 @@ int do_block(const int n,
              const int *restrict l, int *restrict lnew, 
              const int *restrict l1, const int *restrict l2, int *restrict l3,
              int i, int j, int k){
-  for(int kk=0; kk<BLOCK_SIZE; ++kk){
-    memcpy((void *) (l1 + (kk * BLOCK_SIZE)), (const void *) (l + i + (k + kk)*n), BLOCK_SIZE * sizeof(int));
+  for(int kk=0; kk<SMALL_BLOCK_SIZE; ++kk){
+    memcpy((void *) (l1 + (kk * SMALL_BLOCK_SIZE)), (const void *) (l + i + (k + kk)*n), SMALL_BLOCK_SIZE * sizeof(int));
   }
-  for(int jj=0; jj<BLOCK_SIZE; ++jj){
-    memcpy((void *) (l2 + (jj * BLOCK_SIZE)), (const void *) (l + k + (j + jj)*n), BLOCK_SIZE * sizeof(int));
-    memcpy((void *) (l3 + (jj * BLOCK_SIZE)), (const void *) (lnew + i + (j + jj)*n), BLOCK_SIZE * sizeof(int));
+  for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
+    memcpy((void *) (l2 + (jj * SMALL_BLOCK_SIZE)), (const void *) (l + k + (j + jj)*n), SMALL_BLOCK_SIZE * sizeof(int));
+    memcpy((void *) (l3 + (jj * SMALL_BLOCK_SIZE)), (const void *) (lnew + i + (j + jj)*n), SMALL_BLOCK_SIZE * sizeof(int));
   }
   
   int done = basic_square(l1, l2, l3);
   
   if(!done)
-    for(int jj=0; jj<BLOCK_SIZE; ++jj){
-      memcpy((void *) (lnew + i + (j + jj)*n), (const void *) (l3 + (jj * BLOCK_SIZE)), BLOCK_SIZE * sizeof(int));
+    for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
+      memcpy((void *) (lnew + i + (j + jj)*n), (const void *) (l3 + (jj * SMALL_BLOCK_SIZE)), SMALL_BLOCK_SIZE * sizeof(int));
     }
     
   return done;
@@ -64,18 +64,18 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
   int done = 1;
-  const int *l1 = (int *) _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
-  const int *l2 = (int *) _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
-  int *l3 = (int *) _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
-  const int n_blocks = n / BLOCK_SIZE;
+  const int *l1 = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
+  const int *l2 = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
+  int *l3 = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
+  const int n_small_blocks = n / SMALL_BLOCK_SIZE;
   
   //#pragma omp parallel for shared(l, lnew) reduction(&& : done)
-  for (int bj = 0; bj < n_blocks; ++bj){
-    const int j = bj * BLOCK_SIZE;
-    for (int bi = 0; bi < n_blocks; ++bi){
-      const int i = bi * BLOCK_SIZE;
-        for (int bk = 0; bk < n_blocks; ++bk){
-          const int k = bk * BLOCK_SIZE;
+  for (int bj = 0; bj < n_small_blocks; ++bj){
+    const int j = bj * SMALL_BLOCK_SIZE;
+    for (int bi = 0; bi < n_small_blocks; ++bi){
+      const int i = bi * SMALL_BLOCK_SIZE;
+        for (int bk = 0; bk < n_small_blocks; ++bk){
+          const int k = bk * SMALL_BLOCK_SIZE;
           if(!do_block(n, l, lnew, l1, l2, l3, i, j, k)) done = 0;
         }
     }
