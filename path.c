@@ -42,8 +42,7 @@
  */
 
 typedef int  ddt;
-//long ddt_upper_range = (1 << (8 * sizeof(ddt) - 2)) - 1;
-long ddt_upper_range = 9; 
+long ddt_upper_range = (1 << (8 * sizeof(ddt) - 2)) - 1;
 
 
 // ========================================================================== 
@@ -390,7 +389,7 @@ int main(int argc, char** argv)
     int nsplit = (int) ( sqrt(num_ranks) + 0.001 );
     int nblock = (int) ( ceil( (double) n / nsplit ) + 0.001 );
 
-    printf("nblock:%d", nblock);
+    printf("my_id:%d, nblock:%d\n", my_id, nblock);
 
     if ( my_id == 0 )
     {

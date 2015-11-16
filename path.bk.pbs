@@ -7,4 +7,4 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-mpirun -n 16 ./path.x -n 2000 -p 0.05 -i input -o output
+./path.bk.x -n 2000 -p 0.05 -i input -o output
