@@ -479,12 +479,12 @@ int main(int argc, char** argv)
 {
     int n    = 2048;            // Number of nodes
     double p = 0.05;           // Edge probability
-    const char* ifname = "adj"; // Adjacency matrix file name
-    const char* ofname = "dist"; // Distance matrix file name
+    const char* ifname = "adje"; // Adjacency matrix file name
+    const char* ofname = "dista"; // Distance matrix file name
     
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "ht:n:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
