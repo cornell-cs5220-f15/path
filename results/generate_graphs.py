@@ -63,8 +63,9 @@ def weak_graph(name):
               ncol=1)
     plt.xlabel('Threads')
     plt.ylabel('Speedup')
-    plt.savefig('weak_scaling.pdf')
+    plt.savefig('{}.pdf'.format(name))
     # plt.savefig('weak_scaling.png')
     plt.close()
 
-# weak_graph('weak-scale')
+weak_graph('block-hybrid-weak')
+weak_graph('block-mpi-weak')
