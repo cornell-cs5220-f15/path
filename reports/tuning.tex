@@ -1,0 +1,27 @@
+\section{Tuning}\label{sec:tuning}
+We haven't yet spent much time tuning the code serially. The main thing we did
+to improve the serial code was to align memory used in \texttt{lnew} and
+\texttt{l} along 64-byte boundaries. This allows us to use \texttt{\#pragma
+vector aligned} so code is vectorized using aligned instructions instead of
+unaligned instructions which are less efficient.
+
+{
+\scriptsize
+\begin{verbatim}
+LOOP BEGIN at path.c(81,5) inlined into path.c(234,5)
+   remark #15389: vectorization support: reference l has unaligned access   [ path.c(83,13) ]
+   remark #15389: vectorization support: reference l has unaligned access   [ path.c(83,13) ]
+   remark #15381: vectorization support: unaligned access used inside loop body
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15442: entire loop may be executed in remainder
+   remark #15450: unmasked unaligned unit stride loads: 1
+   remark #15451: unmasked unaligned unit stride stores: 1
+   remark #15475: --- begin vector loop cost summary ---
+   remark #15476: scalar loop cost: 14
+   remark #15477: vector loop cost: 1.750
+   remark #15478: estimated potential speedup: 6.140
+   remark #15479: lightweight vector operations: 10
+   remark #15488: --- end vector loop cost summary ---
+LOOP END
+\end{verbatim}
+}
