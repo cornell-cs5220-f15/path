@@ -1,4 +1,37 @@
 \section{Algorithms}\label{sec:algo}
+In this section, we describe the three algorithms we implemented to compute
+all-pairs shortest paths.
+
 \subsection{Repeated Squares}
+The release implementation uses a simple repeated squares (\rs) dynamic
+programming algorithm. Let $l_{ij}^s$ represent the length of the shortest path
+from vertex $i$ to vertex $j$ of at most length $2^s$. \rs{} relies on the
+following recurrence:
+\[
+  l_{ij}^{s+1} = \min_k \group{l_{ik}^s + l_{kj}^s}
+\]
+The base case $l_{ij}^0$ is the weight of the edge from vertex $i$ to vertex
+$j$ or $\infty$ if no such edge exists. This recurrence is nearly identical to
+the formula used to compute the square of a matrix $A$:
+\[
+  a_{ij}^2 = \sum_k a_{ik} a_{kj}
+\]
+
+The algorithm initializes the distance matrix $L^s$ for $s=0$ and iteratively
+computes $L^{s+1}$ by squaring $L^s$. The algorithm terminates once squaring
+$L$ reaches a fixpoint; that is, once $L^2 = L$. Each squaring requires
+$O(N^3)$ operations where $N$ is the number of vertices in the graph and the
+side-length of $L$. A shortest path can be of at most length $N$, so the
+algorithm terminates after at most $\log N$ iterations. Thus, the running time
+of \rs{} has a worst-case running time of $O(N^3 \log N)$.
+
 \subsection{Blocked Repeated Squares}
+The release implementation of \rs{} uses a naive matrix multiplication kernel
+to square $L$.
+
+% - blocking
+% - compile-time loop bounds
+% - copy optimization
+% - vectorization
+
 \subsection{Floyd-Warshall}
