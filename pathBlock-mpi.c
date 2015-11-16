@@ -101,12 +101,12 @@ int do_block(const int n,
     }
     
     int done = basic_square(row_smallblock, col_smallblock, mysmallblock);
-    /* not needed in this implementation?:
+   
     if(!done)
         for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
-            //memcpy((void *) (lnew + i + (j + jj)*n), (const void *) (l3 + (jj * SMALL_BLOCK_SIZE)), SMALL_BLOCK_SIZE * sizeof(int));
+            memcpy((void *) (myblock + i + (j + jj)*block_size), (const void *) (mysmallblock + (jj * SMALL_BLOCK_SIZE)), SMALL_BLOCK_SIZE * sizeof(int));
         }
-    */
+  
     return done;
 }
 
@@ -344,7 +344,6 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
     int BA = (mycolrank*n_block+myrowrank)*block_size*block_size; // Block address
     //Copies personal block from blocked matrix
     for (int i=0; i<block_size*block_size; ++i){
-        assert(bl[BA+i] >=0 );
         myblock[i]=bl[BA+i];
     }
     int colid, rowid;
