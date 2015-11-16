@@ -1,0 +1,85 @@
+\section{Profiling}\label{sec:profiling}
+We began by profiling the given OMP code using VTune Amplifier and examining
+the the vectorization report from ICC.
+
+\subsection{VTune Amplifier}
+The profiling results show that most of the time is spent running the square
+code (as expected). The majority of the time in square is spent on memory
+accesses to retrieve distances. This is in contrast to many applications that
+also spend significant time on computation. This is unsurprising as the only
+computation done in this algorithm is a single addition and a comparison. This
+suggests we should optimize a kernel such that it has good memory access
+patterns and takes advantage of cache as much as possible. This will be the
+focus of our tuning.
+
+{
+\scriptsize
+\begin{verbatim}
+Function                  Module       CPU Time
+------------------------  -----------  --------
+square                    omp.x         41.807s
+__kmp_barrier             libiomp5.so   13.993s
+__kmpc_reduce_nowait      libiomp5.so    6.397s
+__kmp_fork_barrier        libiomp5.so    2.962s
+__intel_ssse3_rep_memcpy  omp.x          0.040s
+fletcher16                omp.x          0.030s
+gen_graph                 omp.x          0.020s
+__kmp_join_call           libiomp5.so    0.010s
+genrand                   omp.x          0.010s
+\end{verbatim}
+}
+
+{
+\scriptsize
+\begin{verbatim}
+Source Line  Source                                                              CPU Time
+-----------  ------------------------------------------------------------------  --------
+41           int square(int n,               // Number of nodes
+42                      int* restrict l,     // Partial distance at step s
+43                      int* restrict lnew)  // Partial distance at step s+1
+44           {
+45               int done = 1;
+46               #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+47               for (int j = 0; j < n; ++j) {
+48                   for (int i = 0; i < n; ++i) {                                 0.020s
+49                       int lij = lnew[j*n+i];                                    0.030s
+50                       for (int k = 0; k < n; ++k) {                             8.072s
+51                           int lik = l[k*n+i];                                  25.646s
+52                           int lkj = l[j*n+k];
+53                           if (lik + lkj < lij) {                                3.644s
+54                               lij = lik+lkj;
+55                               done = 0;                                         4.395s
+56                           }
+57                       }
+58                       lnew[j*n+i] = lij;
+59                   }
+60               }
+61               return done;
+62           }
+\end{verbatim}
+}
+
+\subsection{ICC}
+The ICC vectorization report reports that most loops are being vectorized and
+have large potential speedup. However, the vectorized loops have unaligned
+memory accesses because \texttt{l} and \texttt{lnew} are not allocated into
+aligned memory. This could be improved by aligning memory.
+
+{
+\scriptsize
+\begin{verbatim}
+LOOP BEGIN at path.c(108,5) inlined into path.c(258,5)
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(110,13) ]
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(110,13) ]
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 2
+   remark #15449: unmasked aligned unit stride stores: 1
+   remark #15475: --- begin vector loop cost summary ---
+   remark #15476: scalar loop cost: 14
+   remark #15477: vector loop cost: 1.250
+   remark #15478: estimated potential speedup: 9.830
+   remark #15479: lightweight vector operations: 10
+   remark #15488: --- end vector loop cost summary ---
+LOOP END
+\end{verbatim}
+}

@@ -1,0 +1,7 @@
+\section{Introduction}\label{sec:intro}
+In this assignment we are optimizing an algorithm which determines the shortest
+path between all nodes in a graph in $O(\log(N)N^3)$. We focus on profiling,
+tuning, and parallelization with MPI. We were also interested in comparing this
+slower algorithm to Floyd$-$Warshall which can be done in $O(N^3)$, but has a
+larger number of synchronizations $O(N)$ rather than $O(\log(N))$ for parallel
+code.
