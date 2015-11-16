@@ -120,6 +120,7 @@ int square(int n,              // Number of nodes
 
 static inline void infinitize(int n, int* l)
 {
+    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
@@ -127,6 +128,7 @@ static inline void infinitize(int n, int* l)
 
 static inline void deinfinitize(int n, int* l)
 {
+    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
             l[i] = 0;
@@ -136,12 +138,14 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
+    #pragma vector aligned
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) _mm_calloc(n*n, sizeof(int), 64);
     memcpy(lnew, l, n*n * sizeof(int));
+    #pragma vector aligned
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
@@ -155,7 +159,9 @@ int* gen_graph(int n, double p)
     int* l = _mm_calloc(n*n, sizeof(int), 64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
+    #pragma vector aligned
     for (int j = 0; j < n; ++j) {
+        #pragma vector aligned
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
         l[j*n+j] = 0;
