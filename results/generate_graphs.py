@@ -41,31 +41,30 @@ def create_graph(name, baseline_name, baseline_proc):
     plt.xlabel('Threads')
     plt.ylabel('Speedup')
     plt.savefig('strong_{}_baseline-{}-{}.pdf'.format(name, baseline_name, baseline_proc))
-    plt.savefig('strong_{}_baseline-{}-{}.png'.format(name, baseline_name, baseline_proc))
+    # plt.savefig('strong_{}_baseline-{}-{}.png'.format(name, baseline_name, baseline_proc))
     plt.close()
 
-    # weak scaling
-    n = 500
-    i = 0
-    pts = results[(results['n']/np.sqrt(results['p']))==n]
-    print n
-    print pts
+create_graph('block-hybrid', 'block-hybrid', 1)
+create_graph('block-hybrid', 'block-mpi', 1)
+create_graph('block-hybrid', 'rs-omp', -1)
+create_graph('block-mpi', 'block-mpi', 1)
+create_graph('block-mpi', 'rs-omp', -1)
+
+def weak_graph(name):
+    results = np.genfromtxt('results-{}.csv'.format(name), delimiter=',', names=True)
+    results = average_results(results)
+    colors = ['red', 'green', 'blue', 'yellow', 'black', 'magenta', 'cyan', 'brown', 'orange', 'gray', 'purple', 'pink']
+    pts = results
     pts.sort(order=['n'])
     x = pts['p']
-    y = baseline_y[i] / pts['time']
-    plt.plot(x,y, color=colors[i], label=str(n))
-
+    y = pts['time'][0] / pts['time']
+    plt.plot(x,y, color=colors[0], label=str(int(500)))
     plt.legend(bbox_to_anchor=(1.12,1),
               ncol=1)
     plt.xlabel('Threads')
     plt.ylabel('Speedup')
-    plt.savefig('weak_{}_baseline-{}-{}.pdf'.format(name, baseline_name, baseline_proc))
-    plt.savefig('weak_{}_baseline-{}-{}.png'.format(name, baseline_name, baseline_proc))
+    plt.savefig('weak_scaling.pdf')
+    # plt.savefig('weak_scaling.png')
     plt.close()
 
-create_graph('hybrid', 'hybrid', 1)
-create_graph('hybrid', 'mpi', 1)
-create_graph('hybrid', 'omp', 24)
-create_graph('mpi', 'mpi', 1)
-create_graph('mpi', 'omp', 24)
-
+# weak_graph('weak-scale')

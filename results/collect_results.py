@@ -10,23 +10,17 @@ def collect(name):
                 with open(fname) as f:
                     print fname
                     try:
-                        found = 0
                         for line in f:
-                            par = line.split()
-                            if found == 0 and len(par) > 0 and par[0] == '==':
-                                found = 1
-                                p = par[2]
-                                print p
-                            elif found == 1 and len(par) > 0 and par[0] == 'n:':
-                                found = 2
-                                n = par[-1]
-                            elif found == 2 and len(par) > 0 and par[0] == 'Time:':
-                                time = par[-1]
-                                found = 0
+                            par = line.split(', ')
+                            if len(par) == 6:
+                                p = par[-1][:-1]
+                                n = par[0]
+                                time = par[2]
                                 writer.writerow([n, p, time])
                     except:
                         print par, found
 
-collect('omp')
-collect('hybrid')
-collect('mpi')
+collect('rs-omp')
+collect('block-hybrid')
+collect('block-mpi')
+# collect('weak-scale')
