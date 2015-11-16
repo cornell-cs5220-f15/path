@@ -27,11 +27,34 @@ of \rs{} has a worst-case running time of $O(N^3 \log N)$.
 
 \subsection{Blocked Repeated Squares}
 The release implementation of \rs{} uses a naive matrix multiplication kernel
-to square $L$.
+to square $L$. We developed an optimized matrix multiplication kernel that
+implements a variety of optimizations. We use this kernel in an optimized
+repeated squares implementation that we call \block{}. In this subsection, we
+describe the optimizations implemented by \block{}.
 
-% - blocking
-% - compile-time loop bounds
-% - copy optimization
-% - vectorization
+\paragraph{Blocking}
+A naive matrix multiplication kernel has very poor cache locality. \block{}
+implements a blocked matrix multiplication to greatly improve cache locality.
+An optimal block size of 128 was found empirically.
+
+\paragraph{Copy Optimization}
+When \block{} multiplies two sub-blocks, it first copies them into a smaller,
+aligned buffer. This copy optimization allows the compiler to more aggressively
+vectorize loops over the sub-blocks and it makes memory accesses to the
+sub-blocks much more regular.
+
+\paragraph{Compile-Time Loop Bounds}
+If the size of a matrix is not divisible by the size of a block, then not all
+sub-blocks will have the same size, and the size of a sub-blocks is only known
+at runtime. When \block{} multiplies two sub-blocks, it first checks to see if
+they are full-sized blocks, and if they are, it multiplies them using a kernel
+whose loop bounds are known at compile-time. By knowing loop-bounds at compile
+time, the compiler more aggressively optimizes this code path.  If the
+sub-blocks are not full-sized blocks, then it multiplies them using loops with
+bounds known at runtime. Since most blocks are full-sized blocks, \block{}
+often performs block multiplication with the fully optimized kernel.
+
+\paragraph{Vectorization}
+\block{} organizes all loops and array accesses to be fully vectorized.
 
 \subsection{Floyd-Warshall}
