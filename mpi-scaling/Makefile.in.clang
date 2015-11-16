@@ -1,0 +1,10 @@
+CC=clang
+MPICC=mpicc
+CFLAGS=-std=c99 -g
+
+# If you're using clang, these are good flags to try
+OPTFLAGS=-Ofast -march=native
+
+CFLAGS+=$(OPTFLAGS)
+MPI_CFLAGS=$(CFLAGS)
+OMP_CFLAGS=$(CFLAGS)
