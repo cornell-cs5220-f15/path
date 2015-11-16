@@ -23,7 +23,9 @@ SWEEPS = $(addprefix sweep-,$(basename $(EXES)))
 SPRAYS = $(addprefix spray-,$(basename $(EXES)))
 OBJS   = mt19937p.o
 
+SWEEPS := $(filter-out sweep-fw-mpi, $(SWEEPS))
 SWEEPS := $(filter-out sweep-fw-hybrid, $(SWEEPS))
+SPRAYS := $(filter-out spray-fw-mpi, $(SPRAYS))
 SPRAYS := $(filter-out spray-fw-hybrid, $(SPRAYS))
 
 N = 2400 # -n value passed to main program
