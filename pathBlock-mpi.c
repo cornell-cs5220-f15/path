@@ -63,6 +63,7 @@
 
 int basic_square(const int *restrict l1, const int *restrict l2, int *restrict l3){
     int done=1;
+ 
     for (int j = 0; j < SMALL_BLOCK_SIZE; ++j) {
         for (int i = 0; i < SMALL_BLOCK_SIZE; ++i) {
             int lij = l3[j*SMALL_BLOCK_SIZE+i];
@@ -70,6 +71,7 @@ int basic_square(const int *restrict l1, const int *restrict l2, int *restrict l
                 int lik = l1[k*SMALL_BLOCK_SIZE+i];
                 int lkj = l2[j*SMALL_BLOCK_SIZE+k];
                 if (lik + lkj < lij) {
+		  
                     lij = lik+lkj;
                     done = 0;
                 }
@@ -91,6 +93,7 @@ int do_block(const int n,
              const int *restrict col_smallblock,
              int *restrict mysmallblock,
              int i, int j, int k){
+
     for(int kk=0; kk<SMALL_BLOCK_SIZE; ++kk){
         // copies column by column ?
         memcpy((void *) (row_smallblock + (kk * SMALL_BLOCK_SIZE)), (const void *) (row_buf + bigb_address+ i + (k + kk)*block_size), SMALL_BLOCK_SIZE * sizeof(int));
@@ -102,10 +105,9 @@ int do_block(const int n,
     
     int done = basic_square(row_smallblock, col_smallblock, mysmallblock);
    
-    if(!done)
-        for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
+    for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
             memcpy((void *) (myblock + i + (j + jj)*block_size), (const void *) (mysmallblock + (jj * SMALL_BLOCK_SIZE)), SMALL_BLOCK_SIZE * sizeof(int));
-        }
+     }
   
     return done;
 }
@@ -118,6 +120,7 @@ int square(const int n,   // Number of nodes
            int* restrict col_buf,     // row buffer
            int* restrict myblock)  // block buffer
 {
+
     int done = 1;
     // block from row array, dimension is blocksize*n
     const int *row_smallblock = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
@@ -125,9 +128,9 @@ int square(const int n,   // Number of nodes
     const int *col_smallblock = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
     // new block
     int * mysmallblock= (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
-    const int n_small_blocks = block_size / SMALL_BLOCK_SIZE;
-    
-    for (int bigb=0; bigb< n/(block_size*SMALL_BLOCK_SIZE); ++bigb){ // big block iteration
+    const int n_small_blocks = block_size / SMALL_BLOCK_SIZE; // number of small blocks in big block
+
+    for (int bigb=0; bigb< n/(block_size); ++bigb){ // big block iteration
         int bigb_address = bigb*block_size*block_size;
         for (int bj = 0; bj < n_small_blocks; ++bj){
             const int j = bj * SMALL_BLOCK_SIZE;
@@ -359,10 +362,10 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
     MPI_Allgather( myblock, block_size*block_size, MPI_INT, row_buf, block_size*block_size, MPI_INT, row_comm[myrowrank]);
     
     int local_done;
-    int term = 2*log2(n);
+    int term = log2(n);
     int done = 0;
     int iter = 0;
-    for (int done = 0; !done ;  ) {
+    for (iter =0;iter < term; iter++  ) {
         local_done = square(n, block_size, myblock, row_buf, col_buf );
         
         // gather data from column group
@@ -474,7 +477,7 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
-    int n    = 200;            // Number of nodes
+    int n    = 2048;            // Number of nodes
     double p = 0.05;           // Edge probability
     const char* ifname = "adj"; // Adjacency matrix file name
     const char* ofname = "dist"; // Distance matrix file name
@@ -499,7 +502,7 @@ int main(int argc, char** argv)
     int* l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
-    
+   
     // Time the shortest paths code
     MPI_Init(&argc, &argv);
     double t0 = MPI_Wtime();
