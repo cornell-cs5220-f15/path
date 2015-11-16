@@ -1,15 +1,17 @@
 #include <getopt.h>
+#include <immintrin.h>
+#include <math.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <unistd.h>
-#include <omp.h>
-#include "mt19937p.h"
 
 #include "clear.h"
 #include "copy.h"
 #include "indexing.h"
+#include "mem.h"
+#include "mt19937p.h"
 #include "transpose.h"
 
 #ifndef BLOCK_SIZE
@@ -138,19 +140,19 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = (int*) _mm_calloc(n*n, sizeof(int), 64);
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    free(lnew);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
 int* gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    int* l = _mm_calloc(n*n, sizeof(int), 64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -237,6 +239,6 @@ int main(int argc, char** argv)
         write_matrix(ofname, n, l);
 
     // Clean up
-    free(l);
+    _mm_free(l);
     return 0;
 }

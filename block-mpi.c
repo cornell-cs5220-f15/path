@@ -1,19 +1,19 @@
-#include <getopt.h>
 #include <assert.h>
+#include <getopt.h>
+#include <immintrin.h>
+#include <math.h>
+#include <mpi.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <mpi.h>
 #include <unistd.h>
-#include <omp.h>
-#include <immintrin.h>
-#include "mt19937p.h"
 
 #include "clear.h"
 #include "copy.h"
 #include "indexing.h"
 #include "mem.h"
+#include "mt19937p.h"
 #include "transpose.h"
 
 #ifndef BLOCK_SIZE
