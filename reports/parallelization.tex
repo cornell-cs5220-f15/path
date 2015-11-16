@@ -1,4 +1,40 @@
 \section{Parallelization}\label{sec:parallelization}
+We parallelized the \rs{}, \block{}, and \fw{} algorithm using three
+parallelization mechanisms: OpenMP, MPI, and a hybrid of the two. In this
+section, we describe in detail how each mechanisms was used for parallelization.
+
 \subsection{OpenMP}
-\subsection{OpenMPI}
+TODO:
+
+\subsection{MPI}
+Implementing this algorithm in MPI requires decomposing the problem into sub
+parts, similar to the idea of domain decomposition from the last project. We
+drew inspiration from previous work with distance-vector routing using
+Bellman$-$Ford in determining shortest distances between routers. In that
+algorithm, each router sends its distances to all other routers (each time
+there is a change) to its neighbors which then use that information to update
+their own distances. This continues until no routers have changed distances.
+
+In our case we do not necessarily have a single thread per node, as there maybe
+not be enough available hardware threads. Instead each ''router'' is an MPI
+rank and is responsible for a set of nodes rather than a single node. Each MPI
+rank calculates the minimum distance to each of its nodes from all other nodes
+going through some node between 1 and $N$. Each rank also determines if any
+distances have changed. All MPI ranks then synchronize, to gather distances
+from one another and determine if any distances have changed (if none stop then
+we are done and the ''master'' rank (rank 0) outputs checksum and timing
+information). To determine if any distances have changed we use
+\texttt{mpi\_allreduce} on each rank's done variable. To synchronize distances
+across all ranks we use \texttt{mpi\_allgather} which sends each rank's
+distances to all other ranks and collects them from every rank, including
+itself, into a single buffer. Our implementation is in \texttt{path-mpi.c}.
+
 \subsection{Hybrid}
+MPI and OMP interact seamlessly when put together, making it easy to combine
+our MPI implementation and the origin OMP implementation. Given a fixed number
+of MPI ranks, $r$, and $p$ available threads then each MPI rank will have
+access to $p/r$ threads which can be used in OMP parallel sections of code.
+This can mean we do not take full advantage of all threads available to us if
+$p$ is not divisible by $r$. We implemented a hybrid version (by combining our
+MPI implementation and the OMP parts of the original implementation) in
+\texttt{path-mpi-omp.c}
