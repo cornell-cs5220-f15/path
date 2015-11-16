@@ -7,6 +7,7 @@
 #include <mpi.h>
 #include <omp.h>
 #include "mt19937p.h"
+#define mpi_ddt MPI_INT
 
 //ldoc on
 /**
@@ -49,41 +50,41 @@ long ddt_upper_range = 9;
 //          Justin: this should be done as matrix multiplication
 // ==========================================================================
 
-int square(int n, ddt* restrict l, ddt* restrict l_r, ddt* restrict lnew) 
+int square(int nblock, ddt* restrict col, ddt* restrict row, ddt* restrict cpd_new) 
 {
     int done = 1;
 
-    ddt* l_T = malloc(n * n * sizeof(ddt));
-    
-    for (int i = 0; i < n; i++)
-        for(int j = 0; j < n; j++)
+    ddt* row_T = malloc(nblock*nblock * sizeof(ddt));
+
+    for (int j = 0; j < nblock; j++)
+        for(int i = 0; i < nblock; i++)
         {
-            l_T[i*n + j] = l_r[j*n + i];
+            row_T[j*nblock + i] = row[i*nblock + j];
         }
 
-    #pragma omp parallel for shared(l, l_T, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) 
+    #pragma omp parallel for shared(col, row_T, cpd_new) reduction(&& : done)
+    for (int j = 0; j < nblock; ++j) 
     {
-        for (int i = 0; i < n; ++i) 
+        for (int i = 0; i < nblock; ++i) 
         {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) 
+            int cpd_ij = cpd_new[j*nblock+i];
+            for (int k = 0; k < nblock; ++k) 
             {
                 // ===== Justin: addition now vectorized =====
-                int lik = l_T[i*n+k];
+                int cpd_ik = row_T[i*nblock+k];
                 // ===========================================
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) 
+                int cpd_kj = col[j*nblock+k];
+                if (cpd_ik + cpd_kj < cpd_ij) 
                 {
-                    lij = lik+lkj;
+                    cpd_ij = cpd_ik+cpd_kj;
                     done = 0;
                 }
             }
-            lnew[j*n+i] = lij;
+            cpd_new[j*nblock+i] = cpd_ij;
         }
     }
 
-    free(l_T);
+    free(row_T);
 
     return done;
 }
@@ -136,51 +137,79 @@ static inline void deinfinitize(int n, ddt* l)
 //      Justin: Since the totient is 2d torus, we need to use cannon's algorithm
 // ==================================================================================
 
-int shortest_paths(int nsplit, int nblock, int my_world_id, ddt* cpd_graph, MPI_Comm* rowcomms, MPI_Comm* colcomms)
+int shortest_paths(int nsplit, int nblock, int my_id, ddt* cpd_graph, int* comm_matrix)
 {
     int done = 1;
 
-    ddt* rowblocks = malloc(nsplit * nblock * nblock * sizeof(ddt));
     ddt* colblocks = malloc(nsplit * nblock * nblock * sizeof(ddt));
-    int my_row_id;
-    int my_col_id;
-    MPI_Comm_rank(rowcomms[my_world_id / nsplit], &my_row_id);
-    MPI_Comm_rank(colcomms[my_world_id % nsplit], &my_col_id);
-    
-    for (int i = 0; i < nsplit; i++)
+    ddt* rowblocks = malloc(nsplit * nblock * nblock * sizeof(ddt));
+    MPI_Status status;
+
+    for (int j = 0; j < nsplit; j++)
     {
-        if (my_row_id == i)
+        if (my_id / nsplit == j)
         {
-            memcpy(rowblocks + i * nblock * nblock, cpd_graph, nblock * nblock * sizeof(ddt));
-            MPI_Bcast(cpd_graph, nblock * nblock, MPI_INT, i, rowcomms[my_world_id / nsplit]);
-        }
-        else
-        {
-            MPI_Status status;
-            MPI_Recv(rowblocks + i * nblock * nblock, nblock*nblock, MPI_INT, i, i, rowcomms[my_world_id / nsplit], &status);
-        }
-    }
-    for (int i = 0; i < nsplit; i++)
-    {
-        if (my_col_id == i)
-        {
-            memcpy(colblocks + i * nblock * nblock, cpd_graph, nblock * nblock * sizeof(ddt));
-            MPI_Bcast(cpd_graph, nblock * nblock, MPI_INT, i, colcomms[my_world_id % nsplit]);
-        }
-        else
-        {
-            MPI_Status status;
-            MPI_Recv(colblocks + i * nblock * nblock, nblock*nblock, MPI_INT, i, i, colcomms[my_world_id % nsplit], &status);
-        }
-    }
+            for (int i = 0; i < nsplit; i++)                                        // sending block_{ij}
+            {
+                if (my_id % nsplit == i)                                            // I have the block
+                {
+                    for (int itr = 0; itr < nsplit; itr++)                          // send to everyone in the col 
+                    {
+                        if (itr == i)                                               // self communication
+                        {
+                            memcpy(colblocks + i*nblock*nblock, cpd_graph, nblock*nblock*sizeof(ddt));
+                        }
+                        else
+                        {
+                            MPI_Send(cpd_graph, nblock*nblock, mpi_ddt, j*nsplit+itr, i, MPI_COMM_WORLD);
+                        }
+                    }
+                }
+                else
+                {
+                    MPI_Recv(colblocks + i*nblock*nblock, nblock*nblock, mpi_ddt, j*nsplit+i, i, MPI_COMM_WORLD, &status);
+                }
+            }
+        } 
+    }    
 
     for (int i = 0; i < nsplit; i++)
     {
-        done = done && square(nblock, rowblocks + i * nblock * nblock, colblocks + i * nblock * nblock, cpd_graph); 
+        if (my_id % nsplit == i)
+        {
+            for (int j = 0; j < nsplit; j++)                                        // sending block_{ij}
+            {
+                if (my_id / nsplit == j)                                            // I have the block
+                {
+                    for (int itr = 0; itr < nsplit; itr++)                          // send to everyone in the row
+                    {
+                        if (itr == j)                                               // self communication
+                        {
+                            memcpy(rowblocks + j*nblock*nblock, cpd_graph, nblock*nblock*sizeof(ddt));
+                        }
+                        else
+                        {
+                            MPI_Send(cpd_graph, nblock*nblock, mpi_ddt, itr*nsplit+i, j, MPI_COMM_WORLD);
+                        }
+                    }
+                }
+                else
+                {
+                    MPI_Recv(rowblocks + j*nblock*nblock, nblock*nblock, mpi_ddt, j*nsplit+i, j, MPI_COMM_WORLD, &status);
+                }
+            }
+        } 
+    }    
+
+    for (int i = 0; i < nsplit; i++)
+    {
+        done = done && square(nblock, colblocks + i * nblock * nblock, rowblocks + i * nblock * nblock, cpd_graph); 
     }
 
     free(rowblocks);
     free(colblocks);
+
+    return done;
 }
 
 /**
@@ -215,14 +244,14 @@ ddt* copy_to_cpd(ddt* ori_graph, int n, int nsplit, int nblock)
     int nside = nsplit * nblock; 
     ddt* cpd_graph = malloc(nside*nside * sizeof(ddt));
     
-    for (int i = 0; i < nside; i++)
+    for (int j = 0; j < nside; j++)
     {
-        int  I = i / nblock; 
-        int ii = i % nblock;
-        for (int j = 0; j < nside; j++)
+        int  J = j / nblock;
+        int jj = j % nblock;
+        for (int i = 0; i < nside; i++)
         {
-            int  J = j / nblock;
-            int jj = j % nblock;
+            int  I = i / nblock; 
+            int ii = i % nblock;
 
             int cpd_offset = (J * nsplit + I) * (nblock*nblock) + (jj * nblock + ii);
             
@@ -327,10 +356,10 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
     
     int num_ranks;
-    int my_world_id;
+    int my_id;
 
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_world_id);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
     
     int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
@@ -363,7 +392,7 @@ int main(int argc, char** argv)
 
     printf("nblock:%d", nblock);
 
-    if ( my_world_id == 0 )
+    if ( my_id == 0 )
     {
         // Graph generation + output
         ori_graph = gen_graph(n, p);
@@ -375,22 +404,22 @@ int main(int argc, char** argv)
         for (int i = 0; i < n*n; i += n+1)
             ori_graph[i] = 0;
         
-        printf("%d: ", my_world_id);
-        for (int i = 0; i < n*n; i++)
-            printf("%d ", ori_graph[i]);
-        printf("\n");
+//        printf("%d: ", my_id);
+//        for (int i = 0; i < n*n; i++)
+//            printf("%d ", ori_graph[i]);
+//        printf("\n");
         
         cpd_graph = copy_to_cpd(ori_graph, n, nsplit, nblock);
 
         for (int i = 1; i < nsplit * nsplit; i++)
         {
-            MPI_Send(cpd_graph + i * nblock*nblock, nblock*nblock, MPI_INT, i, i, MPI_COMM_WORLD);
+            MPI_Send(cpd_graph + i * nblock*nblock, nblock*nblock, mpi_ddt, i, i, MPI_COMM_WORLD);
         }
 
-        printf("%d: ", my_world_id);
-        for (int i = 0; i < nblock*nblock; i++)
-            printf("%d ", cpd_graph[i]);
-        printf("\n");
+//        printf("%d: ", my_id);
+//        for (int i = 0; i < nblock*nblock; i++)
+//            printf("%d ", cpd_graph[i]);
+//        printf("\n");
     }
     else
     {
@@ -398,54 +427,65 @@ int main(int argc, char** argv)
 
         MPI_Status status;
 
-        MPI_Recv(cpd_graph, nblock*nblock, MPI_INT, 0, my_world_id, MPI_COMM_WORLD, &status);
+        MPI_Recv(cpd_graph, nblock*nblock, mpi_ddt, 0, my_id, MPI_COMM_WORLD, &status);
 
-        printf("%d: ", my_world_id);
-        for (int i = 0; i < nblock*nblock; i++)
-            printf("%d ", cpd_graph[i]);
-        printf("\n");
+//        printf("%d: ", my_id);
+//        for (int i = 0; i < nblock*nblock; i++)
+//            printf("%d ", cpd_graph[i]);
+//        printf("\n");
     }
 
-    MPI_Group worldgroup;
-    MPI_Comm_group(MPI_COMM_WORLD, &worldgroup);
-
-    MPI_Group* rowgroups = malloc(nsplit * sizeof(MPI_Group));
-    MPI_Group* colgroups = malloc(nsplit * sizeof(MPI_Group));
+    // Initial graph received
     
-    MPI_Comm* rowcomms = malloc(nsplit * sizeof(MPI_Comm));
-    MPI_Comm* colcomms = malloc(nsplit * sizeof(MPI_Comm));
+   
+   
 
-    int* rowranks = malloc(nsplit * sizeof(int));
-    int* colranks = malloc(nsplit * sizeof(int));
-    
-    for (int i = 0; i < nsplit; i++)
+    int* comm_matrix = malloc(nsplit * nsplit * sizeof(int));
+
+    for (int j = 0; j < nsplit; j++)
     {
-        for (int j = 0; j < nsplit; j++)
+        for (int i = 0; i < nsplit; i++)
         {
-            rowranks[j] = i * nsplit + j;
-            colranks[j] = j * nsplit + i;
+            comm_matrix[j * nsplit + i] = j * nsplit + i;
         }
-        MPI_Group_incl(worldgroup, nsplit, rowranks, &rowgroups[i]);
-        MPI_Group_incl(worldgroup, nsplit, colranks, &colgroups[i]);
-        MPI_Comm_create(MPI_COMM_WORLD, rowgroups[i], &rowcomms[i]);
-        MPI_Comm_create(MPI_COMM_WORLD, colgroups[i], &colcomms[i]);
     }
 
     // Time the shortest paths code
     double t0 = MPI_Wtime();
 
-    for (int done = 0; !done; ) 
+    int global_done = 0;
+    while(!global_done)
     {
-        done = shortest_paths(nsplit, nblock, my_world_id, cpd_graph, rowcomms, colcomms);
+        int done = shortest_paths(nsplit, nblock, my_id, cpd_graph, comm_matrix);
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Allreduce(&done, &global_done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
     }
 
     double t1 = MPI_Wtime();
 
-    copy_to_ori(ori_graph, cpd_graph, n, nsplit, nblock);
-
-
-    if ( my_world_id == 0 )
+    if ( my_id != 0 )
     {
+        MPI_Send(cpd_graph, nblock*nblock, mpi_ddt, 0, my_id, MPI_COMM_WORLD);
+
+//        printf("%d: ", my_id);
+//        for (int i = 0; i < nblock*nblock; i++)
+//            printf("%d ", cpd_graph[i]);
+//        printf("\n");
+    }
+    else
+    {
+        MPI_Status status;
+
+        for (int i = 1; i < nsplit * nsplit; i++)
+            MPI_Recv(cpd_graph + i * nblock*nblock, nblock*nblock, mpi_ddt, i, i, MPI_COMM_WORLD, &status);
+
+//        printf("%d: ", my_id);
+//        for (int i = 0; i < nblock*nblock * nsplit*nsplit; i++)
+//            printf("%d ", cpd_graph[i]);
+//        printf("\n");
+
+        copy_to_ori(ori_graph, cpd_graph, n, nsplit, nblock);
+
         printf("=============================\n");
         printf("n:     %d\n", n);
         printf("p:     %g\n", p);
@@ -460,13 +500,6 @@ int main(int argc, char** argv)
     }
 
     free(cpd_graph);
-    free(rowgroups);
-    free(colgroups);
-    free(rowcomms);
-    free(colcomms);
-    free(rowranks);
-    free(colranks);
-
 
     MPI_Finalize();
 
