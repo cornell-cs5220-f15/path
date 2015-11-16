@@ -5,8 +5,7 @@
 //  Created by Marc Gilles on 11/16/15.
 //
 //
-
-#include "pathBlock-mpi.h"
+//#include "pathBlock-mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,8 +127,8 @@ int square(const int n,   // Number of nodes
     int * mysmallblock= (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
     const int n_small_blocks = block_size / SMALL_BLOCK_SIZE;
     
-    for (int bigb=0; b< n/(block_size*SMALL_BLOCK_SIZE); ++b){ // big block iteration
-        bigb_address = bigb*block_size*block_size;
+    for (int bigb=0; bigb< n/(block_size*SMALL_BLOCK_SIZE); ++bigb){ // big block iteration
+        int bigb_address = bigb*block_size*block_size;
         for (int bj = 0; bj < n_small_blocks; ++bj){
             const int j = bj * SMALL_BLOCK_SIZE;
             for (int bi = 0; bi < n_small_blocks; ++bi){
@@ -142,9 +141,9 @@ int square(const int n,   // Number of nodes
         }
     }
     
-    _mm_free((void *) l1);
-    _mm_free((void *) l2);
-    _mm_free((void *) l3);   
+    _mm_free((void *) row_smallblock);
+    _mm_free((void *) col_smallblock);
+    _mm_free((void *) mysmallblock);   
     
     return done;        
 }
