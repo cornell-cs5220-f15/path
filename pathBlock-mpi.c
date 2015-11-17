@@ -477,7 +477,7 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
-    int n    = 2048;            // Number of nodes
+    int n    = 1024;            // Number of nodes
     double p = 0.05;           // Edge probability
     const char* ifname = "adje"; // Adjacency matrix file name
     const char* ofname = "dista"; // Distance matrix file name
