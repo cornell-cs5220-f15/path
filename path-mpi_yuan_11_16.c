@@ -55,11 +55,12 @@ int square(int n,               // Number of nodes
             for (int k = 0; k < n; ++k) {
                 int lik = l[i*n + k];
 				int lkj = lp[j*n + k];
-                if (lik + lkj < lnew[j*n+i]) {
-                    lnew[j*n+i] = lik+lkj;
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
                     done = 0;
                 }
             }
+			lnew[i*n+j+sp] = lij;
         }
     }
     return done;
