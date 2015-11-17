@@ -12,8 +12,12 @@
 
 #ifdef __MIC__
     #define BYTE_ALIGN 64
+    #define width_size ((int) 512)
+    #define height_size ((int) 128)
 #else
     #define BYTE_ALIGN 32
+    #define width_size ((int) 1024)
+    #define height_size ((int) 64)
 #endif
 
 #ifdef __INTEL_COMPILER
@@ -74,7 +78,9 @@ long   num_square = 0;
 
 int square(int n,                 // Number of nodes
            int * restrict l,      // Partial distance at step s
-           int * restrict lnew) { // Partial distance at step s+1
+           int * restrict lnew,    // Partial distance at step s+1
+           int n_width,            // Width (x direction) of block
+           int n_height) {       // Height (y direction) of block
 
     USE_ALIGN(l,    BYTE_ALIGN);
     USE_ALIGN(lnew, BYTE_ALIGN);
@@ -84,21 +90,40 @@ int square(int n,                 // Number of nodes
             num_threads(n_threads) \
             shared(l, lnew)        \
             reduction(&& : done)
-        for (int j = 0; j < n; ++j) {
-            for (int i = 0; i < n; ++i) {
-                int lij = lnew[j*n+i];
-                for (int k = 0; k < n; ++k) {
-                    int lik = l[k*n+i];
-                    int lkj = l[j*n+k];
-
-                    if (lik + lkj < lij) {
-                        lij = lik+lkj;
-                        done = 0;
+            // Major Blocks
+            for(int J=0; J<n_height; ++J) {
+              for(int K=0; K<n_height; ++K) {
+                for(int I=0; I<n_width; ++I){
+                  // Calculate ending indices for the set of blocks
+                  int j_end = ((J+1)*height_size < n? height_size : (n-(J*width_size)));
+                  int k_end = ((K+1)*height_size < n? height_size : (n-(K*width_size)));
+                  int i_end = ((I+1)*width_size  < n? width_size  : (n-(I*height_size)));
+//                  int i_init = I*width_size;
+//                  int k_init = K*height_size;
+                  // Minor Blocks
+                  for (int j = 0; j < j_end; ++j) {
+//                    int jn = J*height_size*n+j*n;
+                    for (int k = 0; k < k_end; ++k) {
+//                      int kn = k*height_size*n+k*n;
+                      for (int i = 0; i < i_end; ++i) {
+                        int lij_ind = (J*height_size+j)*n+I*width_size+i;
+                        int lij = lnew[lij_ind];
+                        int lik_ind = (K*height_size+k)*n+I*width_size+i;
+                        int lik = l[lik_ind];
+                        int lkj_ind = (J*height_size+j)*n+K*height_size+k;
+                        int lkj = l[lkj_ind];
+                        
+                        if (lik + lkj < lij) {
+                          lij = lik+lkj;
+                          lnew[lij_ind] = lij;
+                          done = 0;
+                        }
+                      }
                     }
+                  }
                 }
-                lnew[j*n+i] = lij;
+              }
             }
-        }
 
     return done;
 }
@@ -168,18 +193,20 @@ void shortest_paths(int n, int * restrict l)
     DEF_ALIGN(BYTE_ALIGN) int * restrict lnew = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
     // memset(lnew, 0, num_bytes);
     USE_ALIGN(lnew, BYTE_ALIGN);
-
     memcpy(lnew, l, n*n * sizeof(int));
+  
+    const int n_width = n/width_size + (n%width_size? 1 : 0);
+    const int n_height = n/ height_size + (n%height_size? 1 : 0);
     for (int done = 0; !done; ) {
 
         double square_start = omp_get_wtime();
-        done = square(n, l, lnew);
+        done = square(n, l, lnew, n_width, n_height);
         double square_stop  = omp_get_wtime();
 
         //
         // tmp just to make sure avg is legit
         /////////////////////////////////////////
-        //printf(" -- %.16g\n", square_stop - square_start);
+        printf(" -- %.16g\n", square_stop - square_start);
         /////////////////////////////////////////
         //
         //
