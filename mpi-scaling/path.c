@@ -9,8 +9,6 @@
 
 //ldoc on
 
-static MPI_Status status;
-
 /**
  *
  * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
@@ -58,12 +56,19 @@ int* pad(int n, int m, int* graph) {
     return paddedgraph;
 }
 
-// Calculate columns per process
-int num_cols(int n, int t) {
-
+int receive_updates(int m, int root, int* recvupdates, int* graph) {
+    int upsrecv;
+    MPI_Bcast(&upsrecv, 1, MPI_INT, root, MPI_COMM_WORLD);
+    MPI_Bcast(recvupdates, 3 * upsrecv, MPI_INT, root, MPI_COMM_WORLD);
+    for (int i = 0; i < upsrecv; i++) {
+        int x = recvupdates[i * 3];
+        int y = recvupdates[i * 3 + 1];
+        graph[x * m + y] = recvupdates[i * 3 + 2];
+    }
+    return upsrecv;
 }
 
-void shortest_paths(int n, int m, int t, int* l)
+void shortest_paths(int n, int m, int c, int t, int* l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(m, l);
@@ -76,6 +81,7 @@ void shortest_paths(int n, int m, int t, int* l)
         // Need to pad
         graph = pad(n, m, l);
     }
+    int* updates = (int*) _mm_malloc(3 * m * c * sizeof(int));
 
     // Send matrix to every worker
     MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
@@ -84,7 +90,7 @@ void shortest_paths(int n, int m, int t, int* l)
     do {
         done = 1;
         for (int i = 1; i <= t; i++) {
-
+            done &= !receive_updates(m, i, updates, graph);
         }
     } while (!done);
 
@@ -92,19 +98,58 @@ void shortest_paths(int n, int m, int t, int* l)
         unpad(n, m, l, graph);
     }
     deinfinitize(m, l);
+    _mm_free(updates);
 }
 
 void shortest_paths_worker(int m, int c, int t, int id) {
-    if (id > m) return;
-    size_t s = m*m * sizeof(int);
-    int* graph = (int*) _mm_malloc(s);
+    int* graph = (int*) _mm_malloc(m * m * sizeof(int));
+    int* updates = (int*) _mm_malloc(3 * m * c * sizeof(int));
+    int* recvupdates = (int*) _mm_malloc(3 * m * c * sizeof(int));
     MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // OPT
+    int done;
+    do {
+        done = 1;
+        int nups = 0; // Number of updates
 
+        // Optimize the assigned columns
+        for (int j = 0; j < c; j++) {
+            int x = (id - 1) * m * c + j;
+            for (int y = 0; y < m; y++) {
+                int hasupdate = 0;
+                int newval = graph[x * m + y];
+                for (int i = 0; i < m; i++) {
+                    int dist = graph[x * m + i] + graph[i * m + y];
+                    if (dist < newval) {
+                        newval = dist;
+                        hasupdate = 1;
+                    }
+                }
+                if (hasupdate) {
+                    graph[x * m + y] = newval;
+                    done = 0;
+                    updates[nups * 3] = x;
+                    updates[nups * 3 + 1] = y;
+                    updates[nups * 3 + 2] = newval;
+                    nups++;
+                }
+            }
+        }
 
+        // Synchronize state with other workers
+        for (int i = 1; i <= t; i++) {
+            if (i == id) {
+                MPI_Bcast(&nups, 1, MPI_INT, i, MPI_COMM_WORLD);
+                MPI_Bcast(updates, 3 * nups, MPI_INT, i, MPI_COMM_WORLD);
+            } else {
+                done &= !receive_updates(m, i, recvupdates, graph);
+            }
+        }
+    } while (!done);
 
     _mm_free(graph);
+    _mm_free(updates);
+    _mm_free(recvupdates);
 }
 
 /**
@@ -188,9 +233,7 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
-    int id   = 0;
     int n    = 200;            // Number of nodes
-    int t    = 4;
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
@@ -211,24 +254,19 @@ int main(int argc, char** argv)
         }
     }
 
-    if (t > n) {
-        fprintf(stderr, "Number of processes exceeds dimension of matrix!");
-        return 1;
-    }
-
+    int t, id;
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD,&t);
     MPI_Comm_rank(MPI_COMM_WORLD,&id);
     t -= 1; // Use t - 1 as one of the processes is root
 
-    int c = 1; // If more than enough workers, just assign one col per worker
-    int m = n;
-    if (t < n) {
-        c = (int) ceil(((float) n) / ((float) t));
-        m = t * c;
-    } else {
-        t = n;
+    if (t > n) {
+        fprintf(stderr, "Number of workers exceeds dimension of matrix!");
+        return 1;
     }
+
+    int c = (int) ceil(((float) n) / ((float) t));
+    int m = t * c;
 
     if (id == 0) {
         // Graph generation + output
@@ -238,7 +276,7 @@ int main(int argc, char** argv)
 
         // Time the shortest paths code
         double t0 = omp_get_wtime();
-        shortest_paths(n, m, t, l); 
+        shortest_paths(n, m, c, t, l); 
         double t1 = omp_get_wtime();
 
         printf("%d,%d,%g,%g,%X\n", t, n, t1-t0, p, fletcher16(l, n*n));
