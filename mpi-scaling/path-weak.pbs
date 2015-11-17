@@ -15,5 +15,5 @@ B=")"
 for T in `seq 1 32`;
 do
 	C=`echo $FLOOR$N$A$T$B$B | bc -l`
-	./path.x -n $C -t $T
+	mpirun -np $T path-mpi.x -n $C
 done

@@ -48,7 +48,7 @@ void unpad(int n, int m, int* graph, int* paddedgraph) {
 // Pad an n*n matrix into an m*m matrix, assuming m >= n
 int* pad(int n, int m, int* graph) {
     size_t paddedsize = m*m * sizeof(int);
-    int* paddedgraph = (int*) _mm_malloc(paddedsize);
+    int* paddedgraph = (int*) _mm_malloc(m * m, sizeof(int));
     memset(paddedgraph, m+1, paddedsize);
     for (int i = 0; i < n; i++) {
         memcpy(paddedgraph + (i * m), graph + (i * n), n * sizeof(int));
@@ -81,7 +81,7 @@ void shortest_paths(int n, int m, int c, int t, int* l)
         // Need to pad
         graph = pad(n, m, l);
     }
-    int* updates = (int*) _mm_malloc(3 * m * c * sizeof(int));
+    int* updates = (int*) _mm_malloc(3 * m * c, sizeof(int));
 
     // Send matrix to every worker
     MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
@@ -102,9 +102,9 @@ void shortest_paths(int n, int m, int c, int t, int* l)
 }
 
 void shortest_paths_worker(int m, int c, int t, int id) {
-    int* graph = (int*) _mm_malloc(m * m * sizeof(int));
-    int* updates = (int*) _mm_malloc(3 * m * c * sizeof(int));
-    int* recvupdates = (int*) _mm_malloc(3 * m * c * sizeof(int));
+    int* graph = (int*) _mm_malloc(m * m, sizeof(int));
+    int* updates = (int*) _mm_malloc(3 * m * c, sizeof(int));
+    int* recvupdates = (int*) _mm_malloc(3 * m * c, sizeof(int));
     MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
 
     int done;
@@ -265,7 +265,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    int c = (int) ceil(((float) n) / ((float) t));
+    c = (int) ceil(((float) n) / ((float) t));
     int m = t * c;
 
     if (id == 0) {
