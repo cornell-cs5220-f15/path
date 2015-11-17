@@ -72,7 +72,7 @@ long   num_square = 0;
  * identical, and false otherwise.
  */
 TARGET_MIC
-inline int square(int n,        // Number of nodes
+int square(int n,        // Number of nodes
            int * restrict l,    // Partial distance at step s
            int * restrict lnew, // Partial distance at step s+1
            int n_width,         // Width (x direction) of block
