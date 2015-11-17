@@ -86,42 +86,45 @@ int square(int n,                 // Number of nodes
     USE_ALIGN(lnew, BYTE_ALIGN);
 
     int done = 1;
-    #pragma omp for
-      // Major Blocks
-      for(int J=0; J<n_height; ++J) {
-        for(int K=0; K<n_height; ++K) {
-          for(int I=0; I<n_width; ++I){
-          // Calculate ending indices for the set of blocks
-            int j_end = ((J+1)*height_size < n? height_size : (n-(J*height_size)));
-            int k_end = ((K+1)*height_size < n? height_size : (n-(K*height_size)));
-            int i_end = ((I+1)*width_size  < n? width_size  : (n-(I*width_size)));
-            int j_init = J*height_size*n;
-            int kn_init = K*height_size*n;
-            int k_init = K*height_size;
-            int i_init = I*width_size;
+    #pragma omp parallel for       \
+            num_threads(n_threads) \
+            shared(l, lnew)        \
+            reduction(&& : done)   \
+            // Major Blocks
+            for(int J=0; J<n_height; ++J) {
+              for(int K=0; K<n_height; ++K) {
+                for(int I=0; I<n_width; ++I){
+                  // Calculate ending indices for the set of blocks
+                  int j_end = ((J+1)*height_size < n? height_size : (n-(J*height_size)));
+                  int k_end = ((K+1)*height_size < n? height_size : (n-(K*height_size)));
+                  int i_end = ((I+1)*width_size  < n? width_size  : (n-(I*width_size)));
+                  int j_init = J*height_size*n;
+                  int kn_init = K*height_size*n;
+                  int k_init = K*height_size;
+                  int i_init = I*width_size;
                   
-            // Minor Blocks
-            for (int j = 0; j < j_end; ++j) {
-              int jn = j_init+j*n;
-              for (int k = 0; k < k_end; ++k) {
-                int kn = kn_init+k*n;
-                int lkj = l[jn+k_init+k];
-                for (int i = 0; i < i_end; ++i) {
-                  int lij_ind = jn+i_init+i;
-                  int lij = lnew[lij_ind];
-                  int lik = l[kn+i_init+i];
+                  // Minor Blocks
+                  for (int j = 0; j < j_end; ++j) {
+                    int jn = j_init+j*n;
+                    for (int k = 0; k < k_end; ++k) {
+                      int kn = kn_init+k*n;
+                      int lkj = l[jn+k_init+k];
+                      for (int i = 0; i < i_end; ++i) {
+                        int lij_ind = jn+i_init+i;
+                        int lij = lnew[lij_ind];
+                        int lik = l[kn+i_init+i];
                         
-                  if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    lnew[lij_ind] = lij;
-                    done = 0;
+                        if (lik + lkj < lij) {
+                          lij = lik+lkj;
+                          lnew[lij_ind] = lij;
+                          done = 0;
+                        }
+                      }
+                    }
                   }
                 }
               }
             }
-          }
-        }
-      }
 
     return done;
 }
@@ -174,8 +177,8 @@ void shortest_paths(int n, int * restrict l)
 {
     USE_ALIGN(l, BYTE_ALIGN);
 
-//    printf("-------------------------------------------\n");
-//    printf("Individual Squares:\n");
+    printf("-------------------------------------------\n");
+    printf("Individual Squares:\n");
 
     // Generate l_{ij}^0 from adjacency matrix representation
     double to_inf_start = omp_get_wtime();
@@ -195,32 +198,25 @@ void shortest_paths(int n, int * restrict l)
   
     const int n_width = n/width_size + (n%width_size? 1 : 0);
     const int n_height = n/ height_size + (n%height_size? 1 : 0);
-    #pragma omp parallel num_threads(n_threads) shared(l, lnew)
-    {
-      for (int done = 0; !done; ) {
+    for (int done = 0; !done; ) {
 
-          double square_start = omp_get_wtime();
-      
-          #pragma omp reduction(&& : done)
-          {
-            done = square(n, l, lnew, n_width, n_height);
-          }
-          double square_stop  = omp_get_wtime();
+        double square_start = omp_get_wtime();
+        done = square(n, l, lnew, n_width, n_height);
+        double square_stop  = omp_get_wtime();
 
-          //
-          // tmp just to make sure avg is legit
-          /////////////////////////////////////////
-          //printf(" -- %.16g\n", square_stop - square_start);
-          /////////////////////////////////////////
-          //
-          //
+        //
+        // tmp just to make sure avg is legit
+        /////////////////////////////////////////
+        printf(" -- %.16g\n", square_stop - square_start);
+        /////////////////////////////////////////
+        //
+        //
 
-          // don't want to printf in here.
-          square_avg += square_stop-square_start;
-          num_square++;
+        // don't want to printf in here.
+        square_avg += square_stop-square_start;
+        num_square++;
 
-          memcpy(l, lnew, n*n * sizeof(int));
-      }
+        memcpy(l, lnew, n*n * sizeof(int));
     }
     _mm_free(lnew);
 
