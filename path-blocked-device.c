@@ -75,10 +75,10 @@ int square(int n,        // Number of nodes
     USE_ALIGN(lnew, BYTE_ALIGN);
 
     int done = 1;
-    // #pragma omp parallel for       \
-    //         num_threads(n_threads) \
-    //         shared(l, lnew)        \
-    //         reduction(&& : done)   \
+    #pragma omp parallel for       \
+            num_threads(n_threads) \
+            shared(l, lnew)        \
+            reduction(&& : done)   \
     // Major Blocks
     for(int J = 0; J < n_height; ++J) {
         for(int K = 0; K < n_height; ++K) {
@@ -90,8 +90,8 @@ int square(int n,        // Number of nodes
                 int k_end   = ((K+1)*height_size < grid_height ? height_size : (grid_height-(K*height_size)));
                 int i_end   = ((I+1)*width_size  < n ? width_size  : (n-(I*width_size)));
 
-                int j_init  = J*height_size*grid_height;
-                int kn_init = K*height_size*grid_height;
+                int j_init  = J*height_size*n;
+                int kn_init = K*height_size*n;
                 int k_init  = K*height_size;
                 int i_init  = I*width_size;
 
@@ -101,12 +101,10 @@ int square(int n,        // Number of nodes
 
                 // Minor Blocks
                 for(int j = 0; j < j_end; ++j) {
-                    // int jn = j_init+j*n;
-                    int jn = j_init+j*grid_height;
+                    int jn = j_init+j*n;
             
                     for(int k = 0; k < k_end; ++k) {
-                        // int kn  = kn_init+k*n;
-                        int kn  = kn_init+k*grid_height;
+                        int kn  = kn_init+k*n;
                         int lkj = l[jn+k_init+k];
                         
                         for(int i = 0; i < i_end; ++i) {
@@ -208,24 +206,25 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     int *top_sig = &top_l[0];
     int *bot_sig = &bot_l[0];
 
-    const int n_width = n/width_size + (n%width_size? 1 : 0);
+    const int n_width = n / width_size + (n % width_size ? 1 : 0);
     // const int n_height = n/ height_size + (n%height_size? 1 : 0);
     const int top_n_height = top_h / height_size + (top_h % height_size ? 1 : 0);
     const int bot_n_height = bot_h / height_size + (bot_h % height_size ? 1 : 0);
 
     int first_iter = 1, top_done = 0, bot_done = 0;
-    for (int done = 0, top_done = 0, bot_done = 0; !(top_done && bot_done);) {//!done; done = top_done || bot_done) {
+    for (int done = 0, top_done = 0, bot_done = 0; !(top_done && bot_done);) {
         double square_start = omp_get_wtime();
 
         //
         // asynchronous offload to the first mic; send top half
         //
 #ifdef __INTEL_COMPILER
-        #pragma offload target(mic:0) \
+        #pragma offload target(mic:0) signal(top_sig)                             \
                 in(n_threads)                                                     \
                 in(n)                                                             \
                 in(n_width)                                                       \
                 in(top_n_height)                                                  \
+                in(top_h)                                                         \
                 inout(top_l    : length(n*top_h) alloc_if(first_iter) free_if(0)) \
                 inout(top_lnew : length(n*top_h) alloc_if(first_iter) free_if(0))
 #endif
@@ -233,14 +232,15 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
 
 
         //
-        // asynchronous offload to the first mic; send bottom half
+        // asynchronous offload to the second mic; send bottom half
         //
 #ifdef __INTEL_COMPILER
-        #pragma offload target(mic:1) \
+        #pragma offload target(mic:1) signal(bot_sig)                             \
                 in(n_threads)                                                     \
                 in(n)                                                             \
                 in(n_width)                                                       \
                 in(bot_n_height)                                                  \
+                in(bot_h)                                                         \
                 inout(bot_l    : length(n*bot_h) alloc_if(first_iter) free_if(0)) \
                 inout(bot_lnew : length(n*bot_h) alloc_if(first_iter) free_if(0))
 #endif
