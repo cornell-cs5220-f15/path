@@ -220,26 +220,26 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
         //
         // asynchronous offload to the first mic; send top half
         //
-        #pragma offload target(mic:0) \
-                in(n_threads)                                                     \
-                in(n)                                                             \
-                in(n_width)                                                       \
-                in(top_n_height)                                                  \
-                inout(top_l    : length(n*top_h) alloc_if(first_iter) free_if(0)) \
-                inout(top_lnew : length(n*top_h) alloc_if(first_iter) free_if(0))
+        // #pragma offload target(mic:0) \
+        //         in(n_threads)                                                     \
+        //         in(n)                                                             \
+        //         in(n_width)                                                       \
+        //         in(top_n_height)                                                  \
+        //         inout(top_l    : length(n*top_h) alloc_if(first_iter) free_if(0)) \
+        //         inout(top_lnew : length(n*top_h) alloc_if(first_iter) free_if(0))
         top_done = square(n, top_l, top_lnew, n_width, top_n_height, n_threads);
 
 
         //
         // asynchronous offload to the first mic; send bottom half
         //
-        #pragma offload target(mic:1) \
-                in(n_threads)                                                     \
-                in(n)                                                             \
-                in(n_width)                                                       \
-                in(bot_n_height)                                                  \
-                inout(bot_l    : length(n*bot_h) alloc_if(first_iter) free_if(0)) \
-                inout(bot_lnew : length(n*bot_h) alloc_if(first_iter) free_if(0))
+        // #pragma offload target(mic:1) \
+        //         in(n_threads)                                                     \
+        //         in(n)                                                             \
+        //         in(n_width)                                                       \
+        //         in(bot_n_height)                                                  \
+        //         inout(bot_l    : length(n*bot_h) alloc_if(first_iter) free_if(0)) \
+        //         inout(bot_lnew : length(n*bot_h) alloc_if(first_iter) free_if(0))
         bot_done = square(n, bot_l, bot_lnew, n_width, top_n_height, n_threads);
         
 
@@ -270,8 +270,8 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     }
 
     // free the phi memory used in the loop
-    #pragma offload_transfer target(mic:0) nocopy(top_l : free_if(1)) nocopy(top_lnew : free_if(1))
-    #pragma offload_transfer target(mic:1) nocopy(bot_l : free_if(1)) nocopy(bot_lnew : free_if(1))
+    // #pragma offload_transfer target(mic:0) nocopy(top_l : free_if(1)) nocopy(top_lnew : free_if(1))
+    // #pragma offload_transfer target(mic:1) nocopy(bot_l : free_if(1)) nocopy(bot_lnew : free_if(1))
 
     _mm_free(lnew);
 
