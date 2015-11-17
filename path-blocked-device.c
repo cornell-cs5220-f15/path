@@ -217,11 +217,11 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
 
     const int n_width = n/width_size + (n%width_size? 1 : 0);
     // const int n_height = n/ height_size + (n%height_size? 1 : 0);
-    const int top_n_height = n / height_size + (n % height_size ? 1 : 0);
+    const int top_n_height = top_h / height_size + (top_h % height_size ? 1 : 0);
     const int bot_n_height = bot_h / height_size + (bot_h % height_size ? 1 : 0);
 
     int first_iter = 1, top_done = 0, bot_done = 0;
-    for (int done = 0, top_done = 0, bot_done = 1; !(top_done && bot_done);) {//!done; done = top_done || bot_done) {
+    for (int done = 0, top_done = 0, bot_done = 0; !(top_done && bot_done);) {//!done; done = top_done || bot_done) {
         double square_start = omp_get_wtime();
 
         //
@@ -234,7 +234,7 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
         //         in(top_n_height)                                                  \
         //         inout(top_l    : length(n*top_h) alloc_if(first_iter) free_if(0)) \
         //         inout(top_lnew : length(n*top_h) alloc_if(first_iter) free_if(0))
-        top_done = square(n, top_l, top_lnew, n_width, top_n_height, top_h*2, n_threads);
+        top_done = square(n, top_l, top_lnew, n_width, top_n_height, top_h, n_threads);
 
 
         //
@@ -247,7 +247,7 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
         //         in(bot_n_height)                                                  \
         //         inout(bot_l    : length(n*bot_h) alloc_if(first_iter) free_if(0)) \
         //         inout(bot_lnew : length(n*bot_h) alloc_if(first_iter) free_if(0))
-        // bot_done = square(n, bot_l, bot_lnew, n_width, bot_n_height, bot_h, n_threads);
+        bot_done = square(n, bot_l, bot_lnew, n_width, bot_n_height, bot_h, n_threads);
         
 
 
