@@ -95,23 +95,26 @@ int square(int n,                 // Number of nodes
               for(int K=0; K<n_height; ++K) {
                 for(int I=0; I<n_width; ++I){
                   // Calculate ending indices for the set of blocks
-                  int j_end = ((J+1)*height_size < n? height_size : (n-(J*width_size)));
-                  int k_end = ((K+1)*height_size < n? height_size : (n-(K*width_size)));
-                  int i_end = ((I+1)*width_size  < n? width_size  : (n-(I*height_size)));
-//                  int i_init = I*width_size;
-//                  int k_init = K*height_size;
+                  int j_end = ((J+1)*height_size < n? height_size : (n-(J*height_size)));
+                  int k_end = ((K+1)*height_size < n? height_size : (n-(K*height_size)));
+                  int i_end = ((I+1)*width_size  < n? width_size  : (n-(I*width_size)));
+                  int j_init = J*height_size*n;
+                  int kn_init = K*height_size*n;
+                  int k_init = K*height_size;
+                  int i_init = I*width_size;
+                  
                   // Minor Blocks
                   for (int j = 0; j < j_end; ++j) {
-//                    int jn = J*height_size*n+j*n;
+                    int jn = j_init+j*n;
                     for (int k = 0; k < k_end; ++k) {
-//                      int kn = k*height_size*n+k*n;
+                      int kn = kn_init+k*n;
+                      int lkj = l[jn+k_init+k];
                       for (int i = 0; i < i_end; ++i) {
-                        int lij_ind = (J*height_size+j)*n+I*width_size+i;
+                        int lij_ind = jn+i_init+i;
+                        int lik_ind = kn+i_init+i;
+                        
                         int lij = lnew[lij_ind];
-                        int lik_ind = (K*height_size+k)*n+I*width_size+i;
                         int lik = l[lik_ind];
-                        int lkj_ind = (J*height_size+j)*n+K*height_size+k;
-                        int lkj = l[lkj_ind];
                         
                         if (lik + lkj < lij) {
                           lij = lik+lkj;
