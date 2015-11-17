@@ -187,27 +187,69 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    // int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     size_t num_bytes = n*n*sizeof(int);
     DEF_ALIGN(BYTE_ALIGN) int * restrict lnew = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
-    // memset(lnew, 0, num_bytes);
     USE_ALIGN(lnew, BYTE_ALIGN);
     memcpy(lnew, l, n*n * sizeof(int));
+
+    // divide into ~even subgrids, top and bottom. if n is odd, the top half will be
+    // one row smaller than the bottom half
+    int half_h = n / 2;
+    int offset = n * half_h;
+    int parity = n % 2;
+
+    int top_h = half_h;
+    int bot_h = half_h + parity;
+
+    int *top_l = l;          int *top_lnew = lnew;
+    int *bot_l = l + offset; int *bot_lnew = lnew + offset;
   
+    int *top_sig = &top_l[0];
+    int *bot_sig = &bot_l[0];
+
     const int n_width = n/width_size + (n%width_size? 1 : 0);
-    const int n_height = n/ height_size + (n%height_size? 1 : 0);
-    int first_iter = 1;
-    for (int done = 0; !done; ) {
+    // const int n_height = n/ height_size + (n%height_size? 1 : 0);
+    const int top_n_height = top_h / height_size + (top_h % height_size ? 1 : 0);
+    const int bot_n_height = bot_h / height_size + (bot_h % height_size ? 1 : 0);
+
+    int first_iter = 1, top_done = 0, bot_done = 0;
+    for (int done = 0; !done; done == top_done && bot_done) {
 
         double square_start = omp_get_wtime();
-        #pragma offload target(mic:0)     \
-                in(n_threads)             \
-                in(n)                     \
-                in(n_width)               \
-                in(n_height)              \
-                inout(l    : length(n*n) alloc_if(first_iter) free_if(0)) \
-                inout(lnew : length(n*n) alloc_if(first_iter) free_if(0))
-        done = square(n, l, lnew, n_width, n_height, n_threads);
+
+        //
+        // asynchronous offload to the first mic; send top half
+        //
+        #pragma offload target(mic:0) signal(top_sig)                             \
+                in(n_threads)                                                     \
+                in(n)                                                             \
+                in(n_width)                                                       \
+                in(top_n_height)                                                  \
+                inout(top_l    : length(n*top_h) alloc_if(first_iter) free_if(0)) \
+                inout(top_lnew : length(n*top_h) alloc_if(first_iter) free_if(0))
+        top_done = square(n, top_l, top_lnew, n_width, top_n_height, n_threads);
+
+
+        //
+        // asynchronous offload to the first mic; send bottom half
+        //
+        #pragma offload target(mic:1) signal(bot_sig)                             \
+                in(n_threads)                                                     \
+                in(n)                                                             \
+                in(n_width)                                                       \
+                in(bot_n_height)                                                  \
+                inout(bot_l    : length(n*bot_h) alloc_if(first_iter) free_if(0)) \
+                inout(bot_lnew : length(n*bot_h) alloc_if(first_iter) free_if(0))
+        bot_done = square(n, bot_l, bot_lnew, n_width, top_n_height, n_threads);
+        
+
+
+        #pragma offload_wait target(mic:0) wait(top_sig)
+        #pragma offload_wait target(mic:1) wait(bot_sig)
+
+
+
+
         double square_stop  = omp_get_wtime();
 
         first_iter = 0;
@@ -228,9 +270,8 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     }
 
     // free the phi memory used in the loop
-    #pragma offload_transfer target(mic:0) \
-            nocopy(l    : free_if(1))      \
-            nocopy(lnew : free_if(1))
+    #pragma offload_transfer target(mic:0) nocopy(top_l : free_if(1)) nocopy(top_lnew : free_if(1))
+    #pragma offload_transfer target(mic:1) nocopy(bot_l : free_if(1)) nocopy(bot_lnew : free_if(1))
 
     _mm_free(lnew);
 
