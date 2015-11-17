@@ -11,10 +11,6 @@
 
 static MPI_Status status;
 
-#define MPI_TAG_INIT 0
-#define MPI_TAG_UPDATE 1
-#define MPI_TAG_DONE 2
-
 /**
  *
  * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
@@ -81,7 +77,16 @@ void shortest_paths(int n, int m, int t, int* l)
         graph = pad(n, m, l);
     }
 
-// TODO
+    // Send matrix to every worker
+    MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
+
+    int done;
+    do {
+        done = 1;
+        for (int i = 1; i <= t; i++) {
+
+        }
+    } while (!done);
 
     if (m != n) {
         unpad(n, m, l, graph);
@@ -89,8 +94,17 @@ void shortest_paths(int n, int m, int t, int* l)
     deinfinitize(m, l);
 }
 
-void shortest_paths_worker(int n, int m, int t) {
-// TODO
+void shortest_paths_worker(int m, int c, int t, int id) {
+    if (id > m) return;
+    size_t s = m*m * sizeof(int);
+    int* graph = (int*) _mm_malloc(s);
+    MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // OPT
+
+
+
+    _mm_free(graph);
 }
 
 /**
@@ -197,6 +211,11 @@ int main(int argc, char** argv)
         }
     }
 
+    if (t > n) {
+        fprintf(stderr, "Number of processes exceeds dimension of matrix!");
+        return 1;
+    }
+
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD,&t);
     MPI_Comm_rank(MPI_COMM_WORLD,&id);
@@ -207,6 +226,8 @@ int main(int argc, char** argv)
     if (t < n) {
         c = (int) ceil(((float) n) / ((float) t));
         m = t * c;
+    } else {
+        t = n;
     }
 
     if (id == 0) {
@@ -229,7 +250,7 @@ int main(int argc, char** argv)
         // Clean up
         _mm_free(l);
     } else {
-
+        shortest_paths_worker(m, c, t, id);
     }
     
     MPI_Finalize();
