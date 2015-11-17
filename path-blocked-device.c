@@ -196,6 +196,7 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
   
     const int n_width = n/width_size + (n%width_size? 1 : 0);
     const int n_height = n/ height_size + (n%height_size? 1 : 0);
+    int first_iter = 1;
     for (int done = 0; !done; ) {
 
         double square_start = omp_get_wtime();
@@ -204,10 +205,12 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
                 in(n)                     \
                 in(n_width)               \
                 in(n_height)              \
-                inout(l    : length(n*n) alloc_if(1) free_if(1)) \
-                inout(lnew : length(n*n) alloc_if(1) free_if(1))
+                inout(l    : length(n*n) alloc_if(first_iter) free_if(0)) \
+                inout(lnew : length(n*n) alloc_if(first_iter) free_if(0))
         done = square(n, l, lnew, n_width, n_height, n_threads);
         double square_stop  = omp_get_wtime();
+
+        first_iter = 0;
 
         //
         // tmp just to make sure avg is legit
@@ -223,6 +226,12 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
 
         memcpy(l, lnew, n*n * sizeof(int));
     }
+
+    // free the phi memory used in the loop
+    #pragma offload_transfer target(mic:0) \
+            nocopy(l    : free_if(1))      \
+            nocopy(lnew : free_if(1))
+
     _mm_free(lnew);
 
     double de_inf_start = omp_get_wtime();
