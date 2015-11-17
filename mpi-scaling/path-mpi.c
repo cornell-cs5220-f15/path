@@ -4,6 +4,7 @@
 #include <string.h>
 #include <mpi.h>
 #include <sys/time.h>
+#include <math.h>
 #include "mt19937p.h"
 
 //ldoc on
@@ -265,7 +266,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    c = (int) ceil(((float) n) / ((float) t));
+    c = (int) ceil(((double) n) / ((double) t));
     int m = t * c;
 
     if (id == 0) {
