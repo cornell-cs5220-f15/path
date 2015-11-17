@@ -5,12 +5,15 @@
 #include <math.h>
 #include <omp.h> // Only used to get the wall time
 #include <mpi.h>
-#include <limits.h>
 #include "mt19937p.h"
 
 //ldoc on
 
 static MPI_Status status;
+
+#define MPI_TAG_INIT 0
+#define MPI_TAG_UPDATE 1
+#define MPI_TAG_DONE 2
 
 /**
  *
@@ -36,7 +39,7 @@ static inline void infinitize(int n, int* l)
 static inline void deinfinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
-        if (l[i] == n+1)
+        if (l[i] > n)
             l[i] = 0;
 }
 
@@ -52,7 +55,7 @@ void unpad(int n, int m, int* graph, int* paddedgraph) {
 int* pad(int n, int m, int* graph) {
     size_t paddedsize = m*m * sizeof(int);
     int* paddedgraph = (int*) _mm_malloc(paddedsize);
-    memset(paddedgraph, INT_MAX, paddedsize);
+    memset(paddedgraph, m+1, paddedsize);
     for (int i = 0; i < n; i++) {
         memcpy(paddedgraph + (i * m), graph + (i * n), n * sizeof(int));
     }
@@ -61,22 +64,16 @@ int* pad(int n, int m, int* graph) {
 
 // Calculate columns per process
 int num_cols(int n, int t) {
-    if (t >= n) {
-        return 1; // If more than enough workers, just assign one col per worker
-    } else {
-        return (int) ceil(((float) n) / ((float) t));
-    }
+
 }
 
-void shortest_paths(int n, int t, int* l)
+void shortest_paths(int n, int m, int t, int* l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
+    infinitize(m, l);
+    // Setting distances between the same node to 0
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
-
-    int c = num_cols(n, t);
-    int m = c * t;
 
     int* graph = l;
     if (m != n) {
@@ -84,12 +81,16 @@ void shortest_paths(int n, int t, int* l)
         graph = pad(n, m, l);
     }
 
-
+// TODO
 
     if (m != n) {
         unpad(n, m, l, graph);
     }
-    deinfinitize(n, l);
+    deinfinitize(m, l);
+}
+
+void shortest_paths_worker(int n, int m, int t) {
+// TODO
 }
 
 /**
@@ -201,6 +202,13 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD,&id);
     t -= 1; // Use t - 1 as one of the processes is root
 
+    int c = 1; // If more than enough workers, just assign one col per worker
+    int m = n;
+    if (t < n) {
+        c = (int) ceil(((float) n) / ((float) t));
+        m = t * c;
+    }
+
     if (id == 0) {
         // Graph generation + output
         int* l = gen_graph(n, p);
@@ -209,7 +217,7 @@ int main(int argc, char** argv)
 
         // Time the shortest paths code
         double t0 = omp_get_wtime();
-        shortest_paths(n, t, l); 
+        shortest_paths(n, m, t, l); 
         double t1 = omp_get_wtime();
 
         printf("%d,%d,%g,%g,%X\n", t, n, t1-t0, p, fletcher16(l, n*n));
