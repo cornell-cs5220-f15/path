@@ -172,7 +172,7 @@ static inline void deinfinitize(int n, int * restrict l) {
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int * restrict l, int num_threads) {
+void shortest_paths(int n, int * restrict l, int n_threads) {
     USE_ALIGN(l, BYTE_ALIGN);
 
     printf("-------------------------------------------\n");
@@ -200,13 +200,13 @@ void shortest_paths(int n, int * restrict l, int num_threads) {
 
         double square_start = omp_get_wtime();
         #pragma offload target(mic:0)     \
-                in(num_threads)           \
+                in(n_threads)             \
                 in(n)                     \
                 in(n_width)               \
                 in(n_height)              \
                 inout(l    : length(n*n)) \
                 inout(lnew : length(n*n))
-        done = square(n, l, lnew, n_width, n_height, num_threads);
+        done = square(n, l, lnew, n_width, n_height, n_threads);
         double square_stop  = omp_get_wtime();
 
         //
@@ -343,7 +343,6 @@ int main(int argc, char** argv)
     extern char* optarg;
     const char* optstring = "hn:d:p:o:i:t:";
     int c;
-    // int num_threads <-- defined at top for global scope
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
         case 'h':
@@ -367,7 +366,7 @@ int main(int argc, char** argv)
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
-    shortest_paths(n, l, num_threads);
+    shortest_paths(n, l, n_threads);
     double t1 = omp_get_wtime();
 
 
