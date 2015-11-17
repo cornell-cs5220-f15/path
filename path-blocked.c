@@ -111,10 +111,8 @@ int square(int n,                 // Number of nodes
                       int lkj = l[jn+k_init+k];
                       for (int i = 0; i < i_end; ++i) {
                         int lij_ind = jn+i_init+i;
-                        int lik_ind = kn+i_init+i;
-                        
                         int lij = lnew[lij_ind];
-                        int lik = l[lik_ind];
+                        int lik = l[kn+i_init+i];
                         
                         if (lik + lkj < lij) {
                           lij = lik+lkj;
