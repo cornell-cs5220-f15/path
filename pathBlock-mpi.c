@@ -63,15 +63,17 @@
 
 int basic_square(const int *restrict l1, const int *restrict l2, int *restrict l3){
     int done=1;
- 
+   
     for (int j = 0; j < SMALL_BLOCK_SIZE; ++j) {
         for (int i = 0; i < SMALL_BLOCK_SIZE; ++i) {
             int lij = l3[j*SMALL_BLOCK_SIZE+i];
             for (int k = 0; k < SMALL_BLOCK_SIZE; ++k) {
                 int lik = l1[k*SMALL_BLOCK_SIZE+i];
                 int lkj = l2[j*SMALL_BLOCK_SIZE+k];
-                if (lik + lkj < lij) {
-		  
+        	assert(lik>=0);
+
+	        if (lik + lkj < lij) {
+	
                     lij = lik+lkj;
                     done = 0;
                 }
@@ -102,7 +104,13 @@ int do_block(const int n,
         memcpy((void *) (col_smallblock + (jj * SMALL_BLOCK_SIZE)), (const void *) (col_buf + bigb_address + k + (j + jj)*block_size), SMALL_BLOCK_SIZE * sizeof(int));
         memcpy((void *) (mysmallblock + (jj * SMALL_BLOCK_SIZE)), (const void *) (myblock + i + (j + jj)*block_size), SMALL_BLOCK_SIZE * sizeof(int));
     }
-    
+ 
+	for (int i=0; i < SMALL_BLOCK_SIZE*SMALL_BLOCK_SIZE; ++i){
+		assert(row_smallblock[i]>=0);
+	}
+
+
+   
     int done = basic_square(row_smallblock, col_smallblock, mysmallblock);
    
     for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
@@ -120,6 +128,11 @@ int square(const int n,   // Number of nodes
            int* restrict col_buf,     // row buffer
            int* restrict myblock)  // block buffer
 {
+    for(int i=0; i < block_size*n; ++i){
+	if (!( row_buf[i]>=0)){
+		printf("at iter index where its bad %d,value: %d,  max: %d \n", i,row_buf[i], block_size*n);
+		assert(row_buf[i]>=0);
+	}}
 
     int done = 1;
     // block from row array, dimension is blocksize*n
@@ -149,35 +162,6 @@ int square(const int n,   // Number of nodes
     _mm_free((void *) mysmallblock);   
     
     return done;        
-}
-
-
-// old implementation:
-
-int rectangle(int n, int block_size,               // Number of nodes
-              int* restrict myblock,     // Partial distance at step s+1
-              int*  mycol,		// row matrix
-              int*  myrow)  // column matrix
-{
-    int done = 1;
-    for (int b=0; b< n/block_size; ++b){
-        int BA = b*block_size*block_size; // Sub Block address
-        for (int j = 0; j < block_size; ++j) {
-            for (int i = 0; i < block_size; ++i) {
-                int lij = myblock[j*block_size+i];
-                for (int k = 0; k < block_size; ++k) {
-                    int lik = myrow[BA+k*block_size +i];
-                    int lkj = mycol[BA+j*block_size +k];
-                    if (lik + lkj < lij) {
-                        lij = lik+lkj;
-                        done = 0;
-                    }
-                }
-                myblock[j*block_size+i] = lij;
-            }
-        }
-    }
-    return done;
 }
 
 
@@ -348,6 +332,7 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
     //Copies personal block from blocked matrix
     for (int i=0; i<block_size*block_size; ++i){
         myblock[i]=bl[BA+i];
+   	assert(myblock[i]>=0);
     }
     int colid, rowid;
     MPI_Comm_rank( row_comm[myrowrank], &rowid);
@@ -360,13 +345,22 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
     MPI_Allgather( myblock, block_size*block_size, MPI_INT, col_buf, block_size*block_size, MPI_INT, col_comm[mycolrank]);
     // gather data from row group
     MPI_Allgather( myblock, block_size*block_size, MPI_INT, row_buf, block_size*block_size, MPI_INT, row_comm[myrowrank]);
-    
+    printf("max size: %d \n", block_size*block_size*n_block);
+    for(int i=0; i < block_size*n; ++i){
+	if (!( row_buf[i]>=0)){
+		printf("at init: index where its bad %d,value: %d,  max: %d \n", i,row_buf[i], block_size*block_size*n_block);
+		 assert(row_buf[i]>=0);
+	}}
+
+
+
+
     int local_done;
     int term = log2(n);
     int done = 0;
     int iter = 0;
-    for (iter =0;iter < term; iter++  ) {
-        local_done = square(n, block_size, myblock, row_buf, col_buf );
+    for (iter=0;iter < term; ++iter ) {
+        local_done = square(n, block_size, row_buf, col_buf, myblock );
         
         // gather data from column group
         MPI_Allgather( myblock, block_size*block_size, MPI_INT, col_buf, block_size*block_size, MPI_INT, col_comm[mycolrank]);
@@ -377,8 +371,14 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
         MPI_Barrier(MPI_COMM_WORLD);
         // checks if anybody did work this iteration
         MPI_Allreduce( &local_done, &done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-        
-        iter = iter+1;
+        printf("localdone = %d, done = %d", local_done, done);
+        iter = iter;
+        printf("iter: %d \n", iter);
+	for(int i=0; i < block_size*block_size; ++i){
+	assert(myblock[i]>=0);
+	}
+
+
     }
     for (int i=0; i<block_size*block_size; ++i){
         bl[BA+i]=myblock[i];
