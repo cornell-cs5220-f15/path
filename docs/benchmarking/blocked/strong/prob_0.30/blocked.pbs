@@ -1,0 +1,18 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path
+#PBS -j oe
+
+# default args / control over what is submitted
+# usage example: qsub -v SIZE=900,THREADS=12 path.pbs
+P_SIZE=${SIZE:-4000}
+P_THREADS=${THREADS:-24} # aka omp max threads for node
+P_PROB=${PROB:-0.30}
+
+echo $PBS_JOBID >> $PBS_O_WORKDIR/out_files.txt
+
+module load cs5220
+cd $PBS_O_WORKDIR
+../path-blocked.x -n $P_SIZE -t $P_THREADS -p $P_PROB
