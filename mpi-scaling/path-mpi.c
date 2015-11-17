@@ -2,9 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <omp.h> // Only used to get the wall time
 #include <mpi.h>
+#include <sys/time.h>
 #include "mt19937p.h"
 
 //ldoc on
@@ -165,7 +164,8 @@ void shortest_paths_worker(int m, int c, int t, int id) {
 
 int* gen_graph(int n, double p)
 {
-    int* l = _mm_calloc(n*n, sizeof(int));
+    int* l = _mm_malloc(n * n, sizeof(int));
+    memset(l, 0, n * n * sizeof(int));
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -274,12 +274,13 @@ int main(int argc, char** argv)
         if (ifname)
             write_matrix(ifname,  n, l);
 
-        // Time the shortest paths code
-        double t0 = omp_get_wtime();
+        struct timeval t0, t1;
+        gettimeofday(&t0, NULL);
         shortest_paths(n, m, c, t, l); 
-        double t1 = omp_get_wtime();
+        gettimeofday(&t1, NULL);
+        double elapsed = (t1.tv_sec-t0.tv_sec) + (t1.tv_usec-t0.tv_usec)*1e-6;
 
-        printf("%d,%d,%g,%g,%X\n", t, n, t1-t0, p, fletcher16(l, n*n));
+        printf("%d,%d,%g,%g,%X\n", t, n, elapsed, p, fletcher16(l, n*n));
 
         // Generate output file
         if (ofname)
