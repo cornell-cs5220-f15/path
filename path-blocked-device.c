@@ -199,13 +199,13 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     for (int done = 0; !done; ) {
 
         double square_start = omp_get_wtime();
-        // #pragma offload target(mic:0)     \
-        //         in(n_threads)             \
-        //         in(n)                     \
-        //         in(n_width)               \
-        //         in(n_height)              \
-        //         inout(l    : length(n*n)) \
-        //         inout(lnew : length(n*n))
+        #pragma offload target(mic:0)     \
+                in(n_threads)             \
+                in(n)                     \
+                in(n_width)               \
+                in(n_height)              \
+                inout(l    : length(n*n) alloc_if(1) free_if(1)) \
+                inout(lnew : length(n*n) alloc_if(1) free_if(1))
         done = square(n, l, lnew, n_width, n_height, n_threads);
         double square_stop  = omp_get_wtime();
 
