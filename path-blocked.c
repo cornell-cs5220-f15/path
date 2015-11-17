@@ -90,41 +90,43 @@ int square(int n,                 // Number of nodes
             num_threads(n_threads) \
             shared(l, lnew)        \
             reduction(&& : done)   \
-            // Major Blocks
-            for(int J=0; J<n_height; ++J) {
-              for(int K=0; K<n_height; ++K) {
-                for(int I=0; I<n_width; ++I){
-                  // Calculate ending indices for the set of blocks
-                  int j_end = ((J+1)*height_size < n? height_size : (n-(J*height_size)));
-                  int k_end = ((K+1)*height_size < n? height_size : (n-(K*height_size)));
-                  int i_end = ((I+1)*width_size  < n? width_size  : (n-(I*width_size)));
-                  int j_init = J*height_size*n;
-                  int kn_init = K*height_size*n;
-                  int k_init = K*height_size;
-                  int i_init = I*width_size;
-                  
-                  // Minor Blocks
-                  for (int j = 0; j < j_end; ++j) {
+    // Major Blocks
+    for(int J = 0; J < n_height; ++J) {
+        for(int K = 0; K < n_height; ++K) {
+            for(int I = 0; I < n_width; ++I){
+                // Calculate ending indices for the set of blocks
+                int j_end   = ((J+1)*height_size < n ? height_size : (n-(J*height_size)));
+                int k_end   = ((K+1)*height_size < n ? height_size : (n-(K*height_size)));
+                int i_end   = ((I+1)*width_size  < n ? width_size  : (n-(I*width_size)));
+                int j_init  = J*height_size*n;
+                int kn_init = K*height_size*n;
+                int k_init  = K*height_size;
+                int i_init  = I*width_size;
+          
+                // Minor Blocks
+                for (int j = 0; j < j_end; ++j) {
                     int jn = j_init+j*n;
+            
                     for (int k = 0; k < k_end; ++k) {
-                      int kn = kn_init+k*n;
-                      int lkj = l[jn+k_init+k];
-                      for (int i = 0; i < i_end; ++i) {
-                        int lij_ind = jn+i_init+i;
-                        int lij = lnew[lij_ind];
-                        int lik = l[kn+i_init+i];
+                        int kn  = kn_init+k*n;
+                        int lkj = l[jn+k_init+k];
                         
-                        if (lik + lkj < lij) {
-                          lij = lik+lkj;
-                          lnew[lij_ind] = lij;
-                          done = 0;
+                        for (int i = 0; i < i_end; ++i) {
+                            int lij_ind = jn+i_init+i;
+                            int lij = lnew[lij_ind];
+                            int lik = l[kn+i_init+i];
+                
+                            if (lik + lkj < lij) {
+                                lij = lik+lkj;
+                                lnew[lij_ind] = lij;
+                                done = 0;
+                            }
                         }
-                      }
                     }
-                  }
-                }
-              }
+                }// end Minor Blocks
             }
+        }
+    }// end Major Blocks (and omp parallel for)
 
     return done;
 }
