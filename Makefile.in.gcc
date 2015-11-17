@@ -3,7 +3,7 @@ MPICC=mpicc
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
-OPTFLAGS=-O3 #-march=native
+OPTFLAGS=-O0#-O3 #-march=native
 
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS) -fopenmp
