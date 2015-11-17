@@ -359,7 +359,7 @@ void shortest_paths(int n, int* restrict l, int argc, char** argv)
     int term = log2(n);
     int done = 0;
     int iter = 0;
-    for (iter=0;iter < term; ++iter ) {
+    for (done=0; !done; ) {
         local_done = square(n, block_size, row_buf, col_buf, myblock );
         
         // gather data from column group
