@@ -7,10 +7,9 @@
 set OMP_NM_THREADS = 4
 module load cs5220
 cd $PBS_O_WORKDIR
-mpirun -np 6 ./floyd-warshall -n 32
-mpirun -np 6 ./floyd-warshall -n 64
-mpirun -np 6 ./floyd-warshall -n 128
-mpirun -np 6 ./floyd-warshall -n 256
-mpirun -np 6 ./floyd-warshall -n 512
-mpirun -np 6 ./floyd-warshall -n 1024
-mpirun -np 6 ./floyd-warshall -n 2048
+mpirun -np 1  ./floyd-warshall -n 1024
+mpirun -np 2  ./floyd-warshall -n 1024
+mpirun -np 4  ./floyd-warshall -n 1024
+mpirun -np 8  ./floyd-warshall -n 1024
+mpirun -np 16 ./floyd-warshall -n 1024
+mpirun -np 24 ./floyd-warshall -n 1024

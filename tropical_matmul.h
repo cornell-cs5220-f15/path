@@ -27,14 +27,19 @@ static inline void deinfinitize(int n, int* l)
 }
 
 void tropical_matsquare_partial(int *A, int *C, int offset, int width, int dim){
-    #pragma omp parallel for
+	//do some copy optimization 
+	int * Abuf = (int*)malloc(dim*sizeof(int));
+    #pragma omp parallel for shared(A, C)
 	for(int i = 0; i < dim; i ++){
+		
+		for(int n = 0; n < dim; n++) Abuf[n] =  A[i + n*dim];
 		for(int j = offset; j < (offset + width); j ++){
-				int Cij = dim*dim;
+			int Cij = dim*dim;
+			
 			for(int k = 0; k < dim; k ++){
-				int Aik = A[i + k*dim];
-                int Akj = A[k + j*dim];
-                    if(Aik + Akj < Cij){
+				int Aik = Abuf[k];
+               			int Akj = A[k + j*dim];
+                   	 if(Aik + Akj < Cij){
                         Cij = Aik + Akj;
                     }
 			}
@@ -44,12 +49,17 @@ void tropical_matsquare_partial(int *A, int *C, int offset, int width, int dim){
 }
 
 void tropical_matmul_partial(int *A, int *B, int *C, int offset, int width, int dim){
-    #pragma omp parallel for
+
+    int *Abuf = (int*)malloc(dim*sizeof(int));
+    #pragma omp parallel for shared(A, B, C)
     for(int i = 0; i < dim; i ++){
+	
+	for(int n = 0; n < dim; n++) Abuf[n] = A[i + n*dim];
+
         for(int j = offset; j < (offset + width); j ++){
                 int Cij = dim*dim;
             for(int k = 0; k < dim; k ++){
-                int Aik = A[i + k*dim];
+                int Aik = Abuf[k];
                 int Bkj = B[k + j*dim];
                     if(Aik + Bkj < Cij){
                         Cij = Aik + Bkj;
@@ -71,6 +81,7 @@ void mpi_tropical_matmul(int size, int *A, char* binary_representation, int leng
     int* C = (int*) calloc(size*size, sizeof(int));
     int *ANS = (int*)calloc(size*size, sizeof(int));
 
+
     //making ANS the identity matrix first
     for(int i = 0; i < size*size; i ++) ANS[i] = size*size;
     for(int i = 0; i < size; i ++) ANS[i + size*i] = 0;
@@ -83,6 +94,7 @@ void mpi_tropical_matmul(int size, int *A, char* binary_representation, int leng
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
 	int width = size/world_size;
+
 
 	//continually square A. TODO: binary representation. 
 	for(int i = 0; i < length_binary; i ++){
