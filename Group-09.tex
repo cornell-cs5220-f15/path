@@ -1,0 +1,195 @@
+\documentclass{scrartcl}
+\usepackage{dominatrix}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{
+  every axis/.append style={font=\small},
+  compat=newest
+}
+
+\begin{document}
+  \begin{framed}
+  CS 5220 Introduction to Parallel Programming \hfill Fall 2015 \\
+  Kenneth Lim (\href{mailto:kl545@cornell.edu}{kl545}), Batu Inal (\href{mailto:bi49@cornell.edu}{bi49}), Wensi Wu (\href{mailto:ww382@cornell.edu}{ww382}) \hfill Project 3 \hspace{-3ex}
+  \end{framed}
+  \section{Introduction}
+  For compilation, we use a reasonable set of compiler flags:
+  \begin{verbatim}-O3, -no-prec-div, -opt-prefetch, -xHost, -ansi-alias, -ipo -restrict\end{verbatim}
+  to handle the bare-bones of loop optimization, memory allocation/alignment, and architecture specific instructions.
+
+  \subsection{Caveats}
+  Issues with the Intel's VTune Amplifier prevented advanced hotspots analysis up till the time of submission. As a result, the timings reported in subsequent sections are either wall-clock times obtained via \texttt{omp\_get\_time} encapsulation of function calls, or CPU times obtained from VTune Amplifier's concurrency analysis mode.
+
+  \section{Parallelism}
+  The codebase ships by default with good OpenMP annotations that are difficult to beat. \autoref{table:base-conc} shows a breakdown of the time spent per function for the untuned code when run on 2000 nodes generated with an edge inclusion probability of 0.05. Up to 86\% of the CPU time spend by \texttt{square} kernel is ideal, and the bottleneck appears to be the implicit barrier at the end of the parallel region collating the shared and reduced variables. To some extent, this is an unavoidable overhead.
+
+  Note that the \texttt{memcpy} operation executed at the end of every iteration of the while-loop does not constitute a significant portion of the CPU time because the problem size is small. Instead, the difference in execution time for each iteration of the for-loop within \texttt{square} dominates. However, when the problem size is increased significantly, serial-bound operations takes up a larger proportion of the CPU time in comparison to the spinwait of the barrier because threading economies of scale apply. \autoref{table:large-conc} shows a breakdown similar to that of \autoref{table:base-conc} for 16,000 nodes, and attention is drawn to the difference in time contribution from \texttt{\_intel\_ssse3\_memcpy} and \texttt{\_\_kmpc\_fork\_barrier}. Unfortunately, the \texttt{memcpy} call is difficult to optimize as no parallelized version exists. In theory, it should be possible to either perform the copy operation using AVX instructions (where the grid is a multiple of 4, or padding to that end), or modify the values in place. However, since the main bottleneck is still the \texttt{square} kernel, we ignore these minor optimizations in-lieu of focusing our efforts where there is larger room for improvement.
+
+  \begin{table}[ht!]
+    \centering
+    \begin{tabu}{X[3,l]X[1,c]X[1,c]X[1,c]X[1,c]X[1,c]}
+      \toprule
+      & \multicolumn{5}{c}{Time (s)} \\ \cmidrule{2-6}
+      Function & Total & Idle & Poor & Ok & Ideal \\
+      \midrule
+      \texttt{square}                     & 45.143  & 0     & 4.032 & 2.080 & 39.030 \\
+      \texttt{\_\_kmp\_barrier}           & 6.485   & 0     & 6.015 & 0.310 & 0.160 \\
+      \texttt{\_\_kmpc\_reduce\_nowait}   & 2.979   & 0     & 2.790 & 0.189 & 0 \\
+      \texttt{\_\_kmpc\_fork\_barrier}    & 2.553   & 1.420 & 0.972 & 0.132 & 0.030 \\
+      \texttt{gen\_graph}                 & 0.030   & 0.010 & 0.020 & 0     & 0 \\
+      \texttt{\_intel\_ssse3\_memcpy}     & 0.030   & 0     & 0.030 & 0     & 0 \\
+      \texttt{fletcher16}                 & 0.030   & 0     & 0.030 & 0     & 0 \\
+      \bottomrule
+    \end{tabu}
+    \caption{Concurrency analysis of untuned Floyd-Warshall APSP implementation with $n = 2000$ and $p = 0.05$. All times shown are CPU times.\label{table:base-conc}}
+  \end{table}
+
+  \begin{table}[ht!]
+    \centering
+    \begin{tabu}{X[3,l]X[1,c]X[1,c]X[1,c]X[1,c]X[1,c]}
+      \toprule
+      & \multicolumn{5}{c}{Time (s)} \\ \cmidrule{2-6}
+      Function & Total & Idle & Poor & Ok & Ideal \\
+      \midrule
+      \texttt{square}                     & 4753.975  & 5.341 & 230.318 & 0   & 4518.316 \\
+      \texttt{\_intel\_ssse3\_memcpy}     & 1.742     & 0.020 & 1.722   & 0   & 0 \\
+      \texttt{fletcher16}                 & 1.550     & 0     & 1.550   & 0   & 0 \\
+      \texttt{gen\_graph}                 & 1.502     & 0.020 & 1.482   & 0   & 0 \\
+      \texttt{\_\_kmpc\_fork\_barrier}    & 0.439     & 0.010 & 0.429   & 0   & 0.030 \\
+      \bottomrule
+    \end{tabu}
+    \caption{Abbreviated concurrency analysis of untuned Floyd-Warshall APSP implementation with $n = 16,000$ and $p = 0.05$. All times shown are CPU times.\label{table:large-conc}}
+  \end{table}
+
+  The loop structure for this problem is somewhat similar to that of the previous project---the termination condition is enforced by a while-loop which \emph{has} to run in a single-threaded environment, whereas the nested for-loop benefits from parallel execution.
+
+  In Project 2, the approach to parallelism was as follows:
+  \begin{enumerate}[nosep]
+    \item Initialize the thread pool as early as possible, and outside any iteration scopes
+    \item Enforce a master thread that maintains the loop invariant
+    \item Allocate work via tasks created within the nested for-loop (from the master thread), and collate results using an implicit wait
+  \end{enumerate}
+
+  The challenge with Project 3 is that the producer-consumer model created by items (2) and (3) is incompatible with the reduction construct provided by a \texttt{\#pragma omp for} environment. Thus, a choice has to be made between incurring the overhead of thread pool initialization on every iteration of the while loop, or an atomic update of the \texttt{done} variable (by foregoing the reduction construct) causing thread contention. In our experiments, we found that the former resulted in significantly better timings, because the computation time associated with initialization of the thread pool is relatively long when $n$ is large, whereas contending for access to a variable within a highly vectorized loop nullifies any performance improvements in that aspect.
+
+  \section{Vectorization and Memory Access}
+  A significant portion of our speed gains were obtained by vectorizing the \texttt{square} kernel. We go for the low-hanging fruit first by altering the loop iteration order from $j$, $i$, $k$, to $j$, $k$, $i$ from outermost to innermost loops. This ensures that the innermost loop has unit stride, which itself provides only a modest speed boost (1.3x), but improves timing consistency as $n$ changes.
+
+  Next, we enforce memory alignment to 64-byte boundaries on all allocated arrays by swapping out \texttt{malloc} and \texttt{free} calls for \texttt{\_mm\_malloc} and \texttt{\_mm\_free} calls respectively. This allows us to assert that all data structures in the innermost loop of \texttt{square} are aligned in memory for an added performance boost. The updated code is shown in~\autoref{alg:kernel}.
+
+  \begin{figure}[ht!]
+    \begin{lstlisting}
+#pragma omp parallel for shared(l, lnew) reduction(&&:done)
+for (int j = 0; j < n; ++j) {
+  const int jn = j * n;
+
+  for (int k = 0; k < n; ++k) {
+    const int lkj = l[jn+k];
+
+    #pragma vector aligned
+    for (int i = 0; i < n; ++i) {
+      const int lijOriginal = lnew[jn+i];
+      const int lik = l[k*n+i];
+      const int lijTest = lik + lkj;
+
+      if (lijTest < lijOriginal) {
+        lnew[jn+i] = lijTest;
+        done = false;
+      }
+    }
+  }
+}
+    \end{lstlisting}
+    \cprotect\caption{Updated \texttt{square} kernel with vectorization annotations\label{alg:kernel}}
+  \end{figure}
+
+  Note that we have cached some of the more frequently-used variables to minimize the number of operations carried out within the loop. The combined effect of the vectoriation tweaks made to \texttt{square} results in an approx. 4x speed-up on the wall-clock time. As an aside, it is interesting to note that merely enabling vectorization improves the performance of \texttt{infinitize} and \texttt{deinfinitize} by approx. 8x. This is somewhat expected because the loop operations are simple and predictable.
+  \section{Blocking and Other Improvements}
+  We investigated a blocked computation approach for \texttt{square}, but did not manage to obtain significant improvements. To be specific, we retrofitted code from the best performing groups in Project 1, swapping out the $4 \times 4$ matrix multiplication kernel for a simple addition loop. While doing so indeed improves performance, the effects are marginal, and only observed at large values of $n$ where the overhead from copying the blocks is offset by the time taken to perform the calculation. High-level discussions with other groups who focused on blocking instead of parallelism and vectorization shows that the performance gains for both approaches are similar (approx. 4x overall).
+
+  An alternative approach to the problem is to evaluate a subset of the entire search space and terminate the computation as early as possible. The current implementation evaluates every point in the adjacency matrix, neglecting the fact that the distances are symmetric about the diagonal, and the distances \emph{on} the diagonal are zero. That is, for some pair of nodes $0 \leq i \leq n$ and $0 \leq j \leq n$, where $i \neq j$, $P_{ij} = P{ji}$, where $P$ is the path distance between the nodes identified in the subset notation. When $i = j$, $P_{ij} = 0$. Exploiting this relationship is equivalent to iterating over a triangular matrix, which still has the same time complexity as the original implementation, but benefits from a smaller constant factor as $n$ increases.
+
+  In addition, the current implementation naively evaluates \emph{every} node until it is certain that both \texttt{lnew} and \texttt{l} have converged. Instead of asserting \texttt{done = 1} at the start of every while-loop iteration, it might be possible to check for the reverse condition and break out of the nested for-loops once the arrays converge. This idea entails a different challenge: it is not possible to \texttt{break} or \texttt{goto} within an OpenMP parallel region. A known workaround is to guard the inner loops with a check for the global loop termination condition, as shown in~\autoref{alg:flush}
+  \begin{figure}[ht!]
+    \begin{lstlisting}
+#pragma omp parallel for shared(l, lnew) reduction(&&:done)
+for (...) {
+  #pragma omp flush(done)
+  if (!done) {
+    for (...) {
+      for (...) {
+        if (converged) {
+          done = true;
+          #pragma omp flush(done)
+        }
+      }
+    }
+  }
+}
+    \end{lstlisting}
+    \caption{Toy example of OpenMP flush constructs\label{alg:flush}}
+  \end{figure}
+
+  While this method works as expected, the performance improvement obtained by early termination is lost almost immediately due to the overhead from the OpenMP \texttt{flush} calls, which are equivalent to a barrier. An alternative solution might be to exploit the new OpenMP 4.0 \texttt{\#pragma omp cancel for} construct as shown in~\autoref{alg:cancel}.
+  \begin{figure}[ht!]
+    \begin{lstlisting}
+#pragma omp parallel shared(l, lnew) reduction(&&:done)
+{
+  #pragma omp for collapse(3) schedule(dynamic)
+  for (...) {
+    for (...) {
+      for (...) {
+        if (converged) {
+          done = true;
+          #pragma omp cancel for
+        }
+
+        #pragma omp cancellation point for
+      }
+    }
+  }
+
+  #pragma omp cancellation point parallel
+}
+    \end{lstlisting}
+    \caption{Toy example of OpenMP cancellation constructs\label{alg:cancel}}
+  \end{figure}
+
+  The difficulty with this method is that canceling out of the for-loop leaves any reduction variables in an indeterminate state by default. This means that we \emph{cannot} rely on the value of \texttt{done} to terminate the while-loop. We were unable to make further progress in this area by time of submission, but expect to investigate further leading up to the final report.
+
+  \section{Offloading and MPI}
+  Unfornately, we were unable to get MPI to work because of issues with the cluster. We expect to periodically reattempt a study with MPI, and will report accordingly if successful. Offloading is currently a work-in-progress.
+
+  \section{Scaling Studies}
+  We report strong and weak scaling studies for our current best attempt, which implements the vectorization and parallelism changes described above. To avoid spurious results at small values of $n$, we run each instance 10 times and average the result. \autoref{graph:strong-scaling} shows the results for a weak scaling study in which we vary the problem size from $n = 500$ to $n = 8000$, doubling at each tick. The number of OMP threads is scaled accordingly from 1 to 24. The regression line is linear, which confirms that we are scaling correctly with the problem size. \autoref{graph:weak-scaling} shows the results for a strong scaling study in which we hold the problem size constant at $n = 4000$ and vary the number of OMP threads from 1 to 24, doubling at each tick up to 16. The regression line demonstrates exponential decrease, which corroborates the speedup obtained from parallelizing the \texttt{square} kernel.
+
+  \begin{figure}[p]
+    \centering
+    \resizebox{0.75\textwidth}{!}{%
+    \begin{tikzpicture}
+      \begin{axis}[axis lines=left,xlabel=$n$,ylabel=Wall Clock Time,xmin=500,xmax=8100,ymin=0,ymax=65]
+      \addplot[only marks] coordinates {
+        (500, 0.1395077) (1000, 0.2093694) (2000, 1.1027736) (4000, 10.261178) (8000, 59.45483)
+      };
+      \addplot[domain=500:8100,samples=1000] {0.008*x - 10.645};
+      \end{axis}
+    \end{tikzpicture}
+  }
+  \caption{Weak scaling study varying $n$ from 500 to 8000, and varying the number of OMP threads from 1 to 24. The best-fit line is linear with $R^2 = 0.912$\label{graph:weak-scaling}}
+  \end{figure}
+
+  \begin{figure}[p]
+    \centering
+    \resizebox{0.75\textwidth}{!}{%
+    \begin{tikzpicture}
+      \begin{axis}[axis lines=left,xlabel=Number of Threads,ylabel=Wall Clock Time,xmin=1,xmax=24,ymin=0,ymax=140]
+      \addplot[only marks] coordinates {
+        (1, 137.1031) (2, 80.45658) (4, 42.85352) (8, 21.5718) (16, 13.45326) (24, 10.261178)
+      };
+      \addplot[domain=1:24,samples=1000] {136*x^-0.836};
+      \end{axis}
+    \end{tikzpicture}
+  }
+  \caption{Strong scaling study varying the number of OMP threads from 1 to 24 with $n = 4000$. The best-fit line is exponential with $R^2 = 0.996$\label{graph:strong-scaling}}
+  \end{figure}
+\end{document}
