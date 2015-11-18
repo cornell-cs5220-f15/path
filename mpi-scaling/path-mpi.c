@@ -22,14 +22,14 @@
  * conventions.
  */
 
-static inline void infinitize(int n, int* l)
+static inline void infinitize(int n, int* restrict l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
 }
 
-static inline void deinfinitize(int n, int* l)
+static inline void deinfinitize(int n, int* restrict l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] > n)
@@ -37,7 +37,7 @@ static inline void deinfinitize(int n, int* l)
 }
 
 // Extract an n*n matrix from a padded m*m matrix, assuming m >= n
-void unpad(int n, int m, int* graph, int* paddedgraph) {
+void unpad(int n, int m, int* restrict graph, int* restrict paddedgraph) {
     for (int i = 0; i < n; i++) {
         memcpy(graph + (i * n), paddedgraph + (i * m), n * sizeof(int));
     }
@@ -45,8 +45,8 @@ void unpad(int n, int m, int* graph, int* paddedgraph) {
 }
 
 // Pad an n*n matrix into an m*m matrix, assuming m >= n
-int* pad(int n, int m, int* graph) {
-    int* paddedgraph = (int*) _mm_malloc(m * m * sizeof(int), sizeof(long));
+int* pad(int n, int m, int* restrict graph) {
+    int* restrict paddedgraph = (int*) _mm_malloc(m * m * sizeof(int), sizeof(long));
     memset(paddedgraph, 0, m * m * sizeof(int));
     for (int i = 0; i < n; i++) {
         memcpy(paddedgraph + (i * m), graph + (i * n), n * sizeof(int));
@@ -54,52 +54,50 @@ int* pad(int n, int m, int* graph) {
     return paddedgraph;
 }
 
-int receive_updates(int m, int root, int* recvupdates, int* graph) {
+int receive_updates(int m, int root, int* restrict recvupdates, int* restrict graph) {
     int upsrecv;
     MPI_Bcast(&upsrecv, 1, MPI_INT, root, MPI_COMM_WORLD);
-    MPI_Bcast(recvupdates, 3 * upsrecv, MPI_INT, root, MPI_COMM_WORLD);
-    for (int i = 0; i < upsrecv; i++) {
-        int x = recvupdates[i * 3];
-        int y = recvupdates[i * 3 + 1];
-        graph[x * m + y] = recvupdates[i * 3 + 2];
+    MPI_Bcast(recvupdates, upsrecv, MPI_INT, root, MPI_COMM_WORLD);
+    for (int i = 0; i < upsrecv; i += 3) {
+        int x = recvupdates[i];
+        int y = recvupdates[i + 1];
+        graph[x * m + y] = recvupdates[i + 2];
     }
     return upsrecv;
 }
 
-int optimize(int m, int c, int id, int* graph, int* updates) {
+int optimize(int m, int c, int id, int* restrict graph, int* restrict updates) {
     int nups = 0; // Number of updates
 
     // Optimize the assigned columns
-    for (int j = 0; j < c; j++) {
-        int x = id * c + j;
-        for (int y = 0; y < m; y++) {
-            int hasupdate = 0;
-            int newval = graph[x * m + y];
-            for (int i = 0; i < m; i++) {
-                int dist = graph[x * m + i] + graph[i * m + y];
-                if (dist < newval) {
-                    newval = dist;
-                    hasupdate = 1;
-                }
+    for (int j = id * c * m; j < (id + 1) * c * m; j++) {
+        int x = j / m;
+        int y = j % m;
+        int hasupdate = 0;
+        int newval = graph[j];
+        for (int i = 0; i < m; i++) {
+            int dist = graph[x * m + i] + graph[i * m + y];
+            if (dist < newval) {
+                newval = dist;
+                hasupdate = 1;
             }
-            if (hasupdate) {
-                graph[x * m + y] = newval;
-                updates[nups * 3] = x;
-                updates[nups * 3 + 1] = y;
-                updates[nups * 3 + 2] = newval;
-                nups++;
-            }
+        }
+        if (hasupdate) {
+            graph[j] = newval;
+            updates[nups++] = x;
+            updates[nups++] = y;
+            updates[nups++] = newval;
         }
     }
     return nups;
 }
 
-void worker(int m, int c, int t, int id, int* graph) {
+void worker(int m, int c, int t, int id, int* restrict graph) {
     // Send matrix to every worker
     MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
 
-    int* updates = (int*) _mm_malloc(3 * m * c * sizeof(int), sizeof(long));
-    int* recvupdates = (int*) _mm_malloc(3 * m * c * sizeof(int), sizeof(long));
+    int* restrict updates = (int*) _mm_malloc(3 * m * c * sizeof(int), sizeof(long));
+    int* restrict recvupdates = (int*) _mm_malloc(3 * m * c * sizeof(int), sizeof(long));
     int done;
 
     do {
@@ -111,7 +109,7 @@ void worker(int m, int c, int t, int id, int* graph) {
         for (int i = 0; i < t; i++) {
             if (i == id) {
                 MPI_Bcast(&nups, 1, MPI_INT, i, MPI_COMM_WORLD);
-                MPI_Bcast(updates, 3 * nups, MPI_INT, i, MPI_COMM_WORLD);
+                MPI_Bcast(updates, nups, MPI_INT, i, MPI_COMM_WORLD);
             } else {
                 done &= !receive_updates(m, i, recvupdates, graph);
             }
@@ -122,9 +120,9 @@ void worker(int m, int c, int t, int id, int* graph) {
     _mm_free(recvupdates);
 }
 
-void shortest_paths(int n, int m, int c, int t, int* l)
+void shortest_paths(int n, int m, int c, int t, int* restrict l)
 {
-    int* graph = l;
+    int* restrict graph = l;
     if (m != n) {
         // Need to pad
         graph = pad(n, m, l);
@@ -157,7 +155,7 @@ void shortest_paths(int n, int m, int c, int t, int* l)
 
 int* gen_graph(int n, double p)
 {
-    int* l = _mm_malloc(n * n * sizeof(int), sizeof(long));
+    int* restrict l = _mm_malloc(n * n * sizeof(int), sizeof(long));
     memset(l, 0, n * n * sizeof(int));
     struct mt19937p state;
     sgenrand(10302011UL, &state);
@@ -186,7 +184,7 @@ int* gen_graph(int n, double p)
  * [wiki-fletcher]: http://en.wikipedia.org/wiki/Fletcher's_checksum
  */
 
-int fletcher16(int* data, int count)
+int fletcher16(int* restrict data, int count)
 {
     int sum1 = 0;
     int sum2 = 0;
@@ -197,7 +195,7 @@ int fletcher16(int* data, int count)
     return (sum2 << 8) | sum1;
 }
 
-void write_matrix(const char* fname, int n, int* a)
+void write_matrix(const char* fname, int n, int* restrict a)
 {
     FILE* fp = fopen(fname, "w+");
     if (fp == NULL) {
@@ -262,7 +260,7 @@ int main(int argc, char** argv)
 
     if (id == 0) {
         // Graph generation + output
-        int* l = gen_graph(n, p);
+        int* restrict l = gen_graph(n, p);
         if (ifname)
             write_matrix(ifname,  n, l);
 
@@ -279,7 +277,7 @@ int main(int argc, char** argv)
         // Clean up
         _mm_free(l);
     } else {
-        int* graph = (int*) _mm_malloc(m * m * sizeof(int), sizeof(long));
+        int* restrict graph = (int*) _mm_malloc(m * m * sizeof(int), sizeof(long));
         worker(m, c, t, id, graph);
         _mm_free(graph);
     }
