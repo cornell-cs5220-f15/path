@@ -93,9 +93,10 @@ void solve(int n,                    // Number of nodes
     {
         // buffered variables
         int *l, *lnew, *done;
+        size_t step = 0;
 
         // while(!done)
-        for(size_t step = 0; /* true */ ; ++step) {
+        for(/* step = 0 */; /* true */ ; ++step) {
             
             // setup double buffers
             int even = step % 2;
@@ -225,7 +226,7 @@ static inline void deinfinitize(int n, int * restrict l) {
 void shortest_paths(int n, int * restrict l, int n_threads) {
     USE_ALIGN(l, BYTE_ALIGN);
 
-    DEF_ALIGN(BYTE_ALIGN) int * restrict lnew = (int * restrict)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
+    DEF_ALIGN(BYTE_ALIGN) int *lnew = (int *)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
     USE_ALIGN(lnew, BYTE_ALIGN);
 
     // initial conditions
