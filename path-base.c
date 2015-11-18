@@ -106,11 +106,6 @@ static inline void deinfinitize(int n, int* l)
 
 void shortest_paths(int n, int* restrict l)
 {
-    // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
-
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
@@ -119,7 +114,6 @@ void shortest_paths(int n, int* restrict l)
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);
-    deinfinitize(n, l);
 }
 
 /**
@@ -229,6 +223,12 @@ int main(int argc, char** argv)
 
     // Graph generation + output
     int* l = gen_graph(n, p, s);
+
+    // Generate l_{ij}^0 from adjacency matrix representation
+    infinitize(n, l);
+    for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;
+
     if (ifname)
         write_matrix(ifname,  n, l);
 
@@ -237,6 +237,8 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
+    deinfinitize(n, l);
+
     printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
@@ -244,9 +246,7 @@ int main(int argc, char** argv)
     printf("Check: %X\n", fletcher16(l, n*n));
 
     // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
-
+    if (ofname) write_matrix(ofname, n, l);
 
     // Clean up
     free(l);

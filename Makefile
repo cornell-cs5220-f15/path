@@ -1,28 +1,17 @@
-#
-# To build with a different compiler / on a different platform, use
-#     make PLATFORM=xxx
-#
-# where xxx is
-#     icc = Intel compilers
-#     gcc = GNU compilers
-#     clang = Clang compiler (OS X default)
-#
-# Or create a Makefile.in.xxx of your own!
-#
-
 PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
-.PHONY: exe exe-base clean realclean
-
-
 # === Executables
+
+.PHONY: exe exe-base exe-blocked exe-tiled
 
 exe: path.x
 
 exe-base: path-base.x
 
 exe-blocked: path-blocked.x
+
+exe-tiled: path-tiled.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -31,6 +20,9 @@ path-base.x: path-base.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
 path-blocked.x: path-blocked.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-tiled.x: path-tiled.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
 path.o: path.c
@@ -74,17 +66,20 @@ vtune-report:
 
 # === Documentation
 
+.PHONY: main.pdf path.md
+
 main.pdf: README.md path.md
 	pandoc $^ -o $@
 
 path.md: path.c
 	ldoc -o $@ $^
 
-
 # === Cleanup and tarball
 
+.PHONY: clean realclean
+
 clean:
-	rm -f *.o
+	rm -f *.o *.dump
 
 realclean: clean
 	rm -f path.x path-mpi.x path.md main.pdf
