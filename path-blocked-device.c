@@ -169,7 +169,7 @@ void solve(int n,                    // Number of nodes
         // if the array that we just wrote into is the locally allocated array, we need
         // to copy this back to the original so that it gets transferred back to the host
         #pragma omp single nowait
-        copy_back = lnew == orig_lnew;
+        copy_back = step % 2 == 0;
     }// end omp parallel
 
     if(copy_back)
