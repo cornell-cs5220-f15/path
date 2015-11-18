@@ -246,13 +246,13 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     const int n_height = n / height_size + (n % height_size ? 1 : 0);
 
 #ifdef __INTEL_COMPILER
-    #pragma offload target(mic:0)                              \
-            in(n_threads)                                      \
-            in(n)                                              \
-            in(n_width)                                        \
-            in(n_height)                                       \
-            inout(l    : length(n*n) alloc_if(1) free_if(1))   \
-            inout(lnew : length(n*n) alloc_if(1) free_if(1))
+    #pragma offload target(mic:0)                         \
+            in(n_threads)                                 \
+            in(n)                                         \
+            in(n_width)                                   \
+            in(n_height)                                  \
+            inout(l : length(n*n) alloc_if(1) free_if(1)) \
+            in(lnew : length(n*n) alloc_if(1) free_if(1))
 #endif
     solve(n, l, lnew, n_width, n_height, n_threads);
 
@@ -263,6 +263,8 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     printf("To Inf: %.16g\n", to_inf_stop - to_inf_start);
     printf("De Inf: %.16g\n", de_inf_stop - de_inf_start);
     printf("-------------------------------------------\n");
+
+    _mm_free(lnew);
 }
 
 /**
