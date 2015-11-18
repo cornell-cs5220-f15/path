@@ -64,38 +64,42 @@ long   num_square = 0;
  */
 TARGET_MIC
 void solve(int n,              // Number of nodes
-           int * restrict l,    // Partial distance at step s
-           int * restrict lnew, // Partial distance at step s+1
+           int * restrict orig_l,    // Partial distance at step s
+           int * restrict orig_lnew, // Partial distance at step s+1
            int n_width,         // Width (x direction) of block
            int n_height,        // Height (y direction) of block
            int n_threads) {     // how many threads to use
 
-    USE_ALIGN(l,    BYTE_ALIGN);
-    USE_ALIGN(lnew, BYTE_ALIGN);
+    USE_ALIGN(orig_l,    BYTE_ALIGN);
+    USE_ALIGN(orig_lnew, BYTE_ALIGN);
 
-    int global_done = 1;
-    int *done = (int *)malloc(n_threads*sizeof(int));
+    int *even_done = (int *)malloc(n_threads*sizeof(int));
+    int *odd_done  = (int *)malloc(n_threads*sizeof(int));
+
+    int last_step_odd = 0;
 
     #pragma omp parallel           \
             num_threads(n_threads) \
-            shared(l, lnew, done)
-    {   
-        do {
+            shared(orig_l, orig_lnew, even_done, odd_done)
+    {
+        size_t step = 0;
+        for(;; ++step) {
+            int even = step % 2;
+            int *l, *lnew, *done;
+            if(even) {
+                done = even_done;
+                l = orig_l;
+                lnew = orig_lnew;
+            }
+            else {
+                done = odd_done;
+                l = orig_lnew;
+                lnew = orig_l;
+            }
+
             // assume the best
             int idx = omp_get_thread_num();
             done[idx] = 1;
-
-            #pragma omp barrier
-
-            // #pragma omp master
-            // {
-            //     printf("START: ");
-            //     for(int i = 0; i < n_threads; ++i) {
-            //         printf("%d ", done[i]);
-            //     }
-            //     printf("\n");
-            // }
-
 
             // Major Blocks
             #pragma omp for
@@ -137,28 +141,24 @@ void solve(int n,              // Number of nodes
                 }
             }// end Major Blocks (and omp for)
 
-        #pragma omp barrier
+            #pragma omp barrier
 
-        #pragma omp master
-        {
-            memcpy(l, lnew, n*n * sizeof(int));
-            // printf("END:   ");
             int finished = 1;
-            for(int i = 0; i < n_threads; ++i) {
+            for(int i = 0; i < n_threads; ++i)
                 finished = finished && done[i];
-                // printf("%d ", done[i]);
-            }
-            global_done = finished;
-            // printf("\n");
-            // printf("Global done: %d\n\n\n", global_done);
+
+            if(finished) break;
+
         }
 
-        #pragma omp barrier
-
-        } while(!global_done);
+        #pragma omp master
+        last_step_odd = step % 2;
     }// end omp parallel
 
-    free(done);
+    if(!last_step_odd) memcpy(orig_l, orig_lnew, n*n * sizeof(int));
+
+    free(even_done);
+    free(odd_done);
 }
 
 /**
