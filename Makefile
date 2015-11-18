@@ -26,6 +26,12 @@ path.x: path.o mt19937p.o
 path.o: path.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
+path-openmp.x: path-openmp.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-openmp.o: path-openmp.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
 path-mpi.x: path-mpi.o mt19937p.o
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 

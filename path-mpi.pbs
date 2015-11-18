@@ -1,0 +1,35 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -N path-mpi
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+
+# mpirun -n 1 ./path-mpi.x -n 2016
+
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  mpirun -n 2 ./path-mpi.x -n 2016
+done
+
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  mpirun -n 4 ./path-mpi.x -n 2016
+done
+
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  mpirun -n 8 ./path-mpi.x -n 2016
+done
+
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  mpirun -n 16 ./path-mpi.x -n 2016
+done
+
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  mpirun -n 24 ./path-mpi.x -n 2016
+done
