@@ -1,10 +1,12 @@
 \section{Evaluation}\label{sec:eval}
 
-We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) by doing strong scaling studies across a range of problem sizes. For rs and block we used a baseline of \rs{omp} and for fw we used a baseline of \fw{omp}. For rs and block we also did weak scaling studies for with a constant work of problem size $n=500$.
+We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) by doing strong scaling studies across a range of problem sizes. For rs and block we used a baseline of \rs{omp} (which has access to 24 threads) and for fw we used a baseline of \fw{omp} (which has access to 24 threads). For rs and block we also did weak scaling studies for with a constant work of problem size $n=500$.
 
 \subsection{RS}
 
 \subsubsection{MPI}
+
+In Figure~\ref{strong-rs-mpi} we can see that increasing the number of MPI ranks (which in turn decreases the number of OMP threads per rank) does increase speedup, but for any problem size larger than 960 does not get above 1. Further there is a drop when ranks goes beyond 12. This is because of increased MPI overhead across 2.
 
 \begin{figure}[ht]
 \centering
@@ -12,6 +14,8 @@ We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) b
 \caption{Strong scaling for rs-mpi with a baseline of rs-omp}
 \label{strong-rs-mpi}
 \end{figure}
+
+In weak scaling (figure~\ref{weak-rs-mpi}) we that performance per thread drops as speedup falls. This is likely because of the increased overhead of synchronizing with 1 more thread as we add 1 more thread.
 
 \begin{figure}[ht]
 \centering
@@ -22,12 +26,16 @@ We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) b
 
 \subsubsection{Hybrid}
 
+In Figure~\ref{strong-rs-hybrid} we can see that increasing the number of MPI ranks (which in turn decreases the number of OMP threads per rank) has mixed speedup for most n. When the number of MPI ranks is less than 10 we sometimes have speedup larger than 1, but as we go beyond 10 and 12 speedup drops off. This is because of increased MPI overhead across 2 chips and the hybrid codes inability to take advantage of all possible threads when there are more than 12 MPI ranks.
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.5\textwidth]{plots/strong_rs-hybrid_baseline-rs-omp--1.pdf}
 \caption{Strong scaling for rs-hybrid with a baseline of rs-omp}
 \label{strong-rs-hybrid}
 \end{figure}
+
+The hybrid implementation drops speedup more rapidly than the MPI implementation for weak scaling (figure~\ref{weak-rs-hybrid}). This is probably because inability to take advantage of the full 24 hardware threads when the number of ranks does not divide 24 perfectly.
 
 \begin{figure}[ht]
 \centering
@@ -36,10 +44,11 @@ We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) b
 \label{weak-rs-hybrid}
 \end{figure}
 
-
 \subsection{Block}
 
 \subsubsection{MPI}
+
+Our block implementation with MPI has much higher speedups than our repeated squares with MPI. It crosses 5x speedup for almost all problem sizes at some point (figure~\ref{strong-block-mpi}). In particular we see that smaller problems (960 being a notable outlier) with larger speedup. Speedup once again increases until 12 and then drops (due to multiple chips) and then increases once again.
 
 \begin{figure}[ht]
 \centering
@@ -47,6 +56,8 @@ We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) b
 \caption{Strong scaling for block-mpi with a baseline of rs-omp}
 \label{strong-block-mpi}
 \end{figure}
+
+%TODO: weak discussion
 
 \begin{figure}[ht]
 \centering
@@ -57,12 +68,16 @@ We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) b
 
 \subsubsection{Hybrid}
 
+Our block implementation with hybrid has much higher speedups than our repeated squares with hybrid, however the speedups are smaller than for MPI (figure~\ref{strong-block-hybrid}). Speedup varies between sizes, particular with fewer than 12 ranks due to not always taking advantage of all 24 hardware threads. Once again, problem size 960 has much more speedup than other sizes.
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.5\textwidth]{plots/strong_block-hybrid_baseline-rs-omp--1.pdf}
 \caption{Strong scaling for block-hybrid with a baseline of rs-omp}
 \label{strong-block-hybrid}
 \end{figure}
+
+%TODO: weak part
 
 \begin{figure}[ht]
 \centering
@@ -75,6 +90,8 @@ We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) b
 
 \subsubsection{MPI}
 
+The performance of FW with MPI is typically poor, this is because of the increased number of synchronizations ($O(N)$) as compared to to $O(log(N))$. We see this in figure~\ref{strong-fw-mpi}, speedup slowly increases for all sizes, but in all cases except for the smallest size (480), never surpasses one; in fact, all but 480 and 960 never cross 0.5 speedup.
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.5\textwidth]{plots/strong_fw-mpi_baseline-fw-omp--1.pdf}
@@ -84,9 +101,11 @@ We evaluated our mpi, hybrid implementations of each algorithm (rs, block, fw) b
 
 \subsubsection{Hybrid}
 
+The performance of FW with hybrid actually tends to decrease as ranks increase, this is because of the increased number of synchronizations once again along with inability to use all 24 hardware threads. We see this in figure~\ref{strong-fw-hybrid}.
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.5\textwidth]{plots/strong_fw-hybrid_baseline-fw-omp--1.pdf}
 \caption{Strong scaling for fw-hybrid with a baseline of fw-omp}
-\label{strong-fw-mpi}
+\label{strong-fw-hybrid}
 \end{figure}
