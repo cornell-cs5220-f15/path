@@ -40,13 +40,13 @@
  */
 
 int square(int n,               // Number of nodes
-           int start,
-           int numRows,
+           int start, //where is this used?
+           int numRows, // number of rows intervals[p]/n
            int* restrict l,     // Partial distance at step s
            int* restrict lnew, // Partial distance at step s+1
-		   int* lp,
-		   int sp,
-		   int lplen)  
+		   int* restrict lp, // rectangular part of l at step s
+		   int sp, // constant off set for lnew
+		   int lplen) // length of lp
 {
     int done = 1;
     for (int i = 0; i <numRows ; ++i) {
@@ -177,80 +177,100 @@ void write_matrix(const char* fname, int n, int* a)
 
 void shortest_paths(int n, int* restrict l, int size, int rank)
 {
-	int sizework = size-1;
-	int masterrank =sizework;
-    int* restrict intervals = (int*) calloc(size, sizeof(int));
-    int* restrict displacements = (int*) calloc(size, sizeof(int));
-    int numRows = n/sizework;
-    int extraRows = n%sizework;
+	int sizework = size-1; // divide work up into # processors - 1
+	int masterrank = sizework; // last processor is master processor all others are slaves
+    int* restrict intervals = (int*) calloc(size, sizeof(int)); //Does this need to be #size - 1 % # elem
+    int* restrict displacements = (int*) calloc(size, sizeof(int)); //Does this need to be #size - 1 % mem loc
+    int numRows = n/sizework; // divide rows up evenly
+    int extraRows = n%sizework;//find extra rows last couple of processors will have
     MPI_Request request;
 	MPI_Status status;
     // divide up the work amonst all processes
     if (rank==masterrank) {
         displacements[0] = 0;
         for (int i = 0; i < sizework-1; i++) {
-            if (i < extraRows)
+            if (i < extraRows) // first couple of processors get an extra number of rows
                 intervals[i] = (numRows+1)*n;
             else
                 intervals[i] = numRows*n;
+            //find the next displacement level
             displacements[i+1] = displacements[i] + intervals[i];
         }
+        //setting last processors intervals up
         intervals[sizework-1] = numRows*n;
     }
-
+    // send the interval and displacement values to everyone
     MPI_Bcast(intervals, size, MPI_INT, masterrank, MPI_COMM_WORLD);
     MPI_Bcast(displacements, size, MPI_INT, masterrank, MPI_COMM_WORLD);
+    //make lnew
 	int* restrict lnew ;
 	if(rank!=masterrank){
+        //make lnew the appropriate length for slave nodes
 		lnew = (int*) calloc(intervals[rank], sizeof(int));
 		//memcpy(lnew, l + displacements[rank], intervals[rank] * sizeof(int));
 	}
 	else{
+        // make lnew same size as l for master node
 		lnew = (int*) calloc(n*n, sizeof(int));
 	}
+    //lp is going to be the tranpose of l
 	int* restrict lp = (int*) calloc(n*n, sizeof(int));
+    //scatter l subdomains that need to go into lnew
     MPI_Scatterv(l, intervals, displacements, MPI_INT, lnew, intervals[rank], MPI_INT, masterrank, MPI_COMM_WORLD);
 
 //    MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
     for (int done = 0; !done; ) {
 		int notdoneLocal=0;
 		if(rank!=masterrank){
+            //lnew is copied over to l in the first chunk
 			memcpy(l,lnew,intervals[rank] * sizeof(int));
 		}
+        //Lp is the transpose of L
 		else{
 			for(int j=0;j<n;++j){
-				for(int i=0;i<intervals[0]/n;++i){
+				for(int i=0;i<intervals[0]/n;++i){ //loops through n/sizework+1 times
 					lp[j+i*n]=l[i+j*n];
 				}
 			}
 		}
+        //cast Lp to all processors
 		MPI_Bcast(lp, intervals[0], MPI_INT, masterrank, MPI_COMM_WORLD);
+        // cut up Lp into chunks
 		for(int p=1;p<sizework;++p){
 			if(rank==masterrank){
 				for(int j=0;j<n;++j){
+                    //i = displacement[p]/n while i < displacement[p]/n + interval[p]
 					for(int i=displacements[p]/n;i<displacements[p]/n+intervals[p]/n;++i){
-						lp[j+i*n]=l[i+j*n];
+						lp[j+i*n]=l[i+j*n]; //it's being cycled but I'm not 100% sure
 					}
 				}
+                //broadcast the new cycled lp out
 				MPI_Ibcast(lp+displacements[p], intervals[p], MPI_INT, masterrank, MPI_COMM_WORLD, &request);
 				MPI_Wait(&request, &status);
 			}
 			else{
+                //receive the cycled lp for processor p
 				MPI_Ibcast(lp+displacements[p], intervals[p], MPI_INT, masterrank, MPI_COMM_WORLD, &request);
-				
+				//compute the local square of the length of the previous lp
 				notdoneLocal += 1-square(n, displacements[rank], intervals[rank]/n, l, lnew,lp+displacements[p-1],displacements[p-1]/n,intervals[p-1]/n);
 				MPI_Wait(&request, &status);
 			}
 		}
 		if(rank!=masterrank){
+            //compute the local square at the last processor that isn't the master processor
 			notdoneLocal += 1-square(n, displacements[rank], intervals[rank]/n, l, lnew,lp+displacements[sizework-1],displacements[sizework-1]/n,intervals[sizework-1]/n);
 		}
+        //gather up all the lnew and transfer it to the l var for the master processor
 		MPI_Gatherv(lnew, intervals[rank], MPI_INT, l, intervals, displacements, MPI_INT, masterrank, MPI_COMM_WORLD);
-		MPI_Allreduce(&notdoneLocal, &done, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+		//reduce all the done using the logicals
+        MPI_Allreduce(&notdoneLocal, &done, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         done= !done;
     }
-
+    //free up all the variables that we allocated earlier
     free(lnew);
+    free(lp);
+    free(intervals);
+    free(displacements);
     if (rank == masterrank)
         deinfinitize(n, l);
 }
