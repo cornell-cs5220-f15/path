@@ -73,16 +73,32 @@ void solve(int n,              // Number of nodes
     USE_ALIGN(l,    BYTE_ALIGN);
     USE_ALIGN(lnew, BYTE_ALIGN);
 
-    int done = 1;
+    int global_done = 1;
+    int *done = (int *)malloc(n_threads*sizeof(int));
+
     #pragma omp parallel           \
             num_threads(n_threads) \
-            shared(l, lnew)
+            shared(l, lnew, done)
     {   
         do {
-            printf("WORKIN: %d\n", omp_get_thread_num());
-            done=1;
+            // assume the best
+            int idx = omp_get_thread_num();
+            done[idx] = 1;
+
+            #pragma omp barrier
+
+            // #pragma omp master
+            // {
+            //     printf("START: ");
+            //     for(int i = 0; i < n_threads; ++i) {
+            //         printf("%d ", done[i]);
+            //     }
+            //     printf("\n");
+            // }
+
+
             // Major Blocks
-            #pragma omp for reduction(&& : done)
+            #pragma omp for
             for(int J = 0; J < n_height; ++J) {
                 for(int K = 0; K < n_height; ++K) {
                     for(int I = 0; I < n_width; ++I){
@@ -112,8 +128,7 @@ void solve(int n,              // Number of nodes
                                     if(lik + lkj < lij) {
                                         lij = lik+lkj;
                                         lnew[lij_ind] = lij;
-                                        done = 0;
-                                        printf("NOT DONE: %d\n", omp_get_thread_num());
+                                        done[idx] = 0;
                                     }
                                 }
                             }
@@ -122,13 +137,28 @@ void solve(int n,              // Number of nodes
                 }
             }// end Major Blocks (and omp for)
 
+        #pragma omp barrier
+
         #pragma omp master
-        memcpy(l, lnew, n*n * sizeof(int));
+        {
+            memcpy(l, lnew, n*n * sizeof(int));
+            // printf("END:   ");
+            int finished = 1;
+            for(int i = 0; i < n_threads; ++i) {
+                finished = finished && done[i];
+                // printf("%d ", done[i]);
+            }
+            global_done = finished;
+            // printf("\n");
+            // printf("Global done: %d\n\n\n", global_done);
+        }
 
         #pragma omp barrier
 
-        } while(!done);
+        } while(!global_done);
     }// end omp parallel
+
+    free(done);
 }
 
 /**
