@@ -73,17 +73,16 @@ void solve(int n,              // Number of nodes
     USE_ALIGN(l,    BYTE_ALIGN);
     USE_ALIGN(lnew, BYTE_ALIGN);
 
-    // int done = 1;
-    // #pragma omp parallel           \
-    //         num_threads(n_threads) \
-    //         shared(l, lnew)
-    // {
-        // do {
-    for (int done = 0; !done; ) {
-        done=1;
-            printf("DONE: %d\n", done);
+    int done = 1;
+    #pragma omp parallel           \
+            num_threads(n_threads) \
+            shared(l, lnew)
+    {   
+        do {
+            printf("WORKIN: %d\n", omp_get_thread_num());
+            done=1;
             // Major Blocks
-            // #pragma omp for reduction(&& : done)
+            #pragma omp for reduction(&& : done)
             for(int J = 0; J < n_height; ++J) {
                 for(int K = 0; K < n_height; ++K) {
                     for(int I = 0; I < n_width; ++I){
@@ -114,6 +113,7 @@ void solve(int n,              // Number of nodes
                                         lij = lik+lkj;
                                         lnew[lij_ind] = lij;
                                         done = 0;
+                                        printf("NOT DONE: %d\n", omp_get_thread_num());
                                     }
                                 }
                             }
@@ -122,11 +122,13 @@ void solve(int n,              // Number of nodes
                 }
             }// end Major Blocks (and omp for)
 
-            // #pragma omp barrier // sync up everybody to see if we need to continue
-
+        #pragma omp master
         memcpy(l, lnew, n*n * sizeof(int));
-        } //while(c!done);
-    // }// end omp parallel
+
+        #pragma omp barrier
+
+        } while(!done);
+    }// end omp parallel
 }
 
 /**
