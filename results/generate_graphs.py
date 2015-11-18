@@ -44,11 +44,12 @@ def create_graph(name, baseline_name, baseline_proc):
     # plt.savefig('strong_{}_baseline-{}-{}.png'.format(name, baseline_name, baseline_proc))
     plt.close()
 
-create_graph('block-hybrid', 'block-hybrid', 1)
-create_graph('block-hybrid', 'block-mpi', 1)
 create_graph('block-hybrid', 'rs-omp', -1)
-create_graph('block-mpi', 'block-mpi', 1)
 create_graph('block-mpi', 'rs-omp', -1)
+create_graph('rs-hybrid', 'rs-omp', -1)
+create_graph('rs-mpi', 'rs-omp', -1)
+create_graph('fw-hybrid', 'fw-omp', -1)
+create_graph('fw-mpi', 'fw-omp', -1)
 
 def weak_graph(name):
     results = np.genfromtxt('results-{}.csv'.format(name), delimiter=',', names=True)
@@ -67,5 +68,7 @@ def weak_graph(name):
     # plt.savefig('weak_scaling.png')
     plt.close()
 
-weak_graph('block-hybrid-weak')
-weak_graph('block-mpi-weak')
+weak_graph('weak_block-hybrid')
+weak_graph('weak_block-mpi')
+weak_graph('weak_rs-hybrid')
+weak_graph('weak_rs-mpi')

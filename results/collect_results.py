@@ -20,8 +20,17 @@ def collect(name):
                     except:
                         print par, found
 
-# collect('rs-omp')
-# collect('block-hybrid')
-# collect('block-mpi')
-collect('block-hybrid-weak')
-collect('block-mpi-weak')
+
+collect('rs-omp')
+collect('rs-hybrid')
+collect('rs-mpi')
+collect('fw-omp')
+collect('fw-hybrid')
+collect('fw-mpi')
+collect('block-omp')
+collect('block-hybrid')
+collect('block-mpi')
+collect('weak_block-hybrid')
+collect('weak_block-mpi')
+collect('weak_rs-hybrid')
+collect('weak_rs-mpi')

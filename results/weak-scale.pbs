@@ -2,20 +2,20 @@
 
 #PBS -l nodes=1:ppn=24
 #PBS -l walltime=0:30:00
-#PBS -N weak-scale
+#PBS -N weak_rs-mpi
 #PBS -j oe
 
 module load cs5220
 cd $PBS_O_WORKDIR
-mpirun -n 1 ../block-mpi.x -n 500
-mpirun -n 2 ../block-mpi.x -n 622
-mpirun -n 3 ../block-mpi.x -n 708
-mpirun -n 4 ../block-mpi.x -n 776
-mpirun -n 5 ../block-mpi.x -n 835
-mpirun -n 6 ../block-mpi.x -n 882
-mpirun -n 7 ../block-mpi.x -n 924
-mpirun -n 8 ../block-mpi.x -n 968
-mpirun -n 9 ../block-mpi.x -n 1008
-mpirun -n 10 ../block-mpi.x -n 1040
-mpirun -n 11 ../block-mpi.x -n 1067
-mpirun -n 12 ../block-mpi.x -n 1104
+mpirun -n 1 ../rs-mpi.x -n 500
+mpirun -n 2 ../rs-mpi.x -n 622
+mpirun -n 3 ../rs-mpi.x -n 708
+mpirun -n 4 ../rs-mpi.x -n 776
+mpirun -n 5 ../rs-mpi.x -n 835
+mpirun -n 6 ../rs-mpi.x -n 882
+mpirun -n 7 ../rs-mpi.x -n 924
+mpirun -n 8 ../rs-mpi.x -n 968
+mpirun -n 9 ../rs-mpi.x -n 1008
+mpirun -n 10 ../rs-mpi.x -n 1040
+mpirun -n 11 ../rs-mpi.x -n 1067
+mpirun -n 12 ../rs-mpi.x -n 1104
