@@ -10,6 +10,7 @@
 
 #include <xmmintrin.h>// _mm_malloc
 #include <string.h>   // memset
+#include <alloca.h>   // alloca ;)
 
 #define BYTE_ALIGN  64
 #define width_size  512
@@ -26,10 +27,6 @@
 #endif
 
 #pragma offload_attribute(pop)
-
-// global timing constants
-double square_avg = 0.0;
-long   num_square = 0;
 
 //ldoc on
 /**
@@ -63,37 +60,52 @@ long   num_square = 0;
  * identical, and false otherwise.
  */
 TARGET_MIC
-void solve(int n,              // Number of nodes
-           int * restrict orig_l,    // Partial distance at step s
-           int * restrict orig_lnew, // Partial distance at step s+1
-           int n_width,         // Width (x direction) of block
-           int n_height,        // Height (y direction) of block
-           int n_threads) {     // how many threads to use
+void solve(int n,                 // Number of nodes
+           int * restrict orig_l, // Partial distance at step s
+           int n_width,           // Width (x direction) of block
+           int n_height,          // Height (y direction) of block
+           int n_threads) {       // how many threads to use
 
     USE_ALIGN(orig_l,    BYTE_ALIGN);
+
+    // create the alt grid on the Phi so we don't have to transfer it over.
+    // we *will* have to wait for allocation, but will have to transfer half
+    // as much data initially and half has much back as well
+    DEF_ALIGN(BYTE_ALIGN) int * restrict orig_lnew = (int * restrict)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
     USE_ALIGN(orig_lnew, BYTE_ALIGN);
 
-    int *even_done = (int *)malloc(n_threads*sizeof(int));
-    int *odd_done  = (int *)malloc(n_threads*sizeof(int));
+    // initial conditions
+    memcpy(orig_lnew, orig_l, n*n * sizeof(int));
 
-    int last_step_odd = 0;
+    // keep track of who is done and who is not (manual reduction)
+    int *even_done = (int *)alloca(n_threads*sizeof(int));
+    int *odd_done  = (int *)alloca(n_threads*sizeof(int));
 
+    // since this is double buffering, we may have written the final results into the
+    // alternate orig_lnew, and therefore need to copy them back at the end
+    int copy_back = 0;
+
+    // avoid re-spawning threads for every iteration of the while(!done) scenario
     #pragma omp parallel           \
             num_threads(n_threads) \
             shared(orig_l, orig_lnew, even_done, odd_done)
     {
-        size_t step = 0;
-        for(;; ++step) {
+        // buffered variables
+        int *l, *lnew, *done;
+
+        // while(!done)
+        for(size_t step = 0; /* true */ ; ++step) {
+            
+            // setup double buffers
             int even = step % 2;
-            int *l, *lnew, *done;
             if(even) {
                 done = even_done;
-                l = orig_l;
+                l    = orig_l;
                 lnew = orig_lnew;
             }
             else {
                 done = odd_done;
-                l = orig_lnew;
+                l    = orig_lnew;
                 lnew = orig_l;
             }
 
@@ -141,8 +153,10 @@ void solve(int n,              // Number of nodes
                 }
             }// end Major Blocks (and omp for)
 
+            // need to sync all threads before we can determine if we are finished
             #pragma omp barrier
 
+            // if any thread is not finished, then all threads continue
             int finished = 1;
             for(int i = 0; i < n_threads; ++i)
                 finished = finished && done[i];
@@ -151,14 +165,16 @@ void solve(int n,              // Number of nodes
 
         }
 
-        #pragma omp master
-        last_step_odd = step % 2;
+        // if the array that we just wrote into is the locally allocated array, we need
+        // to copy this back to the original so that it gets transferred back to the host
+        #pragma omp single nowait
+        copy_back = lnew == orig_lnew;
     }// end omp parallel
 
-    if(!last_step_odd) memcpy(orig_l, orig_lnew, n*n * sizeof(int));
+    if(copy_back)
+        memcpy(orig_l, orig_lnew, n*n * sizeof(int));
 
-    free(even_done);
-    free(odd_done);
+    _mm_free(orig_lnew);
 }
 
 /**
@@ -219,30 +235,18 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
-    // Repeated squaring until nothing changes
-    size_t num_bytes = n*n*sizeof(int);
-    DEF_ALIGN(BYTE_ALIGN) int * restrict lnew = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
-    USE_ALIGN(lnew, BYTE_ALIGN);
-    memcpy(lnew, l, n*n * sizeof(int));
-
     const int n_width  = n / width_size  + (n % width_size  ? 1 : 0);
     const int n_height = n / height_size + (n % height_size ? 1 : 0);
 
 #ifdef __INTEL_COMPILER
-    #pragma offload target(mic:0)                            \
-            in(n_threads)                                    \
-            in(n)                                            \
-            in(n_width)                                      \
-            in(n_height)                                     \
-            inout(l    : length(n*n) alloc_if(1) free_if(1)) \
-            inout(lnew : length(n*n) alloc_if(1) free_if(1))
+    #pragma offload target(mic:0) \
+            in(n_threads)         \
+            in(n)                 \
+            in(n_width)           \
+            in(n_height)          \
+            inout(l : length(n*n) alloc_if(1) free_if(1))
 #endif
-    solve(n, l, lnew, n_width, n_height, n_threads);
-
-    // copy back results
-    memcpy(l, lnew, n*n * sizeof(int));
-
-    _mm_free(lnew);
+    solve(n, l, n_width, n_height, n_threads);
 
     double de_inf_start = omp_get_wtime();
     deinfinitize(n, l);
@@ -341,15 +345,9 @@ const char* usage =
 int main(int argc, char** argv)
 {
 #ifdef __INTEL_COMPILER
-    // query the number of Phi's, use offload_transfer to establish linkage
-    // this is a timely operation and should be done outside of a timing loop
-    const int num_devices = _Offload_number_of_devices();
-    if(num_devices != 2) {
-        printf("This algorithm is designed to work with exactly 2 coprocessors...goodbye.\n");
-        return 0;
-    }
+    // use offload_transfer to establish linkage. This is a timely operation and
+    // should be done outside of a timing loop
     #pragma offload_transfer target(mic:0)
-    #pragma offload_transfer target(mic:1)
 #endif
 
     double overall_start = omp_get_wtime();
@@ -410,7 +408,6 @@ int main(int argc, char** argv)
     printf("-------------------------------------------\n");
     printf("Timings:\n");
     printf("Shortest Paths:  %.16g\n", t1 - t0);
-    printf("Square Average:  %.16g\n", square_avg / ((double)num_square));
     printf("Overall:         %.16g\n", overall_stop - overall_start);
 
     return 0;
