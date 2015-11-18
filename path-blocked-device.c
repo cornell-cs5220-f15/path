@@ -60,22 +60,23 @@
  * identical, and false otherwise.
  */
 TARGET_MIC
-void solve(int n,                 // Number of nodes
-           int * restrict orig_l, // Partial distance at step s
-           int n_width,           // Width (x direction) of block
-           int n_height,          // Height (y direction) of block
-           int n_threads) {       // how many threads to use
+void solve(int n,                    // Number of nodes
+           int * restrict orig_l,    // Partial distance at step s
+           int * restrict orig_lnew, // Partial distance at step s+!
+           int n_width,              // Width (x direction) of block
+           int n_height,             // Height (y direction) of block
+           int n_threads) {          // how many threads to use
 
     USE_ALIGN(orig_l,    BYTE_ALIGN);
 
     // create the alt grid on the Phi so we don't have to transfer it over.
     // we *will* have to wait for allocation, but will have to transfer half
     // as much data initially and half has much back as well
-    DEF_ALIGN(BYTE_ALIGN) int * restrict orig_lnew = (int * restrict)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
+    // DEF_ALIGN(BYTE_ALIGN) int * restrict orig_lnew = (int * restrict)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
     USE_ALIGN(orig_lnew, BYTE_ALIGN);
 
     // initial conditions
-    memcpy(orig_lnew, orig_l, n*n * sizeof(int));
+    // memcpy(orig_lnew, orig_l, n*n * sizeof(int));
 
     // keep track of who is done and who is not (manual reduction)
     int *even_done = (int *)alloca(n_threads*sizeof(int));
@@ -174,7 +175,7 @@ void solve(int n,                 // Number of nodes
     if(copy_back)
         memcpy(orig_l, orig_lnew, n*n * sizeof(int));
 
-    _mm_free(orig_lnew);
+    // _mm_free(orig_lnew);
 }
 
 /**
@@ -224,6 +225,12 @@ static inline void deinfinitize(int n, int * restrict l) {
 void shortest_paths(int n, int * restrict l, int n_threads) {
     USE_ALIGN(l, BYTE_ALIGN);
 
+    DEF_ALIGN(BYTE_ALIGN) int * restrict lnew = (int * restrict)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
+    USE_ALIGN(lnew, BYTE_ALIGN);
+
+    // initial conditions
+    memcpy(lnew, l, n*n * sizeof(int));
+
     printf("-------------------------------------------\n");
     printf("Individual Squares:\n");
 
@@ -239,14 +246,15 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     const int n_height = n / height_size + (n % height_size ? 1 : 0);
 
 #ifdef __INTEL_COMPILER
-    #pragma offload target(mic:0) \
-            in(n_threads)         \
-            in(n)                 \
-            in(n_width)           \
-            in(n_height)          \
-            inout(l : length(n*n) alloc_if(1) free_if(1))
+    #pragma offload target(mic:0)                              \
+            in(n_threads)                                      \
+            in(n)                                              \
+            in(n_width)                                        \
+            in(n_height)                                       \
+            inout(l    : length(n*n) alloc_if(1) free_if(1))   \
+            inout(lnew : length(n*n) alloc_if(1) free_if(1))
 #endif
-    solve(n, l, n_width, n_height, n_threads);
+    solve(n, l, lnew, n_width, n_height, n_threads);
 
     double de_inf_start = omp_get_wtime();
     deinfinitize(n, l);
