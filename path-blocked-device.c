@@ -147,11 +147,6 @@ void solve(int n,                    // Number of nodes
     // if the array that we just wrote into is the locally allocated array, we need
     // to copy this back to the original so that it gets transferred back to the host
     *copy_back = step % 2 == 0;
-
-    // if(copy_back)
-    //     memcpy(orig_l, orig_lnew, n*n * sizeof(int));
-
-    // return copy_back;
 }
 
 /**
@@ -221,6 +216,7 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     const int n_width  = n / width_size  + (n % width_size  ? 1 : 0);
     const int n_height = n / height_size + (n % height_size ? 1 : 0);
 
+    // the phi code is double buffered; may need to copy back after
     int copy_back = -1;
     int *cb = &copy_back;
 
@@ -263,7 +259,6 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
 
 int * gen_graph(int n, double p)
 {
-    // int* l = calloc(n*n, sizeof(int));
     // 'calloc'
     size_t num_bytes = n*n*sizeof(int);
     DEF_ALIGN(BYTE_ALIGN) int *l = (int *)_mm_malloc(num_bytes, BYTE_ALIGN);
