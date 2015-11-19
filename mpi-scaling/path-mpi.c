@@ -62,28 +62,14 @@ void transpose(int n, int* restrict graph, int* restrict graphT) {
     }
 }
 
-int receive_updates(int m, int root, int* restrict recvupdates, int* restrict graph, int* restrict graphT) {
-    int upsrecv;
-    MPI_Bcast(&upsrecv, 1, MPI_INT, root, MPI_COMM_WORLD);
-    MPI_Bcast(recvupdates, upsrecv, MPI_INT, root, MPI_COMM_WORLD);
-    for (int i = 0; i < upsrecv; i += 3) {
-        int x = recvupdates[i];
-        int y = recvupdates[i + 1];
-        int v = recvupdates[i + 2];
-        graph[x * m + y] = v;
-        graphT[y * m + x] = v;
-    }
-    return upsrecv;
-}
-
-int optimize(int m, int c, int id, int* restrict graph, int* restrict graphT, int* restrict updates) {
-    int nups = 0; // Number of updates
+int optimize(int m, int c, int id, int* restrict graph, int* restrict graphT, int* restrict newcols) {
+    int hasupdate = 0;
 
     // Optimize the assigned columns
     for (int j = id * c * m; j < (id + 1) * c * m; j++) {
         int x = j / m;
         int y = j % m;
-        int hasupdate = 0;
+        
         int newval = graph[j];
         for (int i = 0; i < m; i++) {
             int dist = graph[x * m + i] + graphT[y * m + i];
@@ -92,45 +78,28 @@ int optimize(int m, int c, int id, int* restrict graph, int* restrict graphT, in
                 hasupdate = 1;
             }
         }
-        if (hasupdate) {
-            graph[j] = newval;
-            graphT[y * m + x] = newval;
-            updates[nups++] = x;
-            updates[nups++] = y;
-            updates[nups++] = newval;
-        }
+        newcols[j - id * c * m] = newval;
     }
-    return nups;
+    return hasupdate;
 }
 
 void worker(int m, int c, int t, int id, int* restrict graph) {
     // Send matrix to every worker
     MPI_Bcast(graph, m * m, MPI_INT, 0, MPI_COMM_WORLD);
 
-    int* restrict updates = (int*) _mm_malloc(3 * m * c * sizeof(int), sizeof(long));
-    int* restrict recvupdates = (int*) _mm_malloc(3 * m * c * sizeof(int), sizeof(long));
+    int* restrict newcols = (int*) _mm_malloc(m * c * sizeof(int), sizeof(long));
     int* restrict graphT = (int*) _mm_malloc(m * m * sizeof(int), sizeof(long));
-    transpose(m, graph, graphT);
 
-    int done;
+    int hasupdate;
     do {
-        done = 1;
-        int nups = optimize(m, c, id, graph, graphT, updates);
-        done &= !nups;
+        transpose(m, graph, graphT);
+        int hup = optimize(m, c, id, graph, graphT, newcols);
 
-        // Synchronize state with other workers
-        for (int i = 0; i < t; i++) {
-            if (i == id) {
-                MPI_Bcast(&nups, 1, MPI_INT, i, MPI_COMM_WORLD);
-                MPI_Bcast(updates, nups, MPI_INT, i, MPI_COMM_WORLD);
-            } else {
-                done &= !receive_updates(m, i, recvupdates, graph, graphT);
-            }
-        }
-    } while (!done);
+        MPI_Allreduce(&hup, &hasupdate, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        MPI_Allgather(newcols, c * m, MPI_INT, graph, c * m, MPI_INT, MPI_COMM_WORLD);
+    } while (!hasupdate);
 
-    _mm_free(updates);
-    _mm_free(recvupdates);
+    _mm_free(newcols);
     _mm_free(graphT);
 }
 
