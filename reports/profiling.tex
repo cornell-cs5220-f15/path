@@ -1,21 +1,21 @@
 \section{Profiling}\label{sec:profiling}
 The release implementation of all-pairs shortest paths is a naive
-implementation of a repeated squares algorithm that uses OpenMP for
-parallelization.  We profiled the release code using VTune Amplifier and the
+implementation of repeated squares algorithm that uses OpenMP for
+parallelization. We profiled the release code using VTune Amplifier and the
 vectorization reports produced by \icc{}.
 
 \subsection{VTune Amplifier}
 The profiling results produced by VTune Amplifier are shown in \figref{vtune-a}
-and \figref{vtune-b}. The profiles show that the release implementation spends
+and \figref{vtune-b}, which show that the release implementation spends
 most of its time inside the \texttt{square} function. The majority of the time
-in \texttt{square} is spent accessing the \texttt{l} array. This is in contrast
-to many applications that spend most of their time on computation. This is
+in \texttt{square} is spent accessing the \texttt{l} array. Although in contrast
+to many applications that spend most of their time on computation, this is
 unsurprising as the only computation done in the release implementation is a
 single addition and comparison.
 
-These results suggested that we optimize our implementations to have good memory
+These results suggest that we optimize our implementations to have good memory
 access patterns to take full advantage of the cache as much as possible. This
-optimization is discussed in detail in \secref{algo}.
+optimization will be discussed in detail in \secref{algo}.
 
 \begin{figure}[h]
 \centering
@@ -79,8 +79,8 @@ Source Line  Source                                                             
 \end{figure}
 
 \subsection{Vectorization Reports}
-A snippet of an \icc{} vectorization report is shown in
-\figref{icc-vec-report}. The report shows that most loops in the release
+A snippet of the \icc{} vectorization report is shown in
+\figref{icc-vec-report}, which shows that most loops in the release
 implementation are vectorized. However, the vectorized loops have unaligned
 memory accesses because \texttt{l} and \texttt{lnew} are not allocated into
 aligned memory. This suggested that we optimized our code to allocate memory

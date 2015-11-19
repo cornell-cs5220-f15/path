@@ -1,5 +1,5 @@
 \section{Algorithms}\label{sec:algo}
-In this section, we describe the three algorithms we implemented to compute
+In this section, we describe the three algorithms we have implemented to compute
 all-pairs shortest paths.
 
 \subsection{Repeated Squares}
@@ -10,6 +10,7 @@ following recurrence:
 \[
   l_{ij}^{s+1} = \min_k \group{l_{ik}^s + l_{kj}^s}
 \]
+
 The base case $l_{ij}^0$ is the weight of the edge from vertex $i$ to vertex
 $j$ or $\infty$ if no such edge exists. This recurrence is nearly identical to
 the formula used to compute the square of a matrix $A$:
@@ -35,11 +36,11 @@ describe the optimizations implemented by \block{}.
 \paragraph{Blocking}
 A naive matrix multiplication kernel has very poor cache locality. \block{}
 implements a blocked matrix multiplication to greatly improve cache locality.
-An optimal block size of 128 was found empirically.
+The optimal block size of 128 was found empirically.
 
 \paragraph{Copy Optimization}
 When \block{} multiplies two sub-blocks, it first copies them into a smaller,
-aligned buffer. This copy optimization allows the compiler to more aggressively
+aligned buffer, which allows the compiler to more aggressively
 vectorize loops over the sub-blocks and it makes memory accesses to the
 sub-blocks much more regular.
 
@@ -67,6 +68,7 @@ exists. \fw{} relies on the following recurrence:
 \[
   l_{i,j}^{k+1} = \min \group{l_{i,j}^k, l_{i,k+1}^k + l_{k+1,j}^k}
 \]
+
 The base case $l_{i,j}^0$ is the weight of the edge from vertex $i$ to vertex
 $j$ or $\infty$ if no such edge exists. \fw{} initializes $L^0$ and
 iteratively computes $L^{k+1}$ from $L^{k}$ using the above recurrence.
