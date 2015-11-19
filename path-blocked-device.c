@@ -236,15 +236,15 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     const int n_width  = n / width_size  + (n % width_size  ? 1 : 0);
     const int n_height = n / height_size + (n % height_size ? 1 : 0);
 
-// #ifdef __INTEL_COMPILER
-//     #pragma offload target(mic:0)                         \
-//             in(n_threads)                                 \
-//             in(n)                                         \
-//             in(n_width)                                   \
-//             in(n_height)                                  \
-//             inout(l : length(n*n) alloc_if(1) free_if(1)) \
-//             in(lnew : length(n*n) alloc_if(1) free_if(1))
-// #endif
+#ifdef __INTEL_COMPILER
+    #pragma offload target(mic:0)                         \
+            in(n_threads)                                 \
+            in(n)                                         \
+            in(n_width)                                   \
+            in(n_height)                                  \
+            inout(l : length(n*n) alloc_if(1) free_if(1)) \
+            in(lnew : length(n*n) alloc_if(1) free_if(1))
+#endif
     solve(n, l, lnew, n_width, n_height, n_threads);
 
     double de_inf_start = omp_get_wtime();

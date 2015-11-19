@@ -4,7 +4,7 @@ CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
 OPTFLAGS=-O3 -no-prec-div -ipo \
-	-qopt-report=5 -qopt-report-phase=vec #-xcore-avx2
+	-qopt-report=5 -qopt-report-phase=vec -axCORE-AVX512 -axCORE-AVX2
 
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS) -openmp
