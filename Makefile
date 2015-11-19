@@ -69,4 +69,4 @@ clean:
 	rm -f *.o
 
 realclean: clean
-	rm -f path.x path-mpi.x path-blocked.x path-blocked-device.x # path.md main.pdf
+	rm -f path.x path-mpi.x path-blocked.x path-blocked-device.x path-blocked-device-naive.x
