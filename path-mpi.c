@@ -380,9 +380,6 @@ int main(int argc, char** argv)
     shortest_paths(n, block_side, rank, size, lc, curr_row);
     double t1 = MPI_Wtime();
 
-    printf("\n== MPI with %d processors ==\n", size);
-    printf("n:     %d\n", n);
-    printf("Time:  %g\n", t1-t0);
 
     if (rank == 0) {
         for (int r=1; r<size; r++) {
@@ -399,6 +396,9 @@ int main(int argc, char** argv)
         if (ofname)
             write_matrix(ofname, n, l);
             
+        printf("\n== MPI with %d processors ==\n", size);
+        printf("n:     %d\n", n);
+        printf("Time:  %g\n", t1-t0);
         printf("\np:     %g\n", p);
         printf("Check: %X\n", fletcher16(l, n*n));
         free(l);
