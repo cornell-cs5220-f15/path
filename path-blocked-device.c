@@ -123,9 +123,6 @@ void solve(int n,                    // Number of nodes
                         int i_init  = I*width_size;
 
                         // Minor Blocks
-#ifdef __INTEL_COMPILER
-                    #pragma ivdep
-#endif
                         for(int j = 0; j < j_end; ++j) {
                             int jn = j_init+j*n;
                     
@@ -133,6 +130,9 @@ void solve(int n,                    // Number of nodes
                                 int kn  = kn_init+k*n;
                                 int lkj = l[jn+k_init+k];
                                 
+#ifdef __INTEL_COMPILER
+                                #pragma ivdep
+#endif
                                 for(int i = 0; i < i_end; ++i) {
                                     int lij_ind = jn+i_init+i;
                                     int lij = lnew[lij_ind];
