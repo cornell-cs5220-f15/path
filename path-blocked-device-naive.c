@@ -27,9 +27,6 @@
 
 #pragma offload_attribute(pop)
 
-// how many threads?
-int n_threads = 1;
-
 // global timing constants
 double square_avg = 0.0;
 long   num_square = 0;
@@ -65,12 +62,13 @@ long   num_square = 0;
  * The return value for `square` is true if `l` and `lnew` are
  * identical, and false otherwise.
  */
-
-int square(int n,                 // Number of nodes
-           int * restrict l,      // Partial distance at step s
-           int * restrict lnew,    // Partial distance at step s+1
-           int n_width,            // Width (x direction) of block
-           int n_height) {       // Height (y direction) of block
+TARGET_MIC
+int square(int n,              // Number of nodes
+           int * restrict l,   // Partial distance at step s
+           int * restrict lnew,// Partial distance at step s+1
+           int n_width,        // Width (x direction) of block
+           int n_height,       // Height (y direction) of block
+           int n_threads) {    // Number of threads to use 
 
     USE_ALIGN(l,    BYTE_ALIGN);
     USE_ALIGN(lnew, BYTE_ALIGN);
@@ -165,7 +163,7 @@ static inline void deinfinitize(int n, int * restrict l) {
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int * restrict l)
+void shortest_paths(int n, int * restrict l, int n_threads)
 {
     USE_ALIGN(l, BYTE_ALIGN);
 
@@ -202,7 +200,7 @@ void shortest_paths(int n, int * restrict l)
                 inout(l    : length(n*n) alloc_if(first_iter) free_if(0)) \
                 inout(lnew : length(n*n) alloc_if(first_iter) free_if(0))
 #endif
-        done = square(n, l, lnew, n_width, n_height);
+        done = square(n, l, lnew, n_width, n_height, n_threads);
         double square_stop  = omp_get_wtime();
 
         printf(" -- %.16g\n", square_stop - square_start);
@@ -320,17 +318,16 @@ int main(int argc, char** argv)
 {
     double overall_start = omp_get_wtime();
 
-    int n     = 200;                   // Number of nodes
-    double p  = 0.05;                  // Edge probability
-    n_threads = omp_get_max_threads(); // Number of threads to use with OMP
-    const char* ifname = NULL;         // Adjacency matrix file name
-    const char* ofname = NULL;         // Distance matrix file name
+    int n     = 200;          // Number of nodes
+    double p  = 0.05;         // Edge probability
+    int n_threads = 240;      // Number of threads to use with OMP
+    const char* ifname = NULL;// Adjacency matrix file name
+    const char* ofname = NULL;// Distance matrix file name
 
     // Option processing
     extern char* optarg;
     const char* optstring = "hn:d:p:o:i:t:";
     int c;
-    // int num_threads <-- defined at top for global scope
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
         case 'h':
@@ -354,7 +351,7 @@ int main(int argc, char** argv)
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
-    shortest_paths(n, l);
+    shortest_paths(n, l, n_threads);
     double t1 = omp_get_wtime();
 
 
