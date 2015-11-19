@@ -17,13 +17,13 @@ the formula used to compute the square of a matrix $A$:
   a_{ij}^2 = \sum_k a_{ik} a_{kj}
 \]
 
-The algorithm initializes the distance matrix $L^s$ for $s=0$ and iteratively
-computes $L^{s+1}$ by squaring $L^s$. The algorithm terminates once squaring
-$L$ reaches a fixpoint; that is, once $L^2 = L$. Each squaring requires
-$O(N^3)$ operations where $N$ is the number of vertices in the graph and the
-side-length of $L$. A shortest path can be of at most length $N$, so the
-algorithm terminates after at most $\log N$ iterations. Thus, the running time
-of \rs{} has a worst-case running time of $O(N^3 \log N)$.
+The algorithm initializes a distance matrix $L^0$ and iteratively computes
+$L^{s+1}$ by squaring $L^s$. The algorithm terminates once squaring $L$ reaches
+a fixpoint; that is, once $L^2 = L$. Each squaring requires $O(N^3)$ operations
+where $N$ is the number of vertices in the graph and the side-length of $L$. A
+shortest path can be of at most length $N$, so the algorithm terminates after
+at most $\log N$ iterations. Thus, the worst-case running time of \rs{} is
+$O(N^3 \log N)$.
 
 \subsection{Blocked Repeated Squares}
 The release implementation of \rs{} uses a naive matrix multiplication kernel
@@ -45,7 +45,7 @@ sub-blocks much more regular.
 
 \paragraph{Compile-Time Loop Bounds}
 If the size of a matrix is not divisible by the size of a block, then not all
-sub-blocks will have the same size, and the size of a sub-blocks is only known
+sub-blocks have the same size, and the size of a sub-blocks is only known
 at runtime. When \block{} multiplies two sub-blocks, it first checks to see if
 they are full-sized blocks, and if they are, it multiplies them using a kernel
 whose loop bounds are known at compile-time. By knowing loop-bounds at compile
@@ -68,7 +68,7 @@ exists. \fw{} relies on the following recurrence:
   l_{i,j}^{k+1} = \min \group{l_{i,j}^k, l_{i,k+1}^k + l_{k+1,j}^k}
 \]
 The base case $l_{i,j}^0$ is the weight of the edge from vertex $i$ to vertex
-$j$ or $\infty$ if no such edge exists. \fw{} initializes $L^k$ for $k=0$ and
+$j$ or $\infty$ if no such edge exists. \fw{} initializes $L^0$ and
 iteratively computes $L^{k+1}$ from $L^{k}$ using the above recurrence.
 $L^{k+1}$ can be computed in $O(N^2)$ time and the algorithm terminates when it
 computes $L^N$. Thus, the algorithm runs in $O(N^3)$ time.

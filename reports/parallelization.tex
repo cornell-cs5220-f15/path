@@ -4,13 +4,14 @@ parallelization mechanisms: OpenMP, MPI, and a hybrid of the two. In this
 section, we describe in detail how each mechanisms was used for parallelization.
 
 \subsection{OpenMP}
-Parallelizing each algorithm is simply a matter of using \texttt{\#pragma omp
-parallel for} before each outer loop of each algorithm's respective square
-functions. The implementations of this algorithm are in \texttt{rs-omp.c},
-\texttt{block-omp.c}, and \texttt{fw-omp.c}.
+Parallelizing each algorithm using OpenMP is simply a matter of annotating the
+outer loop of each algorithm's respective \texttt{square} functions with
+\texttt{\#pragma omp parallel for}. The implementations of \rs{}, \block{}, and
+\fw{} using OpenMP are in \texttt{rs-omp.c}, \texttt{block-omp.c}, and
+\texttt{fw-omp.c}.
 
 \subsection{MPI}
-Implementing the algorithms in MPI requires decomposing the problem into sub
+Parallelizing the algorithms with MPI requires decomposing the problem into sub
 parts, similar to the idea of domain decomposition from the last project. We
 drew inspiration from previous work with distance-vector routing using
 Bellman$-$Ford in determining shortest distances between routers. In that
@@ -18,31 +19,34 @@ algorithm, each router sends its distances to all other routers (each time
 there is a change) to its neighbors which then use that information to update
 their own distances. This continues until no routers have changed distances.
 
-In our case we do not necessarily have a single thread per node, as there maybe
-not be enough available hardware threads. Instead each ``router'' is an MPI
+In our case, we do not necessarily have a single thread per node, as there may
+not be enough hardware threads available. Instead, each ``router'' is an MPI
 rank and is responsible for a set of nodes rather than a single node. Each MPI
 rank calculates the minimum distance to each of its nodes from all other nodes
 going through each node between 1 and $N$.
 
-For \rs{} and \block{} each rank also determines if any distances have changed.
-All MPI ranks then synchronize, to gather distances from one another and
-determine if any distances have changed (if none stop then we are done and the
-``master'' rank (rank 0) outputs checksum and timing information). To determine
-if any distances have changed we use \texttt{mpi\_allreduce} on each rank's done
-variable. To synchronize distances across all ranks we use
-\texttt{mpi\_allgather} which sends each rank's distances to all other ranks and
-collects them from every rank, including itself, into a single buffer. In the
-case of \fw{} must synchronize for every iteration of $k$, and does not need to
-check if its finished as the algorithm will always finish in the same number of
-loops (N). Our implementations are in \texttt{rs-mpi.c}, \texttt{block-mpi.c},
-and \texttt{fw-mpi.c}.
+For \rs{} and \block{}, each rank also determines if any distances have
+changed.  All MPI ranks then synchronize, to gather distances from one another
+and determine if any distances have changed. If none have changed, then the
+algorithm terminates and the ``master'' rank (rank 0) outputs checksum and
+timing information. To determine if any distances have changed we use
+\texttt{mpi\_allreduce} on each rank's done variable. To synchronize distances
+across all ranks we use \texttt{mpi\_allgather} which sends each rank's
+distances to all other ranks and collects them from every rank, including
+itself, into a single buffer. The implementation of \fw{} must synchronize for
+every iteration of $k$, and does not need to check if its finished as the
+algorithm will always finish in the same number of loops (N).
 
-\subsection{Hybrid} MPI and OMP interact seamlessly when put together, making it
-easy to combine our MPI implementation and the origin OMP implementation. Given
-a fixed number of MPI ranks, $r$, and $p$ available threads then each MPI rank
-will have access to $p/r$ threads which can be used in OMP parallel sections of
-code. This can mean we do not take full advantage of all threads available to us
-if $p$ is not divisible by $r$. We implemented a hybrid version of each
-algorithm (by combining our MPI implementation and the OMP parts of the original
-implementation) in \texttt{rs-hybrid.c}, \texttt{block-hybrid.c}, and \texttt
-{fw-hybrid.c}.
+The implementations of \rs{}, \block{}, and \fw{} using MPI are in
+\texttt{rs-mpi.c}, \texttt{block-mpi.c}, and \texttt{fw-mpi.c}.
+
+\subsection{Hybrid}
+MPI and OpenMP interact seamlessly when put together, making it easy to combine
+our MPI implementation with the release OpenMp implementation. Given a fixed
+number of MPI ranks, $r$, and $p$ available threads then each MPI rank will
+have access to $\frac{p}{r}$ threads which can be used in OpenMP parallel
+sections of code. This means we do not take full advantage of all threads
+available to us if $p$ is not divisible by $r$. We implemented a hybrid version
+of each algorithm (by combining our MPI implementation with the OpenMP
+portitons of the original implementation) in \texttt{rs-hybrid.c},
+\texttt{block-hybrid.c}, and \texttt {fw-hybrid.c}.
