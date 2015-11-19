@@ -7,4 +7,5 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-mpirun -np 4 ./path-mpi.x -n 1000
+# mpirun -np 4 ./path-mpi.x -n 64 -i adj_mat -o out_mat
+mpirun -np 10 ./path-mpi.x -n 6000
