@@ -18,9 +18,9 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path.x
+exe: floyd-warshall
 
-path.x: path.o mt19937p.o
+floyd-warshall: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
 path.o: path.c
@@ -48,7 +48,9 @@ path.md: path.c
 # === Cleanup and tarball
 
 clean:
-	rm -f *.o
+	rm -f *.o*
+	rm floyd-warshall
+
 
 realclean: clean
 	rm -f path.x path-mpi.x path.md main.pdf

@@ -1,0 +1,10 @@
+
+#!/bin/sh
+
+#PBS -N path
+#PBS -j oe
+#PBS -l nodes=2:ppn=1
+#PBS -l walltime=0:30:00
+module load cs5220
+cd $PBS_O_WORKDIR
+mpirun -n 2 ./floyd-warshall -n 32
