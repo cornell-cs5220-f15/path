@@ -7,7 +7,7 @@
 #include <omp.h>
 #include "mt19937p.h"
 
-#define ALIGNBY 64
+#define ALIGNBY 32
 
 //ldoc on
 /**
@@ -47,14 +47,14 @@ int square(int n,               // Number of nodes
 {
   int done = 1;
 
-  __assume_aligned(l,ALIGNBY);
-  __assume_aligned(lnew,ALIGNBY);
-
   #pragma omp parallel for shared(l, lnew) reduction(&& : done)
   for (int j = 0; j < n; ++j) {
     for (int k = 0; k < n; ++k) {
+      __assume_aligned(l,ALIGNBY);
+      __assume_aligned(lnew,ALIGNBY);
       int lkj = l[j*n+k];
-
+      #pragma vector always
+      #pragma ivdep
       for (int i = 0; i < n; ++i) {
 	int lij = lnew[j*n+i];
 	int lik = l[k*n+i];
