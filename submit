@@ -2,4 +2,4 @@
 
 #Arg 1: Initial condition, Arg 2: size
 
-qsub -v ARGS="-n $1" -l nodes=1:ppn=24 path.pbs
+qsub -v ARGS="-n $1 -t $2" -l nodes=1:ppn=24 path.pbs

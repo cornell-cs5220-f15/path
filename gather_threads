@@ -1,0 +1,10 @@
+#!/bin/bash
+filename="$1"
+outfile="timing-$2.csv"
+echo "threads,time">>$outfile
+
+while read -r line
+do
+    index=$line
+    ./get_threads $line $outfile
+done < "$filename"

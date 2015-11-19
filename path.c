@@ -13,7 +13,10 @@
 #define ALIGNBY 32
 #endif
 
-#define NTHREADS 24
+#pragma offload_attribute(push,target(mic))
+int nthreads;
+#pragma offload_attribute(pop)
+#define NTHREADS nthreads
 
 //ldoc on
 /**
@@ -129,6 +132,8 @@ void shortest_paths(int n, int* restrict l)
     /* int* restrict lnew = (int*) calloc(n*n, sizeof(int)); */
 #pragma offload target(mic) inout(l:length(n*n))
     {
+      printf("== OpenMP with %d threads\n", omp_get_max_threads());
+
       int * restrict lnew = (int*) _mm_malloc(n*n*sizeof(int), ALIGNBY);
       memcpy(lnew, l, n*n * sizeof(int));
       
@@ -231,7 +236,7 @@ int main(int argc, char** argv)
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "hn:t:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -239,6 +244,7 @@ int main(int argc, char** argv)
             fprintf(stderr, "%s", usage);
             return -1;
         case 'n': n = atoi(optarg); break;
+        case 't': nthreads = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
@@ -255,8 +261,9 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    /* printf("== OpenMP with %d threads\n", omp_get_max_threads()); */
     printf("n:     %d\n", n);
+    printf("t:     %d\n", nthreads);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
     printf("Check: %X\n", fletcher16(l, n*n));
