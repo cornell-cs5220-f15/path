@@ -1,0 +1,250 @@
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  21.4299
+Check: C4D3
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  20.6818
+Check: 1FF3
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  21.1139
+Check: 7195
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  20.8266
+Check: E084
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  20.7196
+Check: 35B7
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  20.7708
+Check: C0E7
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  20.1629
+Check: F11E
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  20.8075
+Check: D646
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  21.766
+Check: E690
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  20.2619
+Check: B542
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.4559
+Check: C330
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.509
+Check: D7D6
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.3627
+Check: D3E
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.9989
+Check: 1A62
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.7684
+Check: 2E7E
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.5012
+Check: 9D26
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.4484
+Check: 60C9
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.4733
+Check: 4B18
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.7578
+Check: EDCD
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  10.5698
+Check: CD91
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.11508
+Check: 7F48
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.65501
+Check: D2CD
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.22981
+Check: 4327
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.23889
+Check: B765
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.24468
+Check: 5254
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.34438
+Check: 94DF
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.25369
+Check: 56D7
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.58211
+Check: 79BF
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.24847
+Check: 1CBF
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  5.29401
+Check: 3DF6
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  3.95275
+Check: 1A69
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  4.83939
+Check: 2CE5
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  4.75855
+Check: F9D6
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  4.10885
+Check: 9DB
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  3.47468
+Check: B218
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  4.34269
+Check: 82B3
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  4.76486
+Check: F33B
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  4.59278
+Check: 1AC
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  3.98278
+Check: 4C10
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  4.1919
+Check: F760
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.08193
+Check: FD34
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.05909
+Check: 47B8
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.43176
+Check: EBB0
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  3.72644
+Check: 3EB9
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.10149
+Check: F00
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  3.71887
+Check: BFAA
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.67059
+Check: B2CA
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.2909
+Check: 2CF3
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.52521
+Check: 98C3
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  4.35272
+Check: 8D7D

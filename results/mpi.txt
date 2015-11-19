@@ -1,0 +1,250 @@
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.8129
+Check: 13AE
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.4219
+Check: B817
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.3147
+Check: 3A16
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.9193
+Check: 67DC
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.5966
+Check: B538
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.868
+Check: 12AF
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.7766
+Check: 8E53
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.8434
+Check: DFAD
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.2044
+Check: E764
+== MPI with 2 threads
+n:     2016
+p:     0.05
+Time:  17.9121
+Check: 38AC
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.1663
+Check: 2440
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.0544
+Check: 780A
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.1762
+Check: 40C0
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.1081
+Check: C5AB
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.0075
+Check: C804
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.0521
+Check: D7D6
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.2256
+Check: 87B8
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.2533
+Check: 44F0
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.196
+Check: FB45
+== MPI with 4 threads
+n:     2016
+p:     0.05
+Time:  12.2922
+Check: 8437
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.88942
+Check: C167
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.78509
+Check: BCCD
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.88899
+Check: C05F
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.89859
+Check: 702A
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.83504
+Check: 3A5B
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  7.11173
+Check: 8910
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.80893
+Check: 1A67
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.83835
+Check: 264
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  6.79967
+Check: E245
+== MPI with 8 threads
+n:     2016
+p:     0.05
+Time:  7.09542
+Check: BDF7
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.06577
+Check: 6503
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.08461
+Check: 5056
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.09522
+Check: 5BA7
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.13352
+Check: C062
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.07444
+Check: 7E92
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.08728
+Check: 2F62
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.07628
+Check: ACF3
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.09418
+Check: ED4D
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.06666
+Check: E055
+== MPI with 16 threads
+n:     2016
+p:     0.05
+Time:  9.08513
+Check: 4E03
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.43155
+Check: 656
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.43321
+Check: B113
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.44159
+Check: 7355
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.43634
+Check: 9E05
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.44019
+Check: 4281
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.4345
+Check: 92B
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.42429
+Check: 1351
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.44461
+Check: CCF8
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.42798
+Check: AC79
+== MPI with 24 threads
+n:     2016
+p:     0.05
+Time:  6.43004
+Check: 71AE
