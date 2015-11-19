@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path.x # path-mpi.x
+exe: path.x  path-mpi.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -26,11 +26,11 @@ path.x: path.o mt19937p.o
 path.o: path.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
-# path-mpi.x: path-mpi.o mt19937p.o
-# 	$(MPICC) $(MPI_CFLAGS) $(OMP_FLAGS) $^ -o $@
+path-mpi.x: path-mpi.o mt19937p.o
+	$(MPICC) $(MPI_CFLAGS) $(OMP_FLAGS) $^ -o $@
 
-# path-mpi.o: path-mpi.c
-# 	$(MPICC) -c $(MPI_CFLAGS) $(OMP_FLAGS) $<
+path-mpi.o: path-mpi.c
+	$(MPICC) -c $(MPI_CFLAGS) $(OMP_FLAGS) $<
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<

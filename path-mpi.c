@@ -41,7 +41,7 @@
  */
 
 int square(int n,int rank, int np,               // Number of nodes
-           int* restrict l                   )
+           int* restrict l, int *restrict lold)
 {
     int done = 1;
     int i,j,k;
@@ -52,10 +52,9 @@ int square(int n,int rank, int np,               // Number of nodes
     
     tmp=(int *) malloc (n*sizeof(int));
     
-    int *restrict lold;
-    lold=(int *) malloc (n*size1*sizeof(int));
+
     
-    memcpy(lold, l, size1*n * sizeof(int));
+   // memcpy(lold, l, size1*n * sizeof(int));
     
     
     for (k = 0; k < n; ++k) {
@@ -63,16 +62,16 @@ int square(int n,int rank, int np,               // Number of nodes
         if (root == rank) {
             offset = k%(n/np);
             for (j =0; j<n; ++j)
-                tmp[j] = lold[offset*n+j];
+                tmp[j] = l[offset*n+j];
         }
         
         MPI_Bcast (tmp, n, MPI_INT, root, MPI_COMM_WORLD);
 
         for (j = 0; j < size1; ++j) {
-            int lkj = lold[j*n+k];
+            int lkj = l[j*n+k];
             int lij;
             for (i = 0; i < n; ++i) {
-                lij = lold[j*n+i];
+                lij = l[j*n+i];
                 int lik = tmp[i];
                 if (lik + lkj < lij) {
                     l[j*n+i] = lik+lkj;
@@ -82,7 +81,7 @@ int square(int n,int rank, int np,               // Number of nodes
         }
     }
     free(tmp);
-    free(lold);
+  //  free(lold);
     return done;
 }
 
@@ -162,10 +161,11 @@ void shortest_paths(int n, int* restrict l, int np, int rank)
     
   
     
-
+    int *restrict lold;
+    lold=(int *) malloc (n*size1*sizeof(int));
 
     for (int done = 0; !done; ) {
-        done = square(n, rank, np, local);
+        done = square(n, rank, np, local, lold);
     }
     
     MPI_Gatherv(local, size1*n, MPI_INT, l, countElements, displs,
@@ -174,6 +174,7 @@ void shortest_paths(int n, int* restrict l, int np, int rank)
     free(countElements);
     free(local);
     free(displs);
+    free(lold);
     
     if (rank ==0)
         deinfinitize(n, l);
