@@ -6,12 +6,7 @@
 #include <unistd.h>
 #include <omp.h>
 #include "mt19937p.h"
-
-#ifdef __MIC__
-#define ALIGNBY 64
-#else
-#define ALIGNBY 32
-#endif
+#include <mpi.h>
 
 //ldoc on
 /**
@@ -45,35 +40,51 @@
  * identical, and false otherwise.
  */
 
-#pragma offload_attribute(push,target(mic))
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew,int nthreads)  // Partial distance at step s+1
+int square(int n,int rank, int np,               // Number of nodes
+           int* restrict l, int *restrict lold)
 {
-  int done = 1;
+    int done = 1;
+    int i,j,k;
+    int offset; //local index
+    int root;
+    int* tmp;
+    int size1=((rank+1)*n/np)-((rank)*n/np);
+    
+    tmp=(int *) malloc (n*sizeof(int));
+    
 
-#pragma omp parallel for shared(l, lnew) reduction(&& : done) num_threads(nthreads)
-  for (int j = 0; j < n; ++j) {
-    for (int k = 0; k < n; ++k) {
-      __assume_aligned(l,ALIGNBY);
-      __assume_aligned(lnew,ALIGNBY);
-      int lkj = l[j*n+k];
-      #pragma vector always
-      #pragma ivdep
-      for (int i = 0; i < n; ++i) {
-	int lij = lnew[j*n+i];
-	int lik = l[k*n+i];
-	if (lik + lkj < lij) {
-	  lnew[j*n+i] = lik+lkj;
-	  done = 0;
-	}
-      }
-       /* = lij; */
+    
+   // memcpy(lold, l, size1*n * sizeof(int));
+    
+    
+    for (k = 0; k < n; ++k) {
+        root = (np*k)/n;
+        if (root == rank) {
+            offset = k%(n/np);
+            for (j =0; j<n; ++j)
+                tmp[j] = l[offset*n+j];
+        }
+        
+        MPI_Bcast (tmp, n, MPI_INT, root, MPI_COMM_WORLD);
+
+        for (j = 0; j < size1; ++j) {
+            int lkj = l[j*n+k];
+            int lij;
+            for (i = 0; i < n; ++i) {
+                lij = l[j*n+i];
+                int lik = tmp[i];
+                if (lik + lkj < lij) {
+                    l[j*n+i] = lik+lkj;
+                    done = 0;
+                }
+            }
+        }
     }
-  }
-  return done;
+    free(tmp);
+  //  free(lold);
+    return done;
 }
-#pragma offload_attribute(pop)
+
 /**
  *
  * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
@@ -116,30 +127,57 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l, int nthreads)
+void shortest_paths(int n, int* restrict l, int np, int rank)
 {
+    int size1=((rank+1)*n/np)-((rank)*n/np);
+    
+    int* local=(int *) malloc(n*size1*sizeof(int));
+    
+    int *countElements=(int *) malloc(np*sizeof(int));
+    int *displs=(int *) malloc(np*sizeof(int));
+
+    
+ 
+    
     // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
+    if (rank == 0) {
+        infinitize(n, l);
+        for (int i = 0; i < n*n; i += n+1)
+            l[i] = 0;
+        
+        for (int i=0;i<np;i++){
+            countElements[i]=n*(((i+1)*n/np)-((i)*n/np));
+            displs[i]=i*countElements[i];
+        }
+        
+        
 
-    // Repeated squaring until nothing changes
-    /* int* restrict lnew = (int*) calloc(n*n, sizeof(int)); */
-#pragma offload target(mic) inout(l:length(n*n))
-    {
-      printf("== OpenMP with %d threads\n", omp_get_max_threads());
-
-      int * restrict lnew = (int*) _mm_malloc(n*n*sizeof(int), ALIGNBY);
-      memcpy(lnew, l, n*n * sizeof(int));
-      
-      for (int done = 0; !done; ) {
-        done = square(n, l, lnew, nthreads);
-        memcpy(l, lnew, n*n * sizeof(int));
-      }
-      /* free(lnew); */
-      _mm_free(lnew);
+        // Repeated squaring until nothing changes
+       // int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+        //memcpy(lnew, l, n*n * sizeof(int));
     }
-    deinfinitize(n, l);
+    
+    MPI_Scatterv(l,countElements,displs,MPI_INT,local,size1*n,MPI_INT,0,MPI_COMM_WORLD);
+    
+  
+    
+    int *restrict lold;
+    lold=(int *) malloc (n*size1*sizeof(int));
+
+    for (int done = 0; !done; ) {
+        done = square(n, rank, np, local, lold);
+    }
+    
+    MPI_Gatherv(local, size1*n, MPI_INT, l, countElements, displs,
+                MPI_INT, 0, MPI_COMM_WORLD);
+    
+    free(countElements);
+    free(local);
+    free(displs);
+    free(lold);
+    
+    if (rank ==0)
+        deinfinitize(n, l);
 }
 
 /**
@@ -155,8 +193,7 @@ void shortest_paths(int n, int* restrict l, int nthreads)
 
 int* gen_graph(int n, double p)
 {
-    /* int* l = calloc(n*n, sizeof(int)); */
-  int *l = (int*) _mm_malloc(n*n*sizeof(int), ALIGNBY);
+    int* l = calloc(n*n, sizeof(int));
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -225,14 +262,14 @@ const char* usage =
 int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
-    int nthreads = 200;
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
+    
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:t:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -240,7 +277,6 @@ int main(int argc, char** argv)
             fprintf(stderr, "%s", usage);
             return -1;
         case 'n': n = atoi(optarg); break;
-        case 't': nthreads = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
@@ -252,26 +288,37 @@ int main(int argc, char** argv)
     if (ifname)
         write_matrix(ifname,  n, l);
 
+  
+    
+    MPI_Init(&argc, &argv);
+    
+    int np;   // Number of processors
+    MPI_Comm_size(MPI_COMM_WORLD,&np);
+    
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   
     // Time the shortest paths code
-    double t0 = omp_get_wtime();
-    shortest_paths(n, l, nthreads);
-    double t1 = omp_get_wtime();
+    double t0 =MPI_Wtime();
+    shortest_paths(n, l,np,rank);
+    double t1 = MPI_Wtime();
+  
+    if (rank ==0){
 
-    /* printf("== OpenMP with %d threads\n", omp_get_max_threads()); */
-    printf("n:     %d\n", n);
-    printf("t:     %d\n", nthreads);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+        printf("== MPI with %d processors\n", np);
+        printf("n:     %d\n", n);
+        printf("p:     %g\n", p);
+        printf("Time:  %g\n", t1-t0);
+        printf("Check: %X\n", fletcher16(l, n*n));
 
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
+        // Generate output file
+        if (ofname)
+            write_matrix(ofname, n, l);
 
-    // Clean up
-    /* free(l); */
-    _mm_free(l);
+        // Clean up
+
+        free(l);
+    }
+    MPI_Finalize();
     return 0;
 }
-
-

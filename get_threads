@@ -1,0 +1,5 @@
+#!/bin/bash
+THREADS=$(cat path.o$1 | grep MPI | cut -d ' ' -f 4)
+RUNTIME=$(cat path.o$1 |  grep 'Time:' | tr -d ' ' | cut -d ':' -f 2)
+# RUNTIME=$(cat path.o$1 | grep 'Time:' | cut -d ' ' -f 1)
+echo $THREADS,$RUNTIME >> $2

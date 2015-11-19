@@ -1,0 +1,10 @@
+#!/bin/bash
+filename="$1"
+outfile="timing-$2.csv"
+echo "size,time">>$outfile
+
+while read -r line
+do
+    index=$line
+    ./get_size $line $outfile
+done < "$filename"
