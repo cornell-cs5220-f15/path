@@ -60,19 +60,20 @@
  * identical, and false otherwise.
  */
 TARGET_MIC
-int solve(int n,                    // Number of nodes
+void solve(int n,                    // Number of nodes
            int * restrict orig_l,    // Partial distance at step s
            int * restrict orig_lnew, // Partial distance at step s+!
            int n_width,              // Width (x direction) of block
            int n_height,             // Height (y direction) of block
-           int n_threads) {          // how many threads to use
+           int n_threads,            // how many threads to use
+           int *copy_back) {         // copy back?
 
     USE_ALIGN(orig_l,    BYTE_ALIGN);
     USE_ALIGN(orig_lnew, BYTE_ALIGN);
 
     // since this is double buffering, we may have written the final results into the
     // alternate orig_lnew, and therefore need to copy them back at the end
-    int copy_back = 0;
+    *copy_back = 0;
 
     // buffered variables
     int *l, *lnew;
@@ -145,12 +146,12 @@ int solve(int n,                    // Number of nodes
 
     // if the array that we just wrote into is the locally allocated array, we need
     // to copy this back to the original so that it gets transferred back to the host
-    copy_back = step % 2 == 0;
+    *copy_back = step % 2 == 0;
 
     // if(copy_back)
     //     memcpy(orig_l, orig_lnew, n*n * sizeof(int));
 
-    return copy_back;
+    // return copy_back;
 }
 
 /**
@@ -220,16 +221,20 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     const int n_width  = n / width_size  + (n % width_size  ? 1 : 0);
     const int n_height = n / height_size + (n % height_size ? 1 : 0);
 
+    int copy_back = -1;
+    int *cb = &copy_back;
+
 #ifdef __INTEL_COMPILER
     #pragma offload target(mic:0)                         \
             in(n_threads)                                 \
             in(n)                                         \
             in(n_width)                                   \
             in(n_height)                                  \
+            inout(cb)                                 \
             inout(l    : length(n*n) alloc_if(1) free_if(1)) \
             inout(lnew : length(n*n) alloc_if(1) free_if(1))
 #endif
-    int copy_back = solve(n, l, lnew, n_width, n_height, n_threads);
+    solve(n, l, lnew, n_width, n_height, n_threads, cb);
 
     if(copy_back)
         memcpy(l, lnew, n*n * sizeof(int));
