@@ -1,6 +1,6 @@
 #!/bin/sh -l
 
-#PBS -l nodes=en-cs-totient-05.coecis.cornell.edu:ppn=24
+#PBS -l nodes=1:ppn=24
 #PBS -l walltime=0:30:00
 #PBS -N phitown
 #PBS -j oe
