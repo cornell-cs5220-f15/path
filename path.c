@@ -7,6 +7,8 @@
 #include <omp.h>
 #include "mt19937p.h"
 
+#define ALIGNBY 64
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -44,10 +46,15 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
   int done = 1;
+
+  __assume_aligned(l,ALIGNBY);
+  __assume_aligned(lnew,ALIGNBY);
+
   #pragma omp parallel for shared(l, lnew) reduction(&& : done)
   for (int j = 0; j < n; ++j) {
     for (int k = 0; k < n; ++k) {
       int lkj = l[j*n+k];
+
       for (int i = 0; i < n; ++i) {
 	int lij = lnew[j*n+i];
 	int lik = l[k*n+i];
@@ -112,13 +119,15 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    /* int* restrict lnew = (int*) calloc(n*n, sizeof(int)); */
+    int * restrict lnew = (int*) _mm_malloc(n*n*sizeof(int), ALIGNBY);
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    free(lnew);
+    /* free(lnew); */
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -135,7 +144,8 @@ void shortest_paths(int n, int* restrict l)
 
 int* gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    /* int* l = calloc(n*n, sizeof(int)); */
+  int *l = (int*) _mm_malloc(n*n*sizeof(int), ALIGNBY);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -245,6 +255,7 @@ int main(int argc, char** argv)
         write_matrix(ofname, n, l);
 
     // Clean up
-    free(l);
+    /* free(l); */
+    _mm_free(l);
     return 0;
 }
