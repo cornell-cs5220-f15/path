@@ -304,10 +304,15 @@ int main(int argc, char** argv)
     int i, j;
     double t1 = omp_get_wtime();
     double t0_copy = omp_get_wtime();
-    for (j = 0; j < n; ++j) {
-        for (i = 0; i < n; ++i) {
-            l[j*n+i] = lCopy[j * copySize + i];
+    if(copySize != n) {
+        for (j = 0; j < n; ++j) {
+            for (i = 0; i < n; ++i) {
+                l[j*n+i] = lCopy[j * copySize + i];
+            }
         }
+    }
+    else {
+        l = lCopy;
     }
     double t1_copy = omp_get_wtime();
 
