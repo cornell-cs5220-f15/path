@@ -184,9 +184,27 @@ int* gen_graph(int n, double p)
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < n; ++i) {
             l[j*n+i] = (genrand(&state) < p);
+        }
         l[j*n+j] = 0;
+    }
+    return l;
+}
+
+int* gen_graphCopy(int copySize, int n, double p)
+{
+    int* l = (int*) _mm_malloc(copySize*copySize*sizeof(int), 32);
+    struct mt19937p state;
+    sgenrand(10302011UL, &state);
+    for (int j = 0; j < copySize; ++j) {
+        for (int i = 0; i < copySize; ++i) {
+            if(i < n && j < n)
+                l[j*copySize+i] = (genrand(&state) < p);
+            else
+                l[j*copySize+i] = n+1;
+        }
+        l[j*copySize+j] = 0;
     }
     return l;
 }
@@ -271,27 +289,41 @@ int main(int argc, char** argv)
         }
     }
 
+    int nBlocks  = (int) ceil((float) n / (float) SQRT_THREADS / (float) BLOCK_SIZE);
+    int copySize = nBlocks * SQRT_THREADS * BLOCK_SIZE;
+
     // Graph generation + output
-    int* l = gen_graph(n, p);
+    int* lCopy = gen_graphCopy(copySize, n, p);
+    int* l     = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
-    shortest_paths(n, l);
+    shortest_paths(copySize, lCopy);
+    int i, j;
     double t1 = omp_get_wtime();
+    double t0_copy = omp_get_wtime();
+    for (j = 0; j < n; ++j) {
+        for (i = 0; i < n; ++i) {
+            l[j*n+i] = lCopy[j * copySize + i];
+        }
+    }
+    double t1_copy = omp_get_wtime();
 
     printf("== OpenMP with %d threads\n", omp_get_max_threads());
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    printf("n:         %d\n", n);
+    printf("p:         %g\n", p);
+    printf("Time:      %g\n", t1-t0);
+    printf("Copy time: %g\n", t1_copy-t0_copy)
+    printf("Check:     %X\n", fletcher16(l, n*n));
 
     // Generate output file
     if (ofname)
-        write_matrix(ofname, n, l);
+        write_matrix(ofname, copySize, lCopy);
 
     // Clean up
     _mm_free(l);
+    _mm_free(lCopy);
     return 0;
 }
