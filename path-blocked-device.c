@@ -225,12 +225,12 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
     int *cb = &copy_back;
 
 #ifdef __INTEL_COMPILER
-    #pragma offload target(mic:0)                         \
-            in(n_threads)                                 \
-            in(n)                                         \
-            in(n_width)                                   \
-            in(n_height)                                  \
-            inout(cb)                                 \
+    #pragma offload target(mic:0)                            \
+            in(n_threads)                                    \
+            in(n)                                            \
+            in(n_width)                                      \
+            in(n_height)                                     \
+            inout(cb   : length(1)   alloc_if(1) free_if(1)) \
             inout(l    : length(n*n) alloc_if(1) free_if(1)) \
             inout(lnew : length(n*n) alloc_if(1) free_if(1))
 #endif
