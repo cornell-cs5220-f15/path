@@ -60,7 +60,7 @@
  * identical, and false otherwise.
  */
 TARGET_MIC
-void solve(int n,                    // Number of nodes
+int solve(int n,                    // Number of nodes
            int * restrict orig_l,    // Partial distance at step s
            int * restrict orig_lnew, // Partial distance at step s+!
            int n_width,              // Width (x direction) of block
@@ -147,8 +147,10 @@ void solve(int n,                    // Number of nodes
     // to copy this back to the original so that it gets transferred back to the host
     copy_back = step % 2 == 0;
 
-    if(copy_back)
-        memcpy(orig_l, orig_lnew, n*n * sizeof(int));
+    // if(copy_back)
+    //     memcpy(orig_l, orig_lnew, n*n * sizeof(int));
+
+    return copy_back;
 }
 
 /**
@@ -224,10 +226,13 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
             in(n)                                         \
             in(n_width)                                   \
             in(n_height)                                  \
-            inout(l : length(n*n) alloc_if(1) free_if(1)) \
-            in(lnew : length(n*n) alloc_if(1) free_if(1))
+            inout(l    : length(n*n) alloc_if(1) free_if(1)) \
+            inout(lnew : length(n*n) alloc_if(1) free_if(1))
 #endif
-    solve(n, l, lnew, n_width, n_height, n_threads);
+    int copy_back = solve(n, l, lnew, n_width, n_height, n_threads);
+
+    if(copy_back)
+        memcpy(l, lnew, n*n * sizeof(int));
 
     double de_inf_start = omp_get_wtime();
     deinfinitize(n, l);
