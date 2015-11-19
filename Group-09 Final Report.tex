@@ -10,9 +10,14 @@
 \begin{document}
   \begin{framed}
   CS 5220 Introduction to Parallel Programming \hfill Fall 2015 \\
-  Kenneth Lim (\href{mailto:kl545@cornell.edu}{kl545}), Batu Inal (\href{mailto:bi49@cornell.edu}{bi49}), Wensi Wu (\href{mailto:ww382@cornell.edu}{ww382}) \hfill Project 3 \hspace{-3ex}
+  Kenneth Lim (\href{mailto:kl545@cornell.edu}{kl545}), Batu Inal (\href{mailto:bi49@cornell.edu}{bi49}), Wensi Wu (\href{mailto:ww382@cornell.edu}{ww382}) \hfill Project 3 Final Report\hspace{-3ex}
   \end{framed}
   \section{Domain Decomposition}
-  \section{Parallelism}
+  We implement a tiled version of the Floyd-Warshall algorithm that builds on the blocking concept investigated by-and-large in the mid-term report. At each step, the algorithm traverses the diagonal of the adjacency matrix, first expanding computation outwards in the four cardinal directions, and then into four quadrants. This decomposition subdivides the loop structure of the naive Floyd-Warshall implementation, giving us additional opportunities for vectorization and parallelism.
+
+  The size $B$ of each block is chosen to be such that a triplet of such blocks fits within the L3 cache, i.e.$3B^2 = \textrm{L_3}$. This works out to a value of 64. Within each block, we employ a secondary level of partioning using with a ``block'' size of 16 when iterating through the loop. This ensures that the operands of the inner loop fit within the L2 cache.
+
+
+  \section{Parallelism and Offloading}
   \section{Scaling Studies}
 \end{document}
