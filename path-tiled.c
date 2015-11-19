@@ -26,7 +26,7 @@
 #endif
 
 #ifndef BLOCK_SIZE
-  #define BLOCK_SIZE 5
+  #define BLOCK_SIZE 64
 #endif
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -131,12 +131,13 @@ void block_to_src(int i, int j, int ** restrict c, int ** restrict block) {
   __assume_aligned(block, ALIGN_BOUND);
 
   const int i_start = i * BLOCK_SIZE;
-  const int i_end = (i + 1) * BLOCK_SIZE;
-
   const int j_start = j * BLOCK_SIZE;
-  const int j_end = (j + 1) * BLOCK_SIZE;
 
-  // c[i_start:i_end][j_start:j_end] = block[0:BLOCK_SIZE][0:BLOCK_SIZE];
+  for (int row = 0; row < BLOCK_SIZE; ++row) {
+    for (int col = 0; col < BLOCK_SIZE; ++col) {
+      c[i_start + row][j_start + col] = block[row][col];
+    }
+  }
 }
 
 void fwi_abc(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
@@ -189,44 +190,39 @@ void fwt(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
   for (int k = 0; k < num_blocks; ++k) {
     src_to_block(k, k, c, c_kk);
       fwi(BLOCK_SIZE, c_kk, c_kk, c_kk);
-
-      char name[100];
-      snprintf(name, 100, "c_kk_%d.dump", k);
-      dump_array(BLOCK_SIZE, c_kk, name);
-
     block_to_src(k, k, c, c_kk);
 
-    // for (int j = 0; j < num_blocks; ++j) {
-    //   if (j != k) {
-    //     src_to_block(k, j, c, c_kj);
-    //       fwi(BLOCK_SIZE, c_kk, c_kj, c_kj);
-    //     block_to_src(k, j, c, c_kj);
-    //   }
-    // }
-    //
-    // for (int i = 0; i < num_blocks; ++i) {
-    //   if (i != k) {
-    //     src_to_block(i, k, c, c_ik);
-    //       fwi(BLOCK_SIZE, c_ik, c_kk, c_ik);
-    //     block_to_src(i, k, c, c_ik);
-    //   }
-    // }
-    //
-    // for (int i = 0; i < num_blocks; ++i) {
-    //   src_to_block(i, k, c, c_ik);
-    //
-    //   for (int j = 0; j < num_blocks; ++j) {
-    //     if (i != k && j != k) {
-    //       src_to_block(i, j, c, c_ij);
-    //       src_to_block(k, j, c, c_kj);
-    //         fwi_abc(BLOCK_SIZE, c_ik, c_kj, c_ij);
-    //       block_to_src(i, j, c, c_ij);
-    //       block_to_src(k, j, c, c_kj);
-    //     }
-    //   }
-    //
-    //   block_to_src(i, k, c, c_ik);
-    // }
+    #pragma omp parallel for
+    for (int j = 0; j < num_blocks; ++j) {
+      if (j != k) {
+        src_to_block(k, j, c, c_kj);
+          fwi(BLOCK_SIZE, c_kk, c_kj, c_kj);
+        block_to_src(k, j, c, c_kj);
+      }
+    }
+
+    #pragma omp parallel for
+    for (int i = 0; i < num_blocks; ++i) {
+      if (i != k) {
+        src_to_block(i, k, c, c_ik);
+          fwi(BLOCK_SIZE, c_ik, c_kk, c_ik);
+        block_to_src(i, k, c, c_ik);
+      }
+    }
+
+    for (int i = 0; i < num_blocks; ++i) {
+      for (int j = 0; j < num_blocks; ++j) {
+        if (i != k && j != k) {
+          src_to_block(i, j, c, c_ij);
+          src_to_block(i, k, c, c_ik);
+          src_to_block(k, j, c, c_kj);
+            fwi_abc(BLOCK_SIZE, c_ik, c_kj, c_ij);
+          block_to_src(i, j, c, c_ij);
+          block_to_src(i, k, c, c_ik);
+          block_to_src(k, j, c, c_kj);
+        }
+      }
+    }
   }
 
   // Clean-up scratch arrays

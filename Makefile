@@ -34,6 +34,9 @@ path-base.o: path-base.c
 path-blocked.o: path-blocked.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
+path-tiled.o: path-tiled.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
 path-mpi.x: path-mpi.o mt19937p.o
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 

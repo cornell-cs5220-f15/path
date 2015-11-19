@@ -202,8 +202,8 @@ LOOP BEGIN at path-tiled.c(90,14) inlined into path-tiled.c(239,3)
    remark #15527: loop was not vectorized: function call to _mm_malloc(size_t, size_t) cannot be vectorized   [ path-tiled.c(36,19) ]
 LOOP END
 
-LOOP BEGIN at path-tiled.c(189,3) inlined into path-tiled.c(239,3)
-   remark #15520: loop was not vectorized: loop with early exits cannot be vectorized unless it meets search loop idiom criteria
+LOOP BEGIN at path-tiled.c(190,3) inlined into path-tiled.c(239,3)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
 
    LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
       remark #15344: loop was not vectorized: vector dependence prevents vectorization
@@ -212,30 +212,30 @@ LOOP BEGIN at path-tiled.c(189,3) inlined into path-tiled.c(239,3)
 
       LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
          remark #15344: loop was not vectorized: vector dependence prevents vectorization
-         remark #15346: vector dependence: assumed OUTPUT dependence between c line 172 and c line 172
-         remark #15346: vector dependence: assumed OUTPUT dependence between c line 172 and c line 172
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
 
-         LOOP BEGIN at path-tiled.c(169,7) inlined into path-tiled.c(239,3)
+         LOOP BEGIN at path-tiled.c(170,7) inlined into path-tiled.c(239,3)
             remark #15344: loop was not vectorized: vector dependence prevents vectorization
-            remark #15346: vector dependence: assumed OUTPUT dependence between c line 172 and c line 172
-            remark #15346: vector dependence: assumed OUTPUT dependence between c line 172 and c line 172
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
 
-            LOOP BEGIN at path-tiled.c(170,9) inlined into path-tiled.c(239,3)
+            LOOP BEGIN at path-tiled.c(171,9) inlined into path-tiled.c(239,3)
                remark #15344: loop was not vectorized: vector dependence prevents vectorization
-               remark #15346: vector dependence: assumed FLOW dependence between c line 172 and c line 172
-               remark #15346: vector dependence: assumed ANTI dependence between c line 172 and c line 172
+               remark #15346: vector dependence: assumed FLOW dependence between c line 173 and c line 173
+               remark #15346: vector dependence: assumed ANTI dependence between c line 173 and c line 173
 
-               LOOP BEGIN at path-tiled.c(171,11) inlined into path-tiled.c(239,3)
+               LOOP BEGIN at path-tiled.c(172,11) inlined into path-tiled.c(239,3)
                LOOP END
             LOOP END
          LOOP END
       LOOP END
 
-      LOOP BEGIN at path-tiled.c(168,5) inlined into path-tiled.c(239,3)
+      LOOP BEGIN at path-tiled.c(169,5) inlined into path-tiled.c(239,3)
       LOOP END
    LOOP END
 
-   LOOP BEGIN at path-tiled.c(167,3) inlined into path-tiled.c(239,3)
+   LOOP BEGIN at path-tiled.c(168,3) inlined into path-tiled.c(239,3)
    LOOP END
 
    LOOP BEGIN at path-tiled.c(51,3) inlined into path-tiled.c(239,3)
@@ -249,6 +249,323 @@ LOOP BEGIN at path-tiled.c(189,3) inlined into path-tiled.c(239,3)
          remark #15527: loop was not vectorized: function call to fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized
       LOOP END
    LOOP END
+
+   LOOP BEGIN at path-tiled.c(136,3) inlined into path-tiled.c(239,3)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+      remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+
+      LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+         remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(200,5) inlined into path-tiled.c(239,3)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+         remark #15542: loop was not vectorized: inner loop was already vectorized
+
+         LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+            remark #15389: vectorization support: reference block has unaligned access
+            remark #15389: vectorization support: reference l has unaligned access
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15300: LOOP WAS VECTORIZED
+            remark #15450: unmasked unaligned unit stride loads: 1 
+            remark #15451: unmasked unaligned unit stride stores: 1 
+            remark #15475: --- begin vector loop cost summary ---
+            remark #15476: scalar loop cost: 6 
+            remark #15477: vector loop cost: 2.000 
+            remark #15478: estimated potential speedup: 1.500 
+            remark #15479: lightweight vector operations: 2 
+            remark #15481: heavy-overhead vector operations: 1 
+            remark #15488: --- end vector loop cost summary ---
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+         <Remainder>
+         LOOP END
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(168,3) inlined into path-tiled.c(239,3)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+
+         LOOP BEGIN at path-tiled.c(169,5) inlined into path-tiled.c(239,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+
+            LOOP BEGIN at path-tiled.c(170,7) inlined into path-tiled.c(239,3)
+               remark #15344: loop was not vectorized: vector dependence prevents vectorization
+               remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+               remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+
+               LOOP BEGIN at path-tiled.c(171,9) inlined into path-tiled.c(239,3)
+                  remark #15344: loop was not vectorized: vector dependence prevents vectorization
+                  remark #15346: vector dependence: assumed FLOW dependence between c line 173 and c line 173
+                  remark #15346: vector dependence: assumed ANTI dependence between c line 173 and c line 173
+
+                  LOOP BEGIN at path-tiled.c(172,11) inlined into path-tiled.c(239,3)
+                  LOOP END
+               LOOP END
+            LOOP END
+         LOOP END
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(136,3) inlined into path-tiled.c(239,3)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+         remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+            remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(208,5) inlined into path-tiled.c(239,3)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+         remark #15542: loop was not vectorized: inner loop was already vectorized
+
+         LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+            remark #15389: vectorization support: reference block has unaligned access
+            remark #15389: vectorization support: reference l has unaligned access
+            remark #15381: vectorization support: unaligned access used inside loop body
+            remark #15300: LOOP WAS VECTORIZED
+            remark #15450: unmasked unaligned unit stride loads: 1 
+            remark #15451: unmasked unaligned unit stride stores: 1 
+            remark #15475: --- begin vector loop cost summary ---
+            remark #15476: scalar loop cost: 6 
+            remark #15477: vector loop cost: 2.000 
+            remark #15478: estimated potential speedup: 1.500 
+            remark #15479: lightweight vector operations: 2 
+            remark #15481: heavy-overhead vector operations: 1 
+            remark #15488: --- end vector loop cost summary ---
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+         <Remainder>
+         LOOP END
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(168,3) inlined into path-tiled.c(239,3)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+
+         LOOP BEGIN at path-tiled.c(169,5) inlined into path-tiled.c(239,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+
+            LOOP BEGIN at path-tiled.c(170,7) inlined into path-tiled.c(239,3)
+               remark #15344: loop was not vectorized: vector dependence prevents vectorization
+               remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+               remark #15346: vector dependence: assumed OUTPUT dependence between c line 173 and c line 173
+
+               LOOP BEGIN at path-tiled.c(171,9) inlined into path-tiled.c(239,3)
+                  remark #15344: loop was not vectorized: vector dependence prevents vectorization
+                  remark #15346: vector dependence: assumed FLOW dependence between c line 173 and c line 173
+                  remark #15346: vector dependence: assumed ANTI dependence between c line 173 and c line 173
+
+                  LOOP BEGIN at path-tiled.c(172,11) inlined into path-tiled.c(239,3)
+                  LOOP END
+               LOOP END
+            LOOP END
+         LOOP END
+      LOOP END
+
+      LOOP BEGIN at path-tiled.c(136,3) inlined into path-tiled.c(239,3)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+         remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+            remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(216,5) inlined into path-tiled.c(239,3)
+      remark #15542: loop was not vectorized: inner loop was already vectorized
+
+      LOOP BEGIN at path-tiled.c(217,7) inlined into path-tiled.c(239,3)
+         remark #15542: loop was not vectorized: inner loop was already vectorized
+
+         LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+            remark #15542: loop was not vectorized: inner loop was already vectorized
+
+            LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+               remark #15389: vectorization support: reference block has unaligned access
+               remark #15389: vectorization support: reference l has unaligned access
+               remark #15381: vectorization support: unaligned access used inside loop body
+               remark #15300: LOOP WAS VECTORIZED
+               remark #15450: unmasked unaligned unit stride loads: 1 
+               remark #15451: unmasked unaligned unit stride stores: 1 
+               remark #15475: --- begin vector loop cost summary ---
+               remark #15476: scalar loop cost: 6 
+               remark #15477: vector loop cost: 2.000 
+               remark #15478: estimated potential speedup: 1.500 
+               remark #15479: lightweight vector operations: 2 
+               remark #15481: heavy-overhead vector operations: 1 
+               remark #15488: --- end vector loop cost summary ---
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+            <Remainder>
+            LOOP END
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+            remark #15542: loop was not vectorized: inner loop was already vectorized
+
+            LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+               remark #15389: vectorization support: reference block has unaligned access
+               remark #15389: vectorization support: reference l has unaligned access
+               remark #15381: vectorization support: unaligned access used inside loop body
+               remark #15300: LOOP WAS VECTORIZED
+               remark #15450: unmasked unaligned unit stride loads: 1 
+               remark #15451: unmasked unaligned unit stride stores: 1 
+               remark #15475: --- begin vector loop cost summary ---
+               remark #15476: scalar loop cost: 6 
+               remark #15477: vector loop cost: 2.000 
+               remark #15478: estimated potential speedup: 1.500 
+               remark #15479: lightweight vector operations: 2 
+               remark #15481: heavy-overhead vector operations: 1 
+               remark #15488: --- end vector loop cost summary ---
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(125,25) inlined into path-tiled.c(239,3)
+            <Remainder>
+            LOOP END
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(148,3) inlined into path-tiled.c(239,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 154 and c line 154
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 154 and c line 154
+
+            LOOP BEGIN at path-tiled.c(149,5) inlined into path-tiled.c(239,3)
+               remark #15344: loop was not vectorized: vector dependence prevents vectorization
+               remark #15346: vector dependence: assumed OUTPUT dependence between c line 154 and c line 154
+               remark #15346: vector dependence: assumed OUTPUT dependence between c line 154 and c line 154
+
+               LOOP BEGIN at path-tiled.c(150,7) inlined into path-tiled.c(239,3)
+                  remark #15344: loop was not vectorized: vector dependence prevents vectorization
+                  remark #15346: vector dependence: assumed OUTPUT dependence between c line 154 and c line 154
+                  remark #15346: vector dependence: assumed OUTPUT dependence between c line 154 and c line 154
+
+                  LOOP BEGIN at path-tiled.c(151,9) inlined into path-tiled.c(239,3)
+                     remark #15423: loop was not vectorized: has only one iteration
+
+                     LOOP BEGIN at path-tiled.c(152,11) inlined into path-tiled.c(239,3)
+                        remark #15344: loop was not vectorized: vector dependence prevents vectorization
+                        remark #15346: vector dependence: assumed FLOW dependence between c line 154 and c line 154
+                        remark #15346: vector dependence: assumed ANTI dependence between c line 154 and c line 154
+
+                        LOOP BEGIN at path-tiled.c(153,13) inlined into path-tiled.c(239,3)
+                        LOOP END
+                     LOOP END
+                  LOOP END
+               LOOP END
+            LOOP END
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(136,3) inlined into path-tiled.c(239,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+            remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+               remark #15344: loop was not vectorized: vector dependence prevents vectorization
+               remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+               remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+         LOOP END
+
+         LOOP BEGIN at path-tiled.c(136,3) inlined into path-tiled.c(239,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+            remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+               remark #15344: loop was not vectorized: vector dependence prevents vectorization
+               remark #15346: vector dependence: assumed FLOW dependence between l line 138 and l line 138
+               remark #15346: vector dependence: assumed ANTI dependence between l line 138 and l line 138
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+
+            LOOP BEGIN at path-tiled.c(137,5) inlined into path-tiled.c(239,3)
+            LOOP END
+         LOOP END
+      LOOP END
+   LOOP END
 LOOP END
 
 LOOP BEGIN at path-tiled.c(98,3) inlined into path-tiled.c(239,3)
@@ -265,5 +582,65 @@ LOOP END
 
 LOOP BEGIN at path-tiled.c(98,3) inlined into path-tiled.c(239,3)
    remark #15527: loop was not vectorized: function call to _mm_free(void *) cannot be vectorized   [ path-tiled.c(98,31) ]
+LOOP END
+===========================================================================
+
+Begin optimization report for: src_to_block(int, int, int **__restrict__, int **__restrict__)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at path-tiled.c(125,25)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at path-tiled.c(125,25)
+      remark #15389: vectorization support: reference block has unaligned access
+      remark #15389: vectorization support: reference c has unaligned access
+      remark #15381: vectorization support: unaligned access used inside loop body
+      remark #15300: LOOP WAS VECTORIZED
+      remark #15450: unmasked unaligned unit stride loads: 1 
+      remark #15451: unmasked unaligned unit stride stores: 1 
+      remark #15475: --- begin vector loop cost summary ---
+      remark #15476: scalar loop cost: 6 
+      remark #15477: vector loop cost: 2.000 
+      remark #15478: estimated potential speedup: 1.500 
+      remark #15479: lightweight vector operations: 2 
+      remark #15481: heavy-overhead vector operations: 1 
+      remark #15488: --- end vector loop cost summary ---
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(125,25)
+   <Remainder>
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: block_to_src(int, int, int **__restrict__, int **__restrict__)
+
+    Report from: Vector optimizations [vec]
+
+
+LOOP BEGIN at path-tiled.c(136,3)
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed FLOW dependence between c line 138 and c line 138
+   remark #15346: vector dependence: assumed ANTI dependence between c line 138 and c line 138
+
+   LOOP BEGIN at path-tiled.c(137,5)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed FLOW dependence between c line 138 and c line 138
+      remark #15346: vector dependence: assumed ANTI dependence between c line 138 and c line 138
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(137,5)
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(137,5)
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(137,5)
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(137,5)
+   LOOP END
 LOOP END
 ===========================================================================
