@@ -55,11 +55,20 @@ int square_columns(int n,               // Number of nodes
     //     }
     // }
 
+    // copy optimization
+    // int* restrict temp = malloc(n * n * sizeof(int));
+    // for (int i = 0; i < n; i++) {
+    //     for (int j = 0; j < n; j++) {
+    //         temp[i * n + j] = l[j * n + i];
+    //     }
+    // }
+
     int done = 1;
     for (int j = j_min; j < j_max; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = l[j*n+i];
             for (int k = 0; k < n; ++k) {
+                // int lik = temp[i*n+k];
                 int lik = l[k*n+i];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
@@ -70,6 +79,7 @@ int square_columns(int n,               // Number of nodes
         lnew[(j-j_min)*n+i] = lij;
         }
     }
+    // free(temp);
     return done;
 }
 
