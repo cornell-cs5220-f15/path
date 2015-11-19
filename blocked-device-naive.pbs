@@ -2,7 +2,7 @@
 
 #PBS -l nodes=en-cs-totient-05.coecis.cornell.edu:ppn=24
 #PBS -l walltime=0:30:00
-#PBS -N phitown
+#PBS -N phitown-naive
 #PBS -j oe
 
 # default args / control over what is submitted
