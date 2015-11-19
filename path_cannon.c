@@ -9,12 +9,18 @@
 #include <mpi.h>
 
 #define BLOCK_SIZE 64
-#define TAG_DIST_A 11
-#define TAG_DIST_B 12
-#define TAG_DIST_C 13
-#define TAG_RESULT 20
-#define TAG_DONE 31
-#define TAG_ALL_DONE 32
+
+#define TAG_DIST_INIT_A 11
+#define TAG_DIST_INIT_B 12
+#define TAG_DIST_INIT_C 13
+
+#define TAG_DIST_A 21
+#define TAG_DIST_B 22
+#define TAG_DIST_C 23
+
+#define TAG_RESULT 50
+#define TAG_DONE 51
+#define TAG_ALL_DONE 52
 
 //ldoc on
 
@@ -137,7 +143,6 @@ int square( int worldsize, int procs,
             int * restrict l,     // Partial distance at step s
             int * restrict lnew)  // Partial distance at step s+1
 {
-    printf("f16%X\n", fletcher16(l, n*n));
     // Size logistics
     int done = 1;
     int blocks = procs;
@@ -173,7 +178,6 @@ int square( int worldsize, int procs,
     }
     
     // Send A and B blocks in appropriate order
-    printf("r0send\n");
     for (int b = 0; b < totalblocks; ++b) {
         int target = b + 1;
         
@@ -185,25 +189,22 @@ int square( int worldsize, int procs,
         bi = i;
         bj = j;
         
-        printf("r0sendc%d\n", target);
         MPI_Send(CL + (bi + bj * blocks) * totalblocksize,
-            totalblocksize, MPI_INT, target, TAG_DIST_C, MPI_COMM_WORLD);
+            totalblocksize, MPI_INT, target, TAG_DIST_INIT_C, MPI_COMM_WORLD);
         
         // Block A
         bi = i;
         bj = (j - i + blocks) % blocks;
         
-        printf("r0senda%d\n", target);
         MPI_Send(CL + (bi + bj * blocks) * totalblocksize,
-            totalblocksize, MPI_INT, target, TAG_DIST_A, MPI_COMM_WORLD);
+            totalblocksize, MPI_INT, target, TAG_DIST_INIT_A, MPI_COMM_WORLD);
         
         // Block B
         bi = (i - j + blocks) % blocks;
         bj = j;
         
-        printf("r0sendb%d\n", target);
         MPI_Send(CL + (bi + bj * blocks) * totalblocksize,
-            totalblocksize, MPI_INT, target, TAG_DIST_B, MPI_COMM_WORLD);
+            totalblocksize, MPI_INT, target, TAG_DIST_INIT_B, MPI_COMM_WORLD);
     }
     
     // Receive results
@@ -238,12 +239,10 @@ int square( int worldsize, int procs,
     free(res);
     
     // Broadcast done
-    printf("r0bc%d\n", done);
-    //done = 1; // ===== DEBUG =====
     isdone[0] = done;
     MPI_Bcast(isdone, 1, MPI_INT, 0, MPI_COMM_WORLD);
     free(isdone);
-    printf("f16%X\n", fletcher16(lnew, n*n));
+    //printf("f16%X\n", fletcher16(lnew, n*n));
     
     return done;
 }
@@ -251,7 +250,6 @@ int square( int worldsize, int procs,
 // Wait for cannon's algorithm until done
 void cannon(int worldsize, int rank, int procs, int n)
 {
-    printf("\nr%d\n", rank);
     // Size logistics
     int done = 1;
     int blocks = procs;
@@ -265,8 +263,6 @@ void cannon(int worldsize, int rank, int procs, int n)
     int bj = current / blocks;
     int atarget = ((bi - 1 + blocks) % blocks) + bj * blocks + 1;
     int btarget = bi + ((bj - 1 + blocks) % blocks) * blocks + 1;
-    printf("r%dat%d\n", rank, atarget);
-    printf("r%dbt%d\n", rank, btarget);
     
     int * A __attribute__((aligned(64))) =
         (int *) malloc(totalblocksize * sizeof(int));
@@ -281,34 +277,21 @@ void cannon(int worldsize, int rank, int procs, int n)
         int done = 1;
         
         // Receive C
-        printf("r%dwc\n", rank);
         MPI_Recv(C, totalblocksize, MPI_INT, MPI_ANY_SOURCE,
-            TAG_DIST_C, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("r%drc\n", rank);
+            TAG_DIST_INIT_C, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        // Receive initial A and B
+        MPI_Recv(A, totalblocksize, MPI_INT, MPI_ANY_SOURCE,
+            TAG_DIST_INIT_A, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(B, totalblocksize, MPI_INT, MPI_ANY_SOURCE,
+            TAG_DIST_INIT_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         
         // The total number of swaps is constant
         for (int s = 0; s < blocks; ++s) {
-            // Receive new A and Bs
-            // Block A
-            printf("r%dwa\n", rank);
-            MPI_Recv(A, totalblocksize, MPI_INT, MPI_ANY_SOURCE,
-                TAG_DIST_A, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("r%dra\n", rank);
-            printf("r%dfa16%X\n", rank, fletcher16(A, totalblocksize));
-            // Block B
-            printf("r%dwb\n", rank);
-            MPI_Recv(B, totalblocksize, MPI_INT, MPI_ANY_SOURCE,
-                TAG_DIST_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("r%drb\n", rank);
-            printf("r%dfb16%X\n", rank, fletcher16(B, totalblocksize));
-            
             // For now just do the basic square
             int ndone = basic_square(blocksize, A, B, C);
             done = ndone && done;
             
-            printf("r%dfc16%X\n", rank, fletcher16(C, totalblocksize));
-            
-            printf("r%ddone\n", rank);
+            //printf("r%dfc16%X\n", rank, fletcher16(C, totalblocksize));
             
             if (s != blocks - 1) {
                 // Send A and B to next processors
@@ -318,7 +301,16 @@ void cannon(int worldsize, int rank, int procs, int n)
                 // Block B
                 MPI_Send(B, totalblocksize, MPI_INT, btarget,
                     TAG_DIST_B, MPI_COMM_WORLD);
-                printf("r%dsend\n", rank);
+                
+                // Receive new A and Bs
+                // Block A
+                MPI_Recv(A, totalblocksize, MPI_INT, MPI_ANY_SOURCE,
+                    TAG_DIST_A, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                //printf("r%dfa16%X\n", rank, fletcher16(A, totalblocksize));
+                // Block B
+                MPI_Recv(B, totalblocksize, MPI_INT, MPI_ANY_SOURCE,
+                    TAG_DIST_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                //printf("r%dfb16%X\n", rank, fletcher16(B, totalblocksize));
             }
         }
         
@@ -328,16 +320,12 @@ void cannon(int worldsize, int rank, int procs, int n)
         isdone[0] = done;
         MPI_Send(isdone, 1, MPI_INT, 0,
             TAG_DONE, MPI_COMM_WORLD);
-        printf("r%dres\n", rank);
         
         // Check if done
         MPI_Bcast(isdone, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        printf("r%dalldone\n", rank);
-        //isdone[0] = 1; // ===== DEBUG =====
     }
     
     // Completed
-    printf("r%dcomplete\n", rank);
 }
 
 /**
@@ -355,7 +343,6 @@ void cannon(int worldsize, int rank, int procs, int n)
  */
 void shortest_paths(int worldsize, int rank, int procs, int n, int* restrict l)
 {
-    printf("\nr%d\n", rank);
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
@@ -370,7 +357,6 @@ void shortest_paths(int worldsize, int rank, int procs, int n, int* restrict l)
         done = square(worldsize, procs, n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    printf("%d\n", count);
     free(lnew);
     deinfinitize(n, l);
 }
