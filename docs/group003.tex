@@ -379,36 +379,7 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 		\label{mpi_ws}
 	\end{center}
 \end{figure}
-\noindent From the weak scaling, it can once again be seen that large communication costs are associated with using threads that span two Xeon chips by comparing the weak scaling at 8 threads and 16 threads. The poor performance indicates that if we desire to use the MPI parallelization as anything more than a message passer for OpenMP thread teams running on Xeon Phi's, significant effort should be spent on improving parallelization through reducing the communication frequency and the size of data communicated. The higher than one weak scaling for two threads with a probability of 0.1 is once again due to the fact that there is 302 less nodes in the system per processor. We are still unsure of the cause and do not yet have an explanation for why the super-linear scaling displayed in the MPI version is for a probability of 0.10, while for the OpenMP version it is super-linear for a probability of 0.025. 
-
-
-\section{Offloading to the Phi's}
-
-The following compilation hint has been defined:
-
-\begin{lstlisting}
-#ifdef __MIC__
-    #define BYTE_ALIGN 64
-#else
-    #define BYTE_ALIGN 32
-#endif
-\end{lstlisting}
-
-\noindent This conditional definition is to account for the different preferred byte alignment of the Node (Xeon) and the Device (Phi).  We need to more carefully inspect the legitimacy of this tactic, because what this will do currently is the following:
-
-\begin{enumerate}[1.]
-  \item When the code is compiled for the Node, the byte alignment will be 32.
-  \item When the code is compiled for the Device, the byte alignment will be 64.
-\end{enumerate}
-
-\noindent This is because, where \texttt{\#pragma offload target(mic)} sections are concerned, the code is compiled in two passes by \texttt{icc} -- once for the Node and once for the Device.  Although the above specified alignments are the respective preferred alignments, we are breaking the rule of enforcement here and will have to revisit how to appropriately do this.  Since we aim to send the majority of the computation on the Phi's, we may elect to define the byte alignment to be 64 to guarantee that the Phi gets its preferences.\\
-
-\noindent Regardless, offloading this algorithm to the Phi's will be straightforward.  As with \texttt{matmul-}, we don't actually need to know anything about our neighboring blocks to carry forward with the computation.  The key will be delegating work evenly, and ensuring that memory is re-used on the Phi as much as possible.  There will invariably be an overhead associated with the synchronization between the two Phi's at each step (e.g. while checking the \texttt{done} flag), however we feel that for sufficiently large problem sizes we will see a good increase in speed by wielding the Phi's to our advantage.\\
-
-\noindent We will employ these tactics after we have finished bringing in the \texttt{matmul-} style sub-blocking into our code.
-
-%\section{Summary and Future Work}
-%Thus far, we have optimized the preliminary code after hand implementing timing into the program for profiling. Using these optimizations while keeping the OpenMP parallelization, we then performed weak and strong scaling studies to assess the parallelization of the algorithm and to have a comparison for an MPI implementation. We then used the optimizations previously incorporated into the OpenMP parallelized framework to parallelize the algorithm with MPI, which forced us to switch to a distributed memory paradigm. In both the strong and weak scaling studies, we have seen that the original, OpenMP parallelized, algorithm exceeds the MPI version. For this reason, we will continue working on improving the OpenMP parallelized algorithm by offloading work to the Xeon Phi's. Once we have this working, we plan to use MPI to work as master processes that are solely responsible for communicating between nodes and offloading work to multiple Xeon Phi's. 
+\noindent From the weak scaling, it can once again be seen that large communication costs are associated with using threads that span two Xeon chips by comparing the weak scaling at 8 threads and 16 threads. The poor performance indicates that if we desire to use the MPI parallelization as anything more than a message passer for OpenMP thread teams running on Xeon Phi's, significant effort should be spent on improving parallelization through reducing the communication frequency and the size of data communicated. The higher than one weak scaling for two threads with a probability of 0.1 is once again due to the fact that there is 302 less nodes in the system per processor. We are still unsure of the cause and do not yet have an explanation for why the super-linear scaling displayed in the MPI version is for a probability of 0.10, while for the OpenMP version it is super-linear for a probability of 0.025.  
 
 \section{Post Initial Report Work}
 \subsection{Blocking of the \texttt{square} function}
@@ -522,5 +493,125 @@ The following compilation hint has been defined:
 \end{figure}
 
 \noindent By comparing these figures to the original OpenMP scaling figures (\ref{omp_ss} and \ref{omp_ws}), it is obvious that blocking had no effect on the parallel efficiency. Once again, we are not sure why strong scaling efficiency displays values greater than one, however it is possible that this is due to node inhomogeneity on totient, since each job was not submitted to a specific node. For the weak scaling case, this greater than one scaling is due to the limited communication costs when using two threads relative to one, coupled by the fact that the problem is not exactly scaled, meaning with two threads, each thread has 302 less nodes compared to the serial case, as discussed before. 
+
+\subsection{Offloading to the Phi's}
+
+\subsubsection{Compilation Assistance}
+
+Since the Xeon Phi has a larger set of registers, it's preferred data alignment is 64 bytes.  As such, the files that offload work to the Phi (\texttt{path-blocked-device.c} and \texttt{path-blocked-naive.c}) define the following compilation hints:
+
+\begin{lstlisting}
+#define BYTE_ALIGN  64
+#define width_size  512
+#define height_size 128
+\end{lstlisting}
+
+\noindent Originally this was in a conditional \texttt{\#ifdef \_\_MIC\_\_} region, but after careful thought and analysis we conclude that since no real work was intended for the Nodes in these files, the conditional definitions had little meaning, for the following reasons
+
+\begin{enumerate}[1.]
+  \item When the code is compiled for the Node, the byte alignment will be 32.
+  \item When the code is compiled for the Device, the byte alignment will be 64.
+\end{enumerate}
+
+\noindent This is because, where \texttt{\#pragma offload target(mic)} and \texttt{\_\_declspec(target(mic))} sections are concerned, the code is compiled in two passes by \texttt{icc} -- once for the Node and once for the Device.  Although the Node and Phi have different preferred alignments, the conditional definition violates what we assume to be true in the Phi code.  You cannot allocate data on the Node with a 32 byte alignment and assume it is 64 byte aligned after things get transferred to the Phi.\\
+
+\noindent Similar to before, to enable portability to environments where \texttt{icc} is not present, we create the following definitions
+
+\begin{lstlisting}
+#ifdef __INTEL_COMPILER
+    #define DEF_ALIGN(x) __declspec(align((x)))
+    #define USE_ALIGN(var, align) __assume_aligned((var), (align));
+    #define TARGET_MIC __declspec(target(mic))
+#else // GCC
+    #define DEF_ALIGN(x) __attribute__ ((aligned((x))))
+    /* __builtin_assume_align is unreliabale... */
+    #define USE_ALIGN(var, align) ((void)0)
+    #define TARGET_MIC /* n/a */
+#endif
+\end{lstlisting}
+
+\noindent Where the new addition is \texttt{TARGET\_MIC}.  This allows us to declare functions targeted for the Phi in the same way for both \texttt{icc} and \texttt{gcc}:
+
+\begin{lstlisting}
+TARGET_MIC
+void solve(int n,                    // Number of nodes
+           int * restrict orig_l,    // Partial distance at step s
+           ...
+\end{lstlisting}
+
+\noindent The last bit of information the compiler needs is the \texttt{include} and \texttt{define} statements at the top, which can be surrounded with the alternative approach for declaring Phi regions:
+
+\begin{lstlisting}
+#pragma offload_attribute(push, target(mic))
+#include <...>
+...
+#define ... ...
+...
+#pragma offload_attribute(pop)
+\end{lstlisting}
+
+\noindent Not all of the \texttt{include} statements necessarily need to be included, but this is simpler in that it enables more computation to be offloaded to the Phi in the future.
+
+\subsubsection{Offloading -- A Naive First Approach}
+
+\noindent With the same blocking code presented before, our first approach to offloading was to send the \texttt{square} function we identified as being the bottleneck of the algorithm straight to the Phi:
+
+\begin{lstlisting}
+#ifdef __INTEL_COMPILER
+#pragma offload target(mic:0)                                 \
+    in(n_threads)                                             \
+    in(n)                                                     \
+    in(n_width)                                               \
+    in(n_height)                                              \
+    inout(l    : length(n*n) alloc_if(first_iter) free_if(0)) \
+    inout(lnew : length(n*n) alloc_if(first_iter) free_if(0))
+#endif
+    done = square(n, l, lnew, n_width, n_height, n_threads);
+\end{lstlisting}
+
+\noindent The \texttt{INTEL\_COMPILER} condition was needed for \texttt{gcc} compilation, likely because of the line continuations.  All this does is specify the parameters to \texttt{square}, noting that for both \texttt{l} and \texttt{lnew} we need those results copied back to the host in this naive approach.\\
+
+\noindent The only optimization made here is recognizing that since this method is called potentially many times, we want to avoid allocating on the Phi each time.  On the first iteration we specify that the memory needs to be allocated, and for all other iterations we can keep the pointers that were allocated in the first run.  Correspondingly, though, it is important to free this memory outside of the \texttt{for(int done=0; !done;)} loop:
+
+\begin{lstlisting}
+#ifdef __INTEL_COMPILER
+    // free the phi memory used in the loop
+    #pragma offload_transfer target(mic:0)   \
+                    nocopy(l : free_if(1))   \
+                    nocopy(lnew : free_if(1))
+#endif
+\end{lstlisting}
+
+\noindent At this point we observe a key flaw in this approach.  There is no need to continue copying over \texttt{l} and \texttt{lnew} every time that \texttt{square} is called.  One option that would be simple to implement is to change the length specifiers
+
+\begin{lstlisting}
+inout(l    : length(first_iter*n*n) ...
+inout(lnew : length(first_iter*n*n) ...
+\end{lstlisting}
+
+\noindent This can be done because \texttt{first\_iter} will be \texttt{1} on the first iteration, and \texttt{0} for all other iterations.  The only extra piece of data that would be needed is a flag (say as a parameter to \texttt{square}) to indicate whethere this was an even or an odd iteration.  This will enable the usage of \texttt{l} and \texttt{lnew} on the Phi since they have already been allocated, but indicates to the dispatcher that no data needs to be copied.\\
+
+\noindent We present now a strong and weak scaling study demonstrating the results of this approach:
+
+\begin{center}
+	{\Huge PLOT PLOT PLOT}
+\end{center}
+
+\subsubsection{Offloading to the Phi -- A New Perspective}
+
+\noindent At this point, we decided that a more optimal implementation would be to avoid the Node driving the Phi computation altogether, and just use a single \texttt{offload target(mic)} statement that will not terminate until the results are in.  The major difference being to basically take the \texttt{for(int done=0; !done;)} loop and put it in \texttt{square}.  At this point the purpose of the method has changed enough that it warrants a renaming, with additional parameters:
+
+\begin{lstlisting}
+TARGET_MIC
+void solve(int n,                    // Number of nodes
+           int * restrict orig_l,    // Partial distance at step s
+           int * restrict orig_lnew, // Partial distance at step s+1
+           int n_width,              // Width (x direction) of block
+           int n_height,             // Height (y direction) of block
+           int n_threads,            // how many threads to use
+           int *copy_back) {         // copy back? 	
+\end{lstlisting}
+
+\noindent Where the new parameter of interest here is \texttt{int *copy\_back}.  This is just a single int that serves as a flag to the Node of whether the results of the computation ended on an even or an odd iteration, and therefore whether or not \texttt{lnew} needs to be copied back into \texttt{l} after the call to \texttt{solve} terminates inside of \texttt{shortest\_paths}.
 
 \end{document}

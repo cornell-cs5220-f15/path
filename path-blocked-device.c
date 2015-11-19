@@ -62,7 +62,7 @@
 TARGET_MIC
 void solve(int n,                    // Number of nodes
            int * restrict orig_l,    // Partial distance at step s
-           int * restrict orig_lnew, // Partial distance at step s+!
+           int * restrict orig_lnew, // Partial distance at step s+1
            int n_width,              // Width (x direction) of block
            int n_height,             // Height (y direction) of block
            int n_threads,            // how many threads to use
