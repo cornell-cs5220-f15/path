@@ -612,6 +612,69 @@ void solve(int n,                    // Number of nodes
            int *copy_back) {         // copy back? 	
 \end{lstlisting}
 
-\noindent Where the new parameter of interest here is \texttt{int *copy\_back}.  This is just a single int that serves as a flag to the Node of whether the results of the computation ended on an even or an odd iteration, and therefore whether or not \texttt{lnew} needs to be copied back into \texttt{l} after the call to \texttt{solve} terminates inside of \texttt{shortest\_paths}.
+\noindent Where the new parameter of interest here is \texttt{int *copy\_back}.  This is just a single int that serves as a flag to the Node of whether the results of the computation ended on an even or an odd iteration, and therefore whether or not \texttt{lnew} needs to be copied back into \texttt{l} after the call to \texttt{solve} terminates inside of \texttt{shortest\_paths}.\\
+
+\noindent To properly explain \texttt{copy\_back}, we will first explain the \texttt{solve} algorithm.  The method essentially amounts to the following changes:
+
+\begin{lstlisting}
+// since this is double buffering, we may have written the final results 
+// into the alternate orig_lnew, and therefore need to copy them
+// back at the end
+*copy_back = 0;
+
+// buffered variables
+int *l, *lnew;
+size_t step = 0;
+
+// while(!done)
+for(/* step = 0 */; /* true */ ; ++step) {
+    // setup double buffers
+    int even = step % 2;
+    if(even) {
+        l    = orig_l;
+        lnew = orig_lnew;
+    }
+    else {
+        l    = orig_lnew;
+        lnew = orig_l;
+    }
+
+    // Major Blocks
+    int done = 1;
+    #pragma omp parallel for
+    ... same blocking code ...
+    }// end Major Blocks (and omp parallel for)
+    if(done) break;
+}
+
+*copy_back = step % 2 == 0;
+\end{lstlisting}
+
+\noindent In theory, it would be much simpler to just have \texttt{copy\_back} be the return value of the \texttt{solve} function, but for whatever reason this would not compile.  Passing it as a pointer was a cheap hack to work around this issue.\\
+
+\noindent So all of this turns into the statement that if \texttt{solve} had an even number of iterations, this means that the results were written into \texttt{lnew} -- and need to be copied back, and if there were an odd number of iterations then the results were written into \texttt{l} -- and do not need to be copied back.\\
+
+\noindent Then in the \texttt{shortest\_paths} method, we can remove the \texttt{for(int done=0; !done;)} loop and instead just call one time
+
+\begin{lstlisting}
+// the phi code is double buffered; may need to copy back after
+int copy_back = -1;
+int *cb = &copy_back;
+
+#ifdef __INTEL_COMPILER
+#pragma offload target(mic:0)                            \
+        in(n_threads)                                    \
+        in(n)                                            \
+        in(n_width)                                      \
+        in(n_height)                                     \
+        inout(cb   : length(1)   alloc_if(1) free_if(1)) \
+        inout(l    : length(n*n) alloc_if(1) free_if(1)) \
+        inout(lnew : length(n*n) alloc_if(1) free_if(1))
+#endif
+solve(n, l, lnew, n_width, n_height, n_threads, cb);
+
+if(copy_back)
+    memcpy(l, lnew, n*n * sizeof(int));
+\end{lstlisting}
 
 \end{document}
