@@ -10,7 +10,7 @@
 # Or create a Makefile.in.xxx of your own!
 #
 
-PLATFORM=gcc
+PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
 .PHONY: exe clean realclean
@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path-mpi.x
+exe: path-mpi_blocked.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -37,6 +37,13 @@ path-mpi_untuned.x: path-mpi_untuned.o mt19937p.o
 
 path-mpi_untuned.o: path-mpi_untuned.c
 	$(MPICC) -c $(MPI_CFLAGS) $< 
+
+path-mpi_blocked.x: path-mpi_blocked.o mt19937p.o
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
+
+path-mpi_blocked.o: path-mpi_blocked.c
+	$(MPICC) -c $(MPI_CFLAGS) $< 
+
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 

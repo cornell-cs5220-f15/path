@@ -12,6 +12,18 @@
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE ((int) 32)
+#endif
+#ifndef ALIGNED_SIZE
+#define ALIGNED_SIZE ((int) 64)
+#endif
+
+int square_dgemm(const int M, const int N, const int *A, const int *B, int *C);
+void copy_optimize(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp);
+void copy_back(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp);
+int do_block(const int* restrict A_block, const int* restrict B_block, int* C_block);
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -52,39 +64,120 @@ int square_stripe(int n,               // Number of nodes
 {
     int done = 1;
     int end = min(n, (myid + 1) * ncolumns);
-/*       for (int i = 0; i < n; ++i) {
-            for (int j = myid * ncolumns; j < end; ++j) {
-            int lij = l[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[(j-)*n+i] = lij;
-        }
-  }
-*/
+    int lij, lik, lkj;
 
-    memcpy(lnew,l+n*myid*ncolumns,n*ncolumns*sizeof(int));
-    for (int k=0;k<n;++k){
-        for (int j = myid*ncolumns;j<end;j++){
-            int lkj = l[j*n+k];
-            for(int i = 0;i<n;++i){
-                int lik = l[k*n+i];
-                if(lik+lkj<lnew[(j-ncolumns*myid)*n+i]){
-                    lnew[(j-ncolumns*myid)*n+i] = lik+lkj;
-                    done = 0;
-                }
-            }
-        }
-    
-    }
+    int* restrict lst = (int*) calloc(n*ncolumns, sizeof(int));
+    memcpy(lst, l+n*myid*ncolumns,n*ncolumns*sizeof(int));
+    done = square_dgemm(n, ncolumns, l, lst, lnew);
 
   return done;
 }
+
+int square_dgemm(const int M, const int N, const int *A, const int *B, int *C)
+{
+    int done = 1, done_part;
+    const int m_blocks = M / BLOCK_SIZE + (M%BLOCK_SIZE? 1 : 0);
+    const int n_blocks = N / BLOCK_SIZE + (N%BLOCK_SIZE? 1 : 0);
+    const int Mc = BLOCK_SIZE * m_blocks;
+    const int Nc = BLOCK_SIZE * n_blocks;
+    int* A_cp = (int*) _mm_malloc(Mc*Mc*sizeof(int), ALIGNED_SIZE);
+    int* B_cp = (int*) _mm_malloc(Mc*Nc*sizeof(int), ALIGNED_SIZE);
+    int* C_cp = (int*) _mm_malloc(Mc*Nc*sizeof(int), ALIGNED_SIZE);
+    copy_optimize(M, m_blocks, M, m_blocks, A, A_cp);
+    copy_optimize(M, m_blocks, N, n_blocks, B, B_cp);
+    memcpy(C_cp, B_cp, Mc*Nc*sizeof(int));
+    int *A_block, *B_block, *C_block;
+    int bi, bj, bk;
+    for (bi = 0; bi < m_blocks; ++bi) {
+        for (bj = 0; bj < n_blocks; ++bj) {
+            for (bk = 0; bk < m_blocks; ++bk) {
+                A_block = A_cp + BLOCK_SIZE * BLOCK_SIZE * (bi * m_blocks + bk);
+                B_block = B_cp + BLOCK_SIZE * BLOCK_SIZE * (bk * n_blocks + bj);
+                C_block = C_cp + BLOCK_SIZE * BLOCK_SIZE * (bi * n_blocks + bj);
+                done_part = do_block(A_block, B_block, C_block);
+                done = min(done, done_part);
+            }
+        }
+    }
+    copy_back(M, m_blocks, N, n_blocks, C_cp, C);
+    _mm_free(A_cp);
+    _mm_free(B_cp);
+    _mm_free(C_cp);
+    return done;
+}
+
+void copy_optimize(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp )
+{
+    int Mc = BLOCK_SIZE * m_blocks;
+    int Nc = BLOCK_SIZE * n_blocks;
+    int i, j, I, J, ii, jj, id;
+    memset(cp, 0x3f3f3f3f, Mc * Nc * sizeof( int));
+    for (j = 0; j < N; ++j)
+    {
+        J = j / BLOCK_SIZE;
+        jj = j % BLOCK_SIZE;
+        for (i = 0; i < M; ++i)
+        {
+            I = i / BLOCK_SIZE;
+            ii = i % BLOCK_SIZE;
+            id = (I * n_blocks + J) * BLOCK_SIZE * BLOCK_SIZE + ii * BLOCK_SIZE + jj;
+            cp[id] = *(A++);
+        }
+    }
+    return;
+}
+
+void copy_back(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp)
+{
+    int i, j, I, J, ii, jj, id;
+    for (j = 0; j < N; ++j)
+    {
+        J = j / BLOCK_SIZE;
+        jj = j % BLOCK_SIZE;
+        for (i = 0; i < M; ++i)
+        {
+            I = i / BLOCK_SIZE;
+            ii = i % BLOCK_SIZE;
+            id = (I * n_blocks + J) * BLOCK_SIZE * BLOCK_SIZE + ii * BLOCK_SIZE + jj;
+            *(cp++) = A[id];
+        }
+    }
+}
+
+int do_block(const int* restrict A_block, const int* restrict B_block, int* C_block)
+{
+    int i, j, k;
+    int *Ci, *Bk;
+    int Aik, Bkj;
+    int done = 1;
+    __assume_aligned( A_block, ALIGNED_SIZE );
+    __assume_aligned( B_block, ALIGNED_SIZE );
+    __assume_aligned( C_block, ALIGNED_SIZE );
+
+    for (i = 0; i < BLOCK_SIZE; ++i)
+    {
+        Ci = C_block + i * BLOCK_SIZE;
+        __assume_aligned(Ci, ALIGNED_SIZE);
+        for (k = 0; k < BLOCK_SIZE; ++k)
+        {
+            Aik = A_block[i * BLOCK_SIZE + k];
+            Bk = B_block + k * BLOCK_SIZE;
+            __assume_aligned(Bk, ALIGNED_SIZE);
+            for (j = 0; j < BLOCK_SIZE; ++j)
+            {
+                //#pragma vector always
+                Bkj = Bk[j];
+                if (Aik + Bkj < Ci[j])
+                {
+                    done = 0;
+                    Ci[j] = Aik + Bkj;
+                }
+            }
+        }
+    }
+    return done;
+}
+
 
 /**
  *
@@ -148,6 +241,7 @@ static inline void deinfinitize(int n, int* l)
 
 void shortest_paths_mpi(int n, int* restrict l, int myid, int nproc)
 {
+    int count = 0;
     int done = 0, done_part;
     int ncolumns = n / nproc + (n % nproc? 1 : 0 );
     // Generate l_{ij}^0 from adjacency matrix representation
@@ -159,7 +253,7 @@ void shortest_paths_mpi(int n, int* restrict l, int myid, int nproc)
     }
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = (int*) calloc(n*ncolumns, sizeof(int));
     while (!done) {
         MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
         done_part = square_stripe(n, l, lnew, myid, ncolumns);
@@ -299,7 +393,7 @@ int main(int argc, char** argv)
     {
     t1 = MPI_Wtime();
 
-    printf("== MPI with %d threads\n", nproc);
+    printf("== MPI with %d threads with blocked graph\n", nproc);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
