@@ -43,13 +43,25 @@ int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
+    __assume_aligned(l, 64);
+    __assume_aligned(lnew, 64);
+
+    // copy optimization
+    int* restrict temp = _mm_malloc(n * n * sizeof(int), 64);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            temp[i * n + j] = l[j * n + i];
+        }
+    }
+
     int done = 1;
     #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
+                //int lik = l[k*n+i];
+                int lik = temp[i*n+k];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
@@ -59,6 +71,7 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
+    _mm_free(temp);
     return done;
 }
 
@@ -112,13 +125,15 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = _mm_malloc(n*n * sizeof(int), 64);
+    memset(lnew, 0, n*n * sizeof(int));
+
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    free(lnew);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -135,7 +150,8 @@ void shortest_paths(int n, int* restrict l)
 
 int* gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    int* l = _mm_malloc(n*n * sizeof(int), 64);
+    memset(l, 0, n*n * sizeof(int));
     struct mt19937p state;
     sgenrand(omp_get_wtime(), &state);
     //sgenrand(10302011UL, &state);
@@ -246,6 +262,6 @@ int main(int argc, char** argv)
         write_matrix(ofname, n, l);
 
     // Clean up
-    free(l);
+    _mm_free(l);
     return 0;
 }
