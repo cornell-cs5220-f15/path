@@ -32,6 +32,18 @@ path-openmp.x: path-openmp.o mt19937p.o
 path-openmp.o: path-openmp.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
+path-tuning.x: path-tuning.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-tuning.o: path-tuning.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+path-14.x: path-14.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-14.o: path-14.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
 path-mpi.x: path-mpi.o mt19937p.o
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
