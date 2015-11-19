@@ -22,13 +22,7 @@
 #include <unistd.h>
 #include "mt19937p.h"
 #include <mpi.h>
-#if defined _PARALLEL_DEVICE
-#pragma offload_attribute(push,target(mic))
-#endif
 #include <immintrin.h>
-#if defined _PARALLEL_DEVICE
-#pragma offload_attribute(pop)
-#endif
 
 // Global definitions
 
@@ -39,7 +33,6 @@
 // we're running on. Also set the corresponding AVX intrinsics and data
 // types.
 
-#if defined _PARALLEL_NODE
 #define VECTOR_NWORDS 8
 #define VECTOR_NBYTES 32
 #define vec         __m256i
@@ -53,22 +46,6 @@
 #define vec_testc   _mm256_testc_si256
 #define vec_andnot  _mm256_andnot_si256
 #define vec_store   _mm256_store_si256
-#elif defined _PARALLEL_DEVICE
-#define VECTOR_NWORDS 16
-#define VECTOR_NBYTES 64
-#define vec         __m512i
-#define vec_mask    __mmask16
-#define vec_set     _mm512_set_epi32
-#define vec_set1    _mm512_set1_epi32
-#define vec_load    _mm512_load_epi32
-#define vec_add     _mm512_add_epi32
-#define vec_cmpgt   _mm512_cmpgt_epi32_mask
-#define vec_setzero _mm512_setzero_epi32
-#define vec_testc   _mm512_kortestc
-#define vec_and     _mm512_mask_and_epi32
-#define vec_andnot  _mm512_mask_andnot_epi32
-#define vec_store   _mm512_store_epi32
-#endif
 
 //ldoc on
 
@@ -78,9 +55,7 @@
  *  loop.
  */
 
-#if defined _PARALLEL_NODE
 inline __attribute__((always_inline))
-#endif
 void col_copy(int *col, int *l, int index, int n)
 {
   for (int m = 0; m < n; ++m)
@@ -146,9 +121,7 @@ void unpack_padded_data(int n, int npadded, int *l, int *lpadded)
  * identical, and false otherwise.
  */
 
-#if defined _PARALLEL_NODE
 inline __attribute__((always_inline))
-#endif
 int square(int nproc, int rank, int n, int nlocal, int col_nwords,
            int* restrict lproc, int* restrict col_k)
 {
@@ -161,8 +134,6 @@ int square(int nproc, int rank, int n, int nlocal, int col_nwords,
   // elements.
 
   int num_padding = n % VECTOR_NWORDS;
-
-  #if defined _PARALLEL_NODE
   vec pad_vec = vec_set(
       (num_padding > 7) ? MASK_1 : MASK_0,
       (num_padding > 6) ? MASK_1 : MASK_0,
@@ -173,7 +144,6 @@ int square(int nproc, int rank, int n, int nlocal, int col_nwords,
       (num_padding > 1) ? MASK_1 : MASK_0,
       (num_padding > 0) ? MASK_1 : MASK_0
   );
-  #endif
 
   // Moving across columns of the global matrix
   for (int k = 0; k < n; ++k) {
@@ -190,24 +160,6 @@ int square(int nproc, int rank, int n, int nlocal, int col_nwords,
     }
 
     MPI_Bcast(col_k, n, MPI_INT, root, MPI_COMM_WORLD);
-
-    // Offload computation kernel after the MPI broadcast to the
-    // accelerator if necessary. Remember we *cannot* have MPI calls
-    // inside offloaded kernels. We will probably benefit more for
-    // chunking more of the k-domain columns during the broadcast to
-    // amortize the overhad of the offload with more computation.
-
-    #if defined _PARALLEL_DEVICE
-
-    int* done_ptr = &done;
-
-    #pragma offload target(mic) in(n) in(nlocal) in(num_padding) \
-                                in(col_k : length(col_nwords)) \
-                                inout(done_ptr : length(1)) \
-                                inout(lproc : length(col_nwords*nlocal))
-    {
-
-    #endif
 
     // Moving across local columns in lproc
 
@@ -238,8 +190,6 @@ int square(int nproc, int rank, int n, int nlocal, int col_nwords,
         // The comparison intrinsics for AVX-512 return a different mask
         // type, so we need different logic to handle this case.
         //----------------------------------------------------------------
-
-        #if defined _PARALLEL_NODE
 
         // Create a mask based on a vector-wide comparison between the
         // current shortest path and the sum of the shortest paths
@@ -279,43 +229,11 @@ int square(int nproc, int rank, int n, int nlocal, int col_nwords,
         // AVX-512 comparison logic
         //----------------------------------------------------------------
 
-        #elif defined _PARALLEL_DEVICE
-
-        // Comparison return a 16b vector mask, elements with a true
-        // comparison are set to 1.
-        vec_mask mask_vec = vec_cmpgt(lij_vec, sum_vec);
-
-        // Convert vector mask into int. If we are at the last iteration
-        // and we need ignore any elements beyond the padding, we set the
-        // pad mask accordingly.
-
-        int cmp_mask = vec_testc(mask_vec, mask_vec);
-        int pad_mask = 0xffffffff;
-
-        if ((num_padding > 0) && (i == num_wide_ops - 1))
-          pad_mask = ~(pad_mask << num_padding);
-
-        // If any comparison was true, we are not done with computation
-        if ((cmp_mask & pad_mask) != 0)
-          *done_ptr = 0;
-
-        // Isolate the shortest path elements and store to memory
-
-        vec zero_vec = vec_setzero();
-
-        sum_vec = vec_andnot(zero_vec, mask_vec, zero_vec, sum_vec);
-        lij_vec = vec_and(lij_vec, mask_vec, zero_vec, zero_vec);
-
-        #endif
 
         lij_vec = vec_add(sum_vec, lij_vec);
         vec_store((vec*)lij_vec_addr, lij_vec);
       }
     }
-
-    #if defined _PARALLEL_DEVICE
-    }
-    #endif
 
   }
 
