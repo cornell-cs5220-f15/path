@@ -10,7 +10,7 @@
 # Or create a Makefile.in.xxx of your own!
 #
 
-PLATFORM=icc
+PLATFORM=gcc
 include Makefile.in.$(PLATFORM)
 
 .PHONY: exe clean realclean
@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path.x
+exe: path-mpi.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
