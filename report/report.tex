@@ -1,4 +1,3 @@
-
 \documentclass[11pt]{article}
 \usepackage{amsmath,amsthm,verbatim,amssymb,amsfonts,amscd, graphicx}
 \usepackage{graphicx}
@@ -39,8 +38,8 @@ Looking at the time spent inside of the \texttt{square} function, we observe tha
 
 This profiling leads us to believe that we should try to address two problems for the OMP implementation: have better load balancing, and increase cache reuse.
 
+Load balancing problem can be solved by tuning the communication procedure in parallelization. Before that, we try to first increase cache utilization by involving block matrix. The idea is similar to the matrix multiplication problem since they have the similar formulation. With Xeon E5-2620 v3 core with 256KB L2 cache, the block size is choosing to be 128. In the copy optimization \texttt{\_\_mm\_\_malloc} is used to allocate buffers with the byte alignment 64 bits. The reason that this byte alignment can give the best performance may be because the integer in a 64 bits core is 64 bits. In a single thread, the optimized block square function runs in 80s with n=3072, comparing with 350s of the basic loops also in a single thread. It shows that with block matrices the performance is improved significantly even without parallelization. However, directly applying \texttt{\#pragma parallel for} into the block version fails may be due to synchronization issue. Next we will modify the parallelization procedure carefully based on MPI utilizing the similar block format.
 
- 
 
 \section{MPI Implementation}
 We assign each processor to a block of the the matrix instead of an entire column as the original code does.
@@ -73,9 +72,9 @@ The serial versions of both programs were so slow that we plotted them on a sepa
 With a small number of processors (4), our MPI implementation runs about as well as the OpenMP code for small values of $n$, and scales much better for large values of $n$.
 With 16 processors, our MPI implementation is actually a little slower than the OpenMP code at small values, and for some reason much slower for values of $n$ between 1800 and 2200.
 However, for $n = 1600$ and also for large values of $n$, we again perform faster than OpenMP.
- 
- 
+
+
 \section{Future Work}
 Next we will to tune our MPI implementation as well as the OMP implementation provided to us. We will also incorporate the blocking strategy into our parallel code to increase the cache reuse.
- 
+
 \end{document}
