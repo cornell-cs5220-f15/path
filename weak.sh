@@ -2,10 +2,10 @@
 
 touch indices.txt
 
-NT="1 10 20 40 80 160 200 236"
+NT="1 2 4 8 16 24"
 # NT="10 20"
 for p in $NT; do
-    ./submit $(python weak.py $p) $p | cut -d '.' -f 1 >> indices.txt
+    ./submit-mpi $(python weak.py $p) $p | cut -d '.' -f 1 >> indices.txt
     echo $p "processors with domain size " $(python weak.py $p)
 done
 

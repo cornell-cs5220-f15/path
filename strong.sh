@@ -7,7 +7,7 @@ touch indices.txt
 ./submit-mpi 2000 4 | cut -d '.' -f 1 >> indices.txt
 ./submit-mpi 2000 8 | cut -d '.' -f 1 >> indices.txt
 ./submit-mpi 2000 16 | cut -d '.' -f 1 >> indices.txt
-./submit-mpi 2000 24 | cut -d '.' -f 1 >> indices.txt
+./submit-mpi 2000 20 | cut -d '.' -f 1 >> indices.txt
 
 
 # ./submit 5000 10| cut -d '.' -f 1 >> indices.txt

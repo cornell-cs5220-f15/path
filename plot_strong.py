@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-serial = 135.119
+serial = 5.469
 
 def make_plot(runs):
     "Plot results of timing trials"

@@ -1,12 +1,12 @@
 import sys
 from math import *
 
-def round(x):
+def round(x,p):
     y = int(x)
-    return (y/20)*20
+    return (y/p)*p
 
 
 if __name__=='__main__':
     p = int(sys.argv[1])
-    print round(2000*p**(1/3.0))
+    print round(2000*p**(1/3.0),p)
 
