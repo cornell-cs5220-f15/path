@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,9 +8,33 @@
 #include "mt19937p.h"
 #include <mpi.h>
 
+#define SETUP_STAGE 55
 #define INIT_STAGE 66
 #define PARTITION_STAGE 77
 #define ROTATION_STAGE 88
+#define END_STAGE 99
+
+// Print matrix assuming row-major format
+void write_matrix_process(const char* fname, int cols, int rows, int* a, int rank)
+{
+    int namelen = strlen(fname);
+    char rank_str[3];
+    sprintf(rank_str, "%d", rank);
+    char* proc_fname;
+    asprintf(&proc_fname,"%s%s", fname, rank_str);
+
+    FILE* fp = fopen(proc_fname, "w+");
+    if (fp == NULL) {
+        fprintf(stderr, "Could not open output file: %s\n", fname);
+        exit(-1);
+    }
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j)
+            fprintf(fp, "%d ", a[i*cols+j]);
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+}
 
 //ldoc on
 /**
@@ -77,11 +102,11 @@ int square(int n,               // Number of nodes
 //
 // Output:
 //  Done flag if (i,j) block does not get updated
-int mult(int n, int side, int block_no, int* restrict lr, int* restrict lc) {
+int mult(int n, int side, int block_no, int* restrict lr, int* restrict lc, int* restrict lc_new) {
     int done = 1;
     for (int j = 0; j < side; ++j) {
         for (int i = 0; i < side; ++i) {
-            int lij = lc[j*n + i + (block_no*side)];
+            int lij = lc_new[j*n + i + (block_no*side)];
             for (int k = 0; k < n; ++k) {
                 int lik = lr[i*n+k];
                 int lkj = lc[j*n+k];
@@ -90,7 +115,7 @@ int mult(int n, int side, int block_no, int* restrict lr, int* restrict lc) {
                     done = 0;
                 }
             }
-            lc[j*n+i+(block_no*side)] = lij;
+            lc_new[j*n+i+(block_no*side)] = lij;
         }
     }
     return done;
@@ -138,35 +163,31 @@ static inline void deinfinitize_rect(int n, int side, int* l)
             l[i] = 0;
 }
 
-/**
- *
- * Of course, any loop-free path in a graph with $n$ nodes can
- * at most pass through every node in the graph.  Therefore,
- * once $2^s \geq n$, the quantity $l_{ij}^s$ is actually
- * the length of the shortest path of any number of hops.  This means
- * we can compute the shortest path lengths for all pairs of nodes
- * in the graph by $\lceil \lg n \rceil$ repeated squaring operations.
- *
- * The `shortest_path` routine attempts to save a little bit of work
- * by only repeatedly squaring until two successive matrices are the
- * same (as indicated by the return value of the `square` routine).
- */
+void row_unjumble(int n, int side, int* restrict row, int* restrict row_recv) {
+    int recv_ind, col_slot;
+    for (int i=0; i<side; i++) {
+        for (int j=0; j<n; j++) {
+            col_slot = j/side;
+            recv_ind = col_slot*(side*side) + ((i*side) + (j - (col_slot * side)));
+            row[i*n+j] = row_recv[recv_ind];
+        }
+    }
+}
 
-void shortest_paths(int n, int side, int rank, int* restrict col, int* restrict row)
+void shortest_paths(int n, int side, int rank, int size, int* restrict col, int* restrict row)
 {
-    // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize_rect(n, side, col);
-    for (int i = 0; i < side; i++)
-            col[i*n+i+(rank*side)] = 0;
-
     int* row_chunk = (int*) malloc (sizeof(int) * side * side);
-    int proc_done;
+    int* row_recv = (int*) malloc (sizeof(int) * n * side);
+    int proc_done = 0;
+    int row_col_flag = 0;
     int done = 0;
+    int* restrict col_new = (int*) calloc(n*side, sizeof(int));
+    memcpy(col_new, col, n*side*sizeof(int));
 
     // Repeated squaring until nothing changes
-    /* for (int done = 0; !done; ) { */
-    for (int d = 0; d < 100; d++) {
+    for (int done = 0; !done; ) {
 
+        proc_done = 0;
         //For all rows
         for (int r=0; r<(n/side); r++) {
             //Make local row chunk in row major
@@ -175,19 +196,23 @@ void shortest_paths(int n, int side, int rank, int* restrict col, int* restrict 
                     row_chunk[j*side+i] = col[(i*n)+(r*side)+j];
 
             //Send your chunk of row and get row (Allgather)
-            MPI_Allgather(row_chunk, (side*side), MPI_INT, row, (side*side), MPI_INT, MPI_COMM_WORLD);
+            MPI_Allgather(row_chunk, (side*side), MPI_INT, row_recv, (side*side), MPI_INT, MPI_COMM_WORLD);
+            row_unjumble (n, side, row, row_recv);
 
             //Complete row-col operation
-            proc_done = mult(n, side, r, row, col);
+            row_col_flag = mult(n, side, r, row, col, col_new);
+            proc_done += row_col_flag;
         }
+        proc_done = (proc_done == (n/side)); // Column chunk locally done if all rows squares are done
+        memcpy(col, col_new, n*side*sizeof(int));
 
         //Reduce done flag across processors
         MPI_Allreduce (&proc_done, &done, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-        done = done > 0;
+        done = (done == size); // Stop if all processors are done.
     }
 
+    free (col_new);
     free (row_chunk);
-    deinfinitize_rect(n, side, col);
 }
 
 /**
@@ -255,15 +280,9 @@ int fletcher16(int* data, int count)
     return (sum2 << 8) | sum1;
 }
 
-void write_matrix_process(const char* fname, int n, int* a, int rank)
+void write_matrix(const char* fname, int n, int* a)
 {
-    int namelen = strlen(fname);
-    char rank_str[3];
-    sprintf(str, "%d", rank);
-    char proc_fname[namelen + 3];
-    asprintf(proc_fname,"%s%s", fname, rank_str);
-
-    FILE* fp = fopen(proc_fname, "w+");
+    FILE* fp = fopen(fname, "w+");
     if (fp == NULL) {
         fprintf(stderr, "Could not open output file: %s\n", fname);
         exit(-1);
@@ -276,6 +295,7 @@ void write_matrix_process(const char* fname, int n, int* a, int rank)
     fclose(fp);
 }
 
+
 /**
  * # The `main` event
  */
@@ -283,27 +303,27 @@ void write_matrix_process(const char* fname, int n, int* a, int rank)
 const char* usage =
     "path.x -- Parallel all-pairs shortest path on a random graph\n"
     "Flags:\n"
-    "  - n -- number of nodes (200)\n"
-    "  - p -- probability of including edges (0.05)\n"
-    "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  -n -- number of nodes (200)\n"
+    "  -p -- probability of including edges (0.05)\n"
+    "  -i -- file name where adjacency matrix should be stored (none)\n"
+    "  -o -- file name where output matrix should be stored (none)\n";
 
 int main(int argc, char** argv)
 {
 
-    int rank, size, side, block_side;
+    const char* ofname = NULL; // Distance matrix file name
+    int rank, size, block_side;
     MPI_Init(&argc, &argv);
 
     // Assume size is a square number
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int n    = 200;            // Number of nodes
+    int n = 200;            // Number of nodes
+    double p = 0.05;           // Edge probability
     int *l, *lc;
     if (rank == 0) {
-        double p = 0.05;           // Edge probability
         const char* ifname = NULL; // Adjacency matrix file name
-        const char* ofname = NULL; // Distance matrix file name
 
         // Option processing
         extern char* optarg;
@@ -322,43 +342,70 @@ int main(int argc, char** argv)
         }
 
         l = gen_graph(n,p);
+
         if (ifname)
             write_matrix(ifname,  n, l);
 
+        infinitize(n,l);
+        for (int i = 0; i < n*n; i += n+1)
+            l[i] = 0;
+
+        block_side = n / size;
+
+        for (int r=1; r<size; r++) {
+            MPI_Send(&n, 1, MPI_INT, r, SETUP_STAGE, MPI_COMM_WORLD);     
+        }
         // Send column chunks to processors
         for (int r=1; r<size; r++) {
-            
+            MPI_Send(l + (r*block_side*n), (n*block_side), MPI_INT, r, INIT_STAGE, MPI_COMM_WORLD);     
         } 
+
+        lc = (int*) malloc( n * block_side * sizeof(int));
+        memcpy (lc, l, (n * block_side * sizeof(int)));
+
     } else {
-        MPI_Recv(&n, 1, MPI_INT, 0, 
-        
+        MPI_Recv(&n, 1, MPI_INT, 0, SETUP_STAGE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        // Assume n is divisible by processors per side
+        block_side = n / size;
+
+        lc = (int*) malloc( n * block_side * sizeof(int));
+        MPI_Recv(lc, (n * block_side), MPI_INT, 0, INIT_STAGE, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
     }
-    side = (int) round(sqrt(size));
-    
 
-    // Assume n is divisible by processors per side
-    block_side = n / side;
-
-    printf("Processors per side: %d\n", side);
-    printf("Block side : %d\n", block_side);
-
-    // Each processor keeps a column of adjacency matrix of the graph
-    int* local_cols = gen_graph_rect (n, block_side, rank, p);
     int* curr_row = (int*) malloc (sizeof(int) * n * block_side);
 
     // Time the shortest paths code
     double t0 = MPI_Wtime();
-    shortest_paths(n, block_side, rank, local_cols, curr_row);
+    shortest_paths(n, block_side, rank, size, lc, curr_row);
     double t1 = MPI_Wtime();
 
-    printf("== MPI with %d processors\n", size);
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(local_cols, n*block_side));
 
-    free(local_cols);
+    if (rank == 0) {
+        for (int r=1; r<size; r++) {
+            MPI_Recv(l + (r*block_side*n), (n*block_side), MPI_INT, r, END_STAGE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        } 
+        memcpy (l, lc, (n * block_side * sizeof(int)));
+    } else {
+        MPI_Send(lc, (n * block_side), MPI_INT, 0, END_STAGE, MPI_COMM_WORLD); 
+    }
+
+    if (rank == 0) {
+        deinfinitize(n, l);
+        // Generate output file
+        if (ofname)
+            write_matrix(ofname, n, l);
+            
+        printf("\n== MPI with %d processors ==\n", size);
+        printf("n:     %d\n", n);
+        printf("Time:  %g\n", t1-t0);
+        printf("\np:     %g\n", p);
+        printf("Check: %X\n", fletcher16(l, n*n));
+        free(l);
+    }
+
     free(curr_row);
+    free(lc);
 
     MPI_Finalize();
     return 0;
