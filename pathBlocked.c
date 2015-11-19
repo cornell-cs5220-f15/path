@@ -17,7 +17,7 @@
 #endif
 
 #ifndef L2_BLOCK_SIZE
-#define L2_BLOCK_SIZE ((int) 90)
+#define L2_BLOCK_SIZE ((int) 180)
 #define L2 L2_BLOCK_SIZE
 #endif
 
@@ -25,7 +25,7 @@
 //right now the same as L1 blocks. This many blocking levels tend to slow
 //the computation (don't know exactly why.)
 #ifndef L1_BLOCK_SIZE
-#define L1_BLOCK_SIZE ((int) 9)
+#define L1_BLOCK_SIZE ((int) 36)
 #define L1 L1_BLOCK_SIZE
 #endif
 
