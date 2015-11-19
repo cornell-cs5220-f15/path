@@ -7,7 +7,13 @@
 #include <omp.h>
 #include "mt19937p.h"
 
+#ifdef __MIC__
+#define ALIGNBY 64
+#else
 #define ALIGNBY 32
+#endif
+
+#define NTHREADS 24
 
 //ldoc on
 /**
@@ -41,13 +47,14 @@
  * identical, and false otherwise.
  */
 
+#pragma offload_attribute(push,target(mic))
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
   int done = 1;
 
-  #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+#pragma omp parallel for shared(l, lnew) reduction(&& : done) num_threads(NTHREADS)
   for (int j = 0; j < n; ++j) {
     for (int k = 0; k < n; ++k) {
       __assume_aligned(l,ALIGNBY);
@@ -68,7 +75,7 @@ int square(int n,               // Number of nodes
   }
   return done;
 }
-
+#pragma offload_attribute(pop)
 /**
  *
  * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
@@ -120,14 +127,18 @@ void shortest_paths(int n, int* restrict l)
 
     // Repeated squaring until nothing changes
     /* int* restrict lnew = (int*) calloc(n*n, sizeof(int)); */
-    int * restrict lnew = (int*) _mm_malloc(n*n*sizeof(int), ALIGNBY);
-    memcpy(lnew, l, n*n * sizeof(int));
-    for (int done = 0; !done; ) {
+#pragma offload target(mic) inout(l:length(n*n))
+    {
+      int * restrict lnew = (int*) _mm_malloc(n*n*sizeof(int), ALIGNBY);
+      memcpy(lnew, l, n*n * sizeof(int));
+      
+      for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
+      }
+      /* free(lnew); */
+      _mm_free(lnew);
     }
-    /* free(lnew); */
-    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -259,3 +270,5 @@ int main(int argc, char** argv)
     _mm_free(l);
     return 0;
 }
+
+
