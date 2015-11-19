@@ -32,6 +32,12 @@ path-mpi.x: path-mpi.o mt19937p.o
 path-mpi.o: path-mpi.c
 	$(MPICC) -c $(MPI_CFLAGS) $<
 
+path_elliot.x: path_elliot.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path_elliot.o: path_elliot.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 

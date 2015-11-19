@@ -2,6 +2,9 @@
 *.optrpt
 *.csv
 path.x
+path_elliot.x
+path.o*
+path-mpi.o*
 
 # Created by https://www.gitignore.io/api/osx
 

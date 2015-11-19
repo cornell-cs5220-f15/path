@@ -2,10 +2,10 @@
 
 #PBS -l nodes=1:ppn=24
 #PBS -l walltime=0:30:00
-#PBS -N path
+#PBS -N path_elliot
 #PBS -j oe
 
 module load cs5220
 cd $PBS_O_WORKDIR
-# ./path.x -n 600 -i adj_mat_o -o out_mat_o
-./path.x -n 6000
+amplxe-cl -collect hotspots \
+./path_elliot.x -n 2000
