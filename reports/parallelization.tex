@@ -42,7 +42,7 @@ The implementations of \rs{}, \block{}, and \fw{} using MPI are in
 
 \subsection{Hybrid}
 MPI and OpenMP interact seamlessly when put together, making it easy to combine
-our MPI implementation with the release OpenMp implementation. Given a fixed
+our MPI implementation with the release OpenMP implementation. Given a fixed
 number of MPI ranks, $r$, and $p$ available threads then each MPI rank will
 have access to $\frac{p}{r}$ threads which can be used in OpenMP parallel
 sections of code. This means we do not take full advantage of all threads
