@@ -123,12 +123,12 @@ void solve(int n,                    // Number of nodes
                         int i_init  = I*width_size;
 
                         // Minor Blocks
-                        for(int j = 0; j < j_end; ++j) {
-                            int jn = j_init+j*n;
-                    
 #ifdef __INTEL_COMPILER
                     #pragma ivdep
 #endif
+                        for(int j = 0; j < j_end; ++j) {
+                            int jn = j_init+j*n;
+                    
                             for(int k = 0; k < k_end; ++k) {
                                 int kn  = kn_init+k*n;
                                 int lkj = l[jn+k_init+k];
