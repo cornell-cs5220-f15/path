@@ -10,7 +10,7 @@
 \setcounter{secnumdepth}{4}
 
 
-
+\setlength\parindent{0pt}
 
 \graphicspath{{./times/}}
 \topmargin0.0cm
@@ -42,11 +42,11 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
  
 \subsection{Parallel Tuning}
 
-Since the Floyd-Warshall algorithm is structured very similarly to matrix multiplication, we decided to try taking some of the tuning methods used in the first project on matrix multiplication, and applying them to the Floyd-Warshall algorithm.
+Since the Floyd-Warshall algorithm is structured very similarly to matrix multiplication, we decided to try taking some of the tuning methods used in the first project on matrix multiplication, and applying them to the Floyd-Warshall algorithm. \\
 
-The first of these methods is using a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon.
+The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon.
 
-The second method was to change the loop ordering, so that in the innermost loop, memory is being accessed with unit stride, which increases performance.
+The second method changes the loop ordering, so that in the innermost loop, memory is being accessed with unit stride, which increases performance.
 
 As the project goes on, we also hope to add other optimizations attempted in the matrix multiplication project, such as copying the blocks into a contiguous chunk of memory.
 
