@@ -8,22 +8,51 @@
 module load cs5220
 cd $PBS_O_WORKDIR
 
-./path.x -n 127
-./path.x -n 128
-./path.x -n 129
-
-./path.x -n 255
-./path.x -n 256
-./path.x -n 257
-
-./path.x -n 511
-./path.x -n 512
-./path.x -n 513
-
-./path.x -n 1023
-./path.x -n 1024
-./path.x -n 1025
-
-./path.x -n 2047
-./path.x -n 2048
-./path.x -n 2049
+export OMP_NUM_THREADS=1
+./path.x -n 4096
+export OMP_NUM_THREADS=2
+./path.x -n 4096
+export OMP_NUM_THREADS=3
+./path.x -n 4096
+export OMP_NUM_THREADS=4
+./path.x -n 4096
+export OMP_NUM_THREADS=5
+./path.x -n 4096
+export OMP_NUM_THREADS=6
+./path.x -n 4096
+export OMP_NUM_THREADS=7
+./path.x -n 4096
+export OMP_NUM_THREADS=8
+./path.x -n 4096
+export OMP_NUM_THREADS=9
+./path.x -n 4096
+export OMP_NUM_THREADS=10
+./path.x -n 4096
+export OMP_NUM_THREADS=11
+./path.x -n 4096
+export OMP_NUM_THREADS=12
+./path.x -n 4096
+export OMP_NUM_THREADS=13
+./path.x -n 4096
+export OMP_NUM_THREADS=14
+./path.x -n 4096
+export OMP_NUM_THREADS=15
+./path.x -n 4096
+export OMP_NUM_THREADS=16
+./path.x -n 4096
+export OMP_NUM_THREADS=17
+./path.x -n 4096
+export OMP_NUM_THREADS=18
+./path.x -n 4096
+export OMP_NUM_THREADS=19
+./path.x -n 4096
+export OMP_NUM_THREADS=20
+./path.x -n 4096
+export OMP_NUM_THREADS=21
+./path.x -n 4096
+export OMP_NUM_THREADS=22
+./path.x -n 4096
+export OMP_NUM_THREADS=23
+./path.x -n 4096
+export OMP_NUM_THREADS=24
+./path.x -n 4096

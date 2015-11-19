@@ -1,0 +1,144 @@
+3
+== OpenMP with 1 threads
+n:     256
+p:     0.05
+Time:  0.0136781
+Check: 4974
+3
+== OpenMP with 2 threads
+n:     512
+p:     0.05
+Time:  0.051048
+Check: 29BB
+3
+== OpenMP with 3 threads
+n:     768
+p:     0.05
+Time:  0.112769
+Check: AE4F
+3
+== OpenMP with 4 threads
+n:     1024
+p:     0.05
+Time:  0.200285
+Check: 5E94
+3
+== OpenMP with 5 threads
+n:     1280
+p:     0.05
+Time:  0.314919
+Check: 3525
+3
+== OpenMP with 6 threads
+n:     1536
+p:     0.05
+Time:  0.456298
+Check: 63F8
+3
+== OpenMP with 7 threads
+n:     1792
+p:     0.05
+Time:  0.623969
+Check: 7200
+3
+== OpenMP with 8 threads
+n:     2048
+p:     0.05
+Time:  0.813955
+Check: 7C32
+3
+== OpenMP with 9 threads
+n:     2304
+p:     0.05
+Time:  1.02437
+Check: 254
+3
+== OpenMP with 10 threads
+n:     2560
+p:     0.05
+Time:  1.28184
+Check: 2A63
+3
+== OpenMP with 11 threads
+n:     2816
+p:     0.05
+Time:  1.5734
+Check: 27DC
+3
+== OpenMP with 12 threads
+n:     3072
+p:     0.05
+Time:  1.8958
+Check: D1BE
+3
+== OpenMP with 13 threads
+n:     3328
+p:     0.05
+Time:  3.49535
+Check: D2E5
+3
+== OpenMP with 14 threads
+n:     3584
+p:     0.05
+Time:  4.20738
+Check: 118E
+3
+== OpenMP with 15 threads
+n:     3840
+p:     0.05
+Time:  4.59926
+Check: 47A5
+3
+== OpenMP with 16 threads
+n:     4096
+p:     0.05
+Time:  5.37098
+Check: 6B72
+3
+== OpenMP with 17 threads
+n:     4352
+p:     0.05
+Time:  6.40334
+Check: EFB0
+3
+== OpenMP with 18 threads
+n:     4608
+p:     0.05
+Time:  7.05783
+Check: 7079
+3
+== OpenMP with 19 threads
+n:     4864
+p:     0.05
+Time:  7.89221
+Check: 5D74
+3
+== OpenMP with 20 threads
+n:     5120
+p:     0.05
+Time:  8.88552
+Check: FD79
+3
+== OpenMP with 21 threads
+n:     5376
+p:     0.05
+Time:  9.70728
+Check: EE7C
+3
+== OpenMP with 22 threads
+n:     5632
+p:     0.05
+Time:  11.0816
+Check: 1275
+3
+== OpenMP with 23 threads
+n:     5888
+p:     0.05
+Time:  12.157
+Check: 2DAE
+3
+== OpenMP with 24 threads
+n:     6144
+p:     0.05
+Time:  14.4131
+Check: CE6D

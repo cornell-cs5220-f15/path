@@ -1,0 +1,45 @@
+== OpenMP with 24 threads
+n:     2047
+p:     0.05
+Time:  1.40739
+Check: 8915
+== OpenMP with 24 threads
+n:     2048
+p:     0.05
+Time:  1.38295
+Check: 7C32
+== OpenMP with 24 threads
+n:     2049
+p:     0.05
+Time:  1.50368
+Check: C9EA
+== OpenMP with 24 threads
+n:     4095
+p:     0.05
+Time:  7.08943
+Check: 4149
+== OpenMP with 24 threads
+n:     4096
+p:     0.05
+Time:  6.99912
+Check: 6B72
+== OpenMP with 24 threads
+n:     4097
+p:     0.05
+Time:  7.23956
+Check: 14F1
+== OpenMP with 24 threads
+n:     8191
+p:     0.05
+Time:  37.2516
+Check: 890A
+== OpenMP with 24 threads
+n:     8192
+p:     0.05
+Time:  37.0134
+Check: DE4C
+== OpenMP with 24 threads
+n:     8193
+p:     0.05
+Time:  50.8505
+Check: 47A4

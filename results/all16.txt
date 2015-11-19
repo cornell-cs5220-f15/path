@@ -1,0 +1,144 @@
+4
+== OpenMP with 16 threads
+n:     127
+p:     0.05
+Time:  0.0178699
+Check: 3C69
+4
+== OpenMP with 16 threads
+n:     128
+p:     0.05
+Time:  0.144723
+Check: 8C4A
+4
+== OpenMP with 16 threads
+n:     129
+p:     0.05
+Time:  0.0294831
+Check: CDBA
+3
+== OpenMP with 16 threads
+n:     255
+p:     0.05
+Time:  0.00774717
+Check: 3E0B
+3
+== OpenMP with 16 threads
+n:     256
+p:     0.05
+Time:  0.00799489
+Check: 4974
+3
+== OpenMP with 16 threads
+n:     257
+p:     0.05
+Time:  0.011425
+Check: 8371
+3
+== OpenMP with 16 threads
+n:     383
+p:     0.05
+Time:  0.0737479
+Check: FECD
+3
+== OpenMP with 16 threads
+n:     384
+p:     0.05
+Time:  0.0432432
+Check: 8DC0
+3
+== OpenMP with 16 threads
+n:     385
+p:     0.05
+Time:  0.016037
+Check: 618D
+3
+== OpenMP with 16 threads
+n:     511
+p:     0.05
+Time:  0.0203822
+Check: 21B6
+3
+== OpenMP with 16 threads
+n:     512
+p:     0.05
+Time:  0.020237
+Check: 29BB
+3
+== OpenMP with 16 threads
+n:     513
+p:     0.05
+Time:  0.025471
+Check: 9156
+3
+== OpenMP with 16 threads
+n:     767
+p:     0.05
+Time:  0.0483398
+Check: E44
+3
+== OpenMP with 16 threads
+n:     768
+p:     0.05
+Time:  0.0525601
+Check: AE4F
+3
+== OpenMP with 16 threads
+n:     769
+p:     0.05
+Time:  0.063659
+Check: 43C6
+3
+== OpenMP with 16 threads
+n:     1023
+p:     0.05
+Time:  0.10077
+Check: 57BD
+3
+== OpenMP with 16 threads
+n:     1024
+p:     0.05
+Time:  0.10233
+Check: 5E94
+3
+== OpenMP with 16 threads
+n:     1025
+p:     0.05
+Time:  0.12149
+Check: ADD8
+3
+== OpenMP with 16 threads
+n:     1535
+p:     0.05
+Time:  0.317353
+Check: BE00
+3
+== OpenMP with 16 threads
+n:     1536
+p:     0.05
+Time:  0.316438
+Check: 63F8
+3
+== OpenMP with 16 threads
+n:     1537
+p:     0.05
+Time:  0.509972
+Check: 1E62
+3
+== OpenMP with 16 threads
+n:     2047
+p:     0.05
+Time:  1.08438
+Check: 8915
+3
+== OpenMP with 16 threads
+n:     2048
+p:     0.05
+Time:  1.12597
+Check: 7C32
+3
+== OpenMP with 16 threads
+n:     2049
+p:     0.05
+Time:  0.798571
+Check: C9EA

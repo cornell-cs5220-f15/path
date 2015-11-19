@@ -1,0 +1,144 @@
+4
+== OpenMP with 7 threads
+n:     127
+p:     0.05
+Time:  0.00268412
+Check: 3C69
+4
+== OpenMP with 7 threads
+n:     128
+p:     0.05
+Time:  0.00239205
+Check: 8C4A
+4
+== OpenMP with 7 threads
+n:     129
+p:     0.05
+Time:  0.00374007
+Check: CDBA
+3
+== OpenMP with 7 threads
+n:     255
+p:     0.05
+Time:  0.062089
+Check: 3E0B
+3
+== OpenMP with 7 threads
+n:     256
+p:     0.05
+Time:  0.0051651
+Check: 4974
+3
+== OpenMP with 7 threads
+n:     257
+p:     0.05
+Time:  0.0126519
+Check: 8371
+3
+== OpenMP with 7 threads
+n:     383
+p:     0.05
+Time:  0.011961
+Check: FECD
+3
+== OpenMP with 7 threads
+n:     384
+p:     0.05
+Time:  0.041079
+Check: 8DC0
+3
+== OpenMP with 7 threads
+n:     385
+p:     0.05
+Time:  0.014513
+Check: 618D
+3
+== OpenMP with 7 threads
+n:     511
+p:     0.05
+Time:  0.0200551
+Check: 21B6
+3
+== OpenMP with 7 threads
+n:     512
+p:     0.05
+Time:  0.0200639
+Check: 29BB
+3
+== OpenMP with 7 threads
+n:     513
+p:     0.05
+Time:  0.0248439
+Check: 9156
+3
+== OpenMP with 7 threads
+n:     767
+p:     0.05
+Time:  0.055207
+Check: E44
+3
+== OpenMP with 7 threads
+n:     768
+p:     0.05
+Time:  0.0552239
+Check: AE4F
+3
+== OpenMP with 7 threads
+n:     769
+p:     0.05
+Time:  0.0993629
+Check: 43C6
+3
+== OpenMP with 7 threads
+n:     1023
+p:     0.05
+Time:  0.127953
+Check: 57BD
+3
+== OpenMP with 7 threads
+n:     1024
+p:     0.05
+Time:  0.153553
+Check: 5E94
+3
+== OpenMP with 7 threads
+n:     1025
+p:     0.05
+Time:  0.146797
+Check: ADD8
+3
+== OpenMP with 7 threads
+n:     1535
+p:     0.05
+Time:  0.374631
+Check: BE00
+3
+== OpenMP with 7 threads
+n:     1536
+p:     0.05
+Time:  0.373632
+Check: 63F8
+3
+== OpenMP with 7 threads
+n:     1537
+p:     0.05
+Time:  0.41841
+Check: 1E62
+3
+== OpenMP with 7 threads
+n:     2047
+p:     0.05
+Time:  1.38623
+Check: 8915
+3
+== OpenMP with 7 threads
+n:     2048
+p:     0.05
+Time:  1.17086
+Check: 7C32
+3
+== OpenMP with 7 threads
+n:     2049
+p:     0.05
+Time:  0.951707
+Check: C9EA

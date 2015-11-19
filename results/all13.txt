@@ -1,0 +1,144 @@
+4
+== OpenMP with 13 threads
+n:     127
+p:     0.05
+Time:  0.0117829
+Check: 3C69
+4
+== OpenMP with 13 threads
+n:     128
+p:     0.05
+Time:  0.00795007
+Check: 8C4A
+4
+== OpenMP with 13 threads
+n:     129
+p:     0.05
+Time:  0.00495911
+Check: CDBA
+3
+== OpenMP with 13 threads
+n:     255
+p:     0.05
+Time:  0.00645304
+Check: 3E0B
+3
+== OpenMP with 13 threads
+n:     256
+p:     0.05
+Time:  0.0133798
+Check: 4974
+3
+== OpenMP with 13 threads
+n:     257
+p:     0.05
+Time:  0.00832605
+Check: 8371
+3
+== OpenMP with 13 threads
+n:     383
+p:     0.05
+Time:  0.0108089
+Check: FECD
+3
+== OpenMP with 13 threads
+n:     384
+p:     0.05
+Time:  0.0118148
+Check: 8DC0
+3
+== OpenMP with 13 threads
+n:     385
+p:     0.05
+Time:  0.0202949
+Check: 618D
+3
+== OpenMP with 13 threads
+n:     511
+p:     0.05
+Time:  0.018229
+Check: 21B6
+3
+== OpenMP with 13 threads
+n:     512
+p:     0.05
+Time:  0.0186181
+Check: 29BB
+3
+== OpenMP with 13 threads
+n:     513
+p:     0.05
+Time:  0.064055
+Check: 9156
+3
+== OpenMP with 13 threads
+n:     767
+p:     0.05
+Time:  0.167943
+Check: E44
+3
+== OpenMP with 13 threads
+n:     768
+p:     0.05
+Time:  0.061178
+Check: AE4F
+3
+== OpenMP with 13 threads
+n:     769
+p:     0.05
+Time:  0.065166
+Check: 43C6
+3
+== OpenMP with 13 threads
+n:     1023
+p:     0.05
+Time:  0.116265
+Check: 57BD
+3
+== OpenMP with 13 threads
+n:     1024
+p:     0.05
+Time:  0.118055
+Check: 5E94
+3
+== OpenMP with 13 threads
+n:     1025
+p:     0.05
+Time:  0.158095
+Check: ADD8
+3
+== OpenMP with 13 threads
+n:     1535
+p:     0.05
+Time:  0.365601
+Check: BE00
+3
+== OpenMP with 13 threads
+n:     1536
+p:     0.05
+Time:  0.524317
+Check: 63F8
+3
+== OpenMP with 13 threads
+n:     1537
+p:     0.05
+Time:  0.399257
+Check: 1E62
+3
+== OpenMP with 13 threads
+n:     2047
+p:     0.05
+Time:  0.793127
+Check: 8915
+3
+== OpenMP with 13 threads
+n:     2048
+p:     0.05
+Time:  0.853693
+Check: 7C32
+3
+== OpenMP with 13 threads
+n:     2049
+p:     0.05
+Time:  0.89096
+Check: C9EA

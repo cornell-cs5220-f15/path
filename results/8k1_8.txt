@@ -1,0 +1,103 @@
+2
+== OpenMP with 1 threads
+n:     8191
+p:     0.05
+Time:  206.526
+Check: 890A
+2
+== OpenMP with 1 threads
+n:     8192
+p:     0.05
+Time:  206.599
+Check: DE4C
+3
+== OpenMP with 1 threads
+n:     8193
+p:     0.05
+Time:  310.534
+Check: 47A4
+2
+== OpenMP with 2 threads
+n:     8191
+p:     0.05
+Time:  104.743
+Check: 890A
+2
+== OpenMP with 2 threads
+n:     8192
+p:     0.05
+Time:  104.896
+Check: DE4C
+3
+== OpenMP with 2 threads
+n:     8193
+p:     0.05
+Time:  155.613
+Check: 47A4
+2
+== OpenMP with 3 threads
+n:     8191
+p:     0.05
+Time:  70.9726
+Check: 890A
+2
+== OpenMP with 3 threads
+n:     8192
+p:     0.05
+Time:  71.0805
+Check: DE4C
+3
+== OpenMP with 3 threads
+n:     8193
+p:     0.05
+Time:  106.399
+Check: 47A4
+2
+== OpenMP with 4 threads
+n:     8191
+p:     0.05
+Time:  54.8207
+Check: 890A
+2
+== OpenMP with 4 threads
+n:     8192
+p:     0.05
+Time:  54.3074
+Check: DE4C
+3
+== OpenMP with 4 threads
+n:     8193
+p:     0.05
+Time:  78.8221
+Check: 47A4
+2
+== OpenMP with 5 threads
+n:     8191
+p:     0.05
+Time:  47.466
+Check: 890A
+2
+== OpenMP with 5 threads
+n:     8192
+p:     0.05
+Time:  46.8832
+Check: DE4C
+3
+== OpenMP with 5 threads
+n:     8193
+p:     0.05
+Time:  70.8934
+Check: 47A4
+2
+== OpenMP with 6 threads
+n:     8191
+p:     0.05
+Time:  40.3424
+Check: 890A
+2
+== OpenMP with 6 threads
+n:     8192
+p:     0.05
+Time:  39.7808
+Check: DE4C
+=>> PBS: job killed: walltime 1816 exceeded limit 1800

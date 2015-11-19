@@ -1,0 +1,8 @@
+#!/bin/sh -l
+
+#PBS -l nodes=4:ppn=1
+#PBS -l walltime=0:30:00
+#PBS -N nodetest
+#PBS -j oe
+
+hostname

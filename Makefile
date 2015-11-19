@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path.x
+exe: path.x path_original.x path_offload.x path_cannon.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -26,14 +26,32 @@ path.x: path.o mt19937p.o
 path.o: path.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
-path-mpi.x: path-mpi.o mt19937p.o
+path_original.x: path_original.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path_original.o: path_original.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+path_offload.x: path_offload.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $(OFFLOADFLAGS) $^ -o $@
+
+path_offload.o: path_offload.c
+	$(CC) -c $(OMP_CFLAGS) $(OFFLOADFLAGS) $<
+
+path_mpi.x: path_mpi.o mt19937p.o
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
-path-mpi.o: path-mpi.c
+path_mpi.o: path_mpi.c
+	$(MPICC) -c $(MPI_CFLAGS) $<
+	
+path_cannon.x: path_cannon.o mt19937p.o
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
+
+path_cannon.o: path_cannon.c
 	$(MPICC) -c $(MPI_CFLAGS) $<
 
 %.o: %.c
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS) $(OFFLOADFLAGS) $<
 
 
 # === Documentation

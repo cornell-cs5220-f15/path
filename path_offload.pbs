@@ -1,0 +1,21 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path_offload
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+
+./path_offload.x -n 2047
+./path_offload.x -n 2048
+./path_offload.x -n 2049
+
+./path_offload.x -n 4095
+./path_offload.x -n 4096
+./path_offload.x -n 4097
+
+./path_offload.x -n 8191
+./path_offload.x -n 8192
+./path_offload.x -n 8193

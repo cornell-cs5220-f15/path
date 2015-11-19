@@ -1,0 +1,18 @@
+3
+== OpenMP with 8 threads
+n:     4095
+p:     0.05
+Time:  6.08748
+Check: 4149
+3
+== OpenMP with 8 threads
+n:     4096
+p:     0.05
+Time:  5.99821
+Check: 6B72
+3
+== OpenMP with 8 threads
+n:     4097
+p:     0.05
+Time:  6.18805
+Check: 14F1

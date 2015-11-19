@@ -82,11 +82,20 @@ int square(int n,               // Number of nodes
     // Copied lnew matrix
     int * CN __attribute__((aligned(64))) =
         (int *) malloc(totalblocks * totalblocksize * sizeof(int));
+        
+    #pragma omp parallel shared(CL, CN, done)
+        {
     
     // Copy over
-    int copyoffset = 0;
-    for (int bi = 0; bi < blocks; ++bi) {
-        for (int bj = 0; bj < blocks; ++bj) {
+        int copyoffset = 0;
+    //for (int bi = 0; bi < blocks; ++bi) {
+        //for (int bj = 0; bj < blocks; ++bj) {
+        #pragma omp for
+        for (int bc = 0; bc < blocks * blocks; ++bc) {
+            // Compute block position
+            int bi = bc / blocks;
+            int bj = bc % blocks;
+            
             int oi = bi * BLOCK_SIZE;
             int oj = bj * BLOCK_SIZE;
             copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
@@ -100,17 +109,16 @@ int square(int n,               // Number of nodes
                     else {
                         CL[copyoffset] = n + 1;
                     }
+                    CN[copyoffset] = CL[copyoffset];
                     copyoffset++;
                 }
             }
         }
-    }
+    //}
     
-    memcpy(CN, CL, totalblocks * totalblocksize * sizeof(int));
+    //memcpy(CN, CL, totalblocks * totalblocksize * sizeof(int));
     
     // Perform square
-    #pragma omp parallel shared(CL, CN, done)
-    {
         #pragma omp for
         for (int bc = 0; bc < blocks * blocks; ++bc) {
             // Compute block position
@@ -130,12 +138,18 @@ int square(int n,               // Number of nodes
                 }
             }
         }
-    }
+    //}
     
     // Copy back
     copyoffset = 0;
-    for (int bi = 0; bi < blocks; ++bi) {
-        for (int bj = 0; bj < blocks; ++bj) {
+    //for (int bi = 0; bi < blocks; ++bi) {
+        //for (int bj = 0; bj < blocks; ++bj) {
+        #pragma omp for
+        for (int bc = 0; bc < blocks * blocks; ++bc) {
+            // Compute block position
+            int bi = bc / blocks;
+            int bj = bc % blocks;
+            
             int oi = bi * BLOCK_SIZE;
             int oj = bj * BLOCK_SIZE;
             copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
@@ -149,6 +163,7 @@ int square(int n,               // Number of nodes
                 }
             }
         }
+    //}
     }
     
     return done;
@@ -206,10 +221,12 @@ void shortest_paths(int n, int* restrict l)
     // Repeated squaring until nothing changes
     int * restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
-    for (int done = 0; !done; ) {
+    int count = 0;
+    for (int done = 0; !done; count++) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
+    printf("%d\n", count);
     free(lnew);
     deinfinitize(n, l);
 }

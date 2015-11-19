@@ -1,0 +1,144 @@
+4
+== OpenMP with 4 threads
+n:     127
+p:     0.05
+Time:  0.00246406
+Check: 3C69
+4
+== OpenMP with 4 threads
+n:     128
+p:     0.05
+Time:  0.00217414
+Check: 8C4A
+4
+== OpenMP with 4 threads
+n:     129
+p:     0.05
+Time:  0.00447893
+Check: CDBA
+3
+== OpenMP with 4 threads
+n:     255
+p:     0.05
+Time:  0.0073719
+Check: 3E0B
+3
+== OpenMP with 4 threads
+n:     256
+p:     0.05
+Time:  0.00507808
+Check: 4974
+3
+== OpenMP with 4 threads
+n:     257
+p:     0.05
+Time:  0.00906014
+Check: 8371
+3
+== OpenMP with 4 threads
+n:     383
+p:     0.05
+Time:  0.0132432
+Check: FECD
+3
+== OpenMP with 4 threads
+n:     384
+p:     0.05
+Time:  0.013185
+Check: 8DC0
+3
+== OpenMP with 4 threads
+n:     385
+p:     0.05
+Time:  0.020288
+Check: 618D
+3
+== OpenMP with 4 threads
+n:     511
+p:     0.05
+Time:  0.0281432
+Check: 21B6
+3
+== OpenMP with 4 threads
+n:     512
+p:     0.05
+Time:  0.028089
+Check: 29BB
+3
+== OpenMP with 4 threads
+n:     513
+p:     0.05
+Time:  0.0409708
+Check: 9156
+3
+== OpenMP with 4 threads
+n:     767
+p:     0.05
+Time:  0.0874739
+Check: E44
+3
+== OpenMP with 4 threads
+n:     768
+p:     0.05
+Time:  0.144862
+Check: AE4F
+3
+== OpenMP with 4 threads
+n:     769
+p:     0.05
+Time:  0.181699
+Check: 43C6
+3
+== OpenMP with 4 threads
+n:     1023
+p:     0.05
+Time:  0.199427
+Check: 57BD
+3
+== OpenMP with 4 threads
+n:     1024
+p:     0.05
+Time:  0.19982
+Check: 5E94
+3
+== OpenMP with 4 threads
+n:     1025
+p:     0.05
+Time:  0.241359
+Check: ADD8
+3
+== OpenMP with 4 threads
+n:     1535
+p:     0.05
+Time:  0.656352
+Check: BE00
+3
+== OpenMP with 4 threads
+n:     1536
+p:     0.05
+Time:  0.651293
+Check: 63F8
+3
+== OpenMP with 4 threads
+n:     1537
+p:     0.05
+Time:  0.734143
+Check: 1E62
+3
+== OpenMP with 4 threads
+n:     2047
+p:     0.05
+Time:  1.51821
+Check: 8915
+3
+== OpenMP with 4 threads
+n:     2048
+p:     0.05
+Time:  1.52768
+Check: 7C32
+3
+== OpenMP with 4 threads
+n:     2049
+p:     0.05
+Time:  1.66514
+Check: C9EA
