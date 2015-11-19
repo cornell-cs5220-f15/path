@@ -111,9 +111,6 @@ void solve(int n,                    // Number of nodes
             #pragma omp for
             for(int J = 0; J < n_height; ++J) {
                 for(int K = 0; K < n_height; ++K) {
-#ifdef __INTEL_COMPILER
-                    #pragma ivdep
-#endif
                     for(int I = 0; I < n_width; ++I){
                         // Calculate ending indices for the set of blocks
                         int j_end   = ((J+1)*height_size < n ? height_size : n - J*height_size);
@@ -129,6 +126,9 @@ void solve(int n,                    // Number of nodes
                         for(int j = 0; j < j_end; ++j) {
                             int jn = j_init+j*n;
                     
+#ifdef __INTEL_COMPILER
+                    #pragma ivdep
+#endif
                             for(int k = 0; k < k_end; ++k) {
                                 int kn  = kn_init+k*n;
                                 int lkj = l[jn+k_init+k];
