@@ -1,0 +1,50 @@
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.17609
+Check: 569D
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.19778
+Check: 4767
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.20616
+Check: E05
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.34443
+Check: 4765
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.11929
+Check: 13F1
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.22967
+Check: 9AA8
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.36695
+Check: 9720
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.16522
+Check: C6F4
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.22517
+Check: B034
+== Serial implementation
+n:     2016
+p:     0.05
+Time:  6.18002
+Check: F9CD
