@@ -17,7 +17,7 @@
 #endif
 
 #ifndef L2_BLOCK_SIZE
-#define L2_BLOCK_SIZE ((int) 144)
+#define L2_BLOCK_SIZE ((int) 90)
 #define L2 L2_BLOCK_SIZE
 #endif
 
@@ -25,7 +25,7 @@
 //right now the same as L1 blocks. This many blocking levels tend to slow
 //the computation (don't know exactly why.)
 #ifndef L1_BLOCK_SIZE
-#define L1_BLOCK_SIZE ((int) 24)
+#define L1_BLOCK_SIZE ((int) 9)
 #define L1 L1_BLOCK_SIZE
 #endif
 
@@ -107,8 +107,10 @@ void to_contiguous3lvlBlock(const int M,
                             const int* restrict A,
                             int* restrict Ak,
                             const int* restrict B,
-                            int* restrict Bk) {
-    int ind_Ak = 0, ind_Bk = 0;
+                            int* restrict Bk,
+                            const int* restrict C,
+                            int* restrict Ck) {
+    int ind_Ak = 0, ind_Bk = 0, ind_Ck = 0;
     const int n3 = M / L3_BLOCK_SIZE + (M%L3_BLOCK_SIZE? 1 : 0);
     for(int i = 0; i < n3; i++){
         const int row_i = i * L3;
@@ -128,6 +130,8 @@ void to_contiguous3lvlBlock(const int M,
                             ind_Ak += L1*L1;
                             read_to_contiguous(M, B, Bk + ind_Bk, col_s + n * L1, row_q + m * L1);
                             ind_Bk += L1*L1;
+                            read_to_contiguous(M, C, Ck + ind_Ck, row_q + m * L1, col_s + n * L1);
+                            ind_Ck += L1*L1;
                         }
                     }
                 }
@@ -283,9 +287,7 @@ int square_dgemm(const int M, const int* restrict A, const int* restrict B, int*
     int* Bk = _mm_malloc(N*N*sizeof(int), 32);
     int* Ck = _mm_malloc(N*N*sizeof(int), 32);
     
-    for (int i = 0; i<N*N; i++)
-        Ck[i] = 0.0;
-    to_contiguous3lvlBlock(M, A, Ak, B, Bk);
+    to_contiguous3lvlBlock(M, A, Ak, B, Bk, C, Ck);
     //End of copying
     
     const int n3 = N / L3 + (N%L3? 1 : 0); //Number of L3 block in one dimension
@@ -293,7 +295,6 @@ int square_dgemm(const int M, const int* restrict A, const int* restrict B, int*
     int i, j, k;
     int MM, NN, KK; //The sizes of the blocks (at the edges they may be rectangular)
     
-    //C_ij = A_ik * B_kj
     for (int bi = 0; bi < n3; bi++){
         i = bi * N * L3;
         int sizeOfBlock_C = ( bi == n3-1 && N%L3 ? L3 * (N%L3) : L3 * L3);
@@ -389,6 +390,7 @@ int square(int n,               // Number of nodes
     **/
     
     //
+    // copy optimzation embedded in square_dgemm()
     return square_dgemm(n,l,l,lnew);
     //
 }
