@@ -8,4 +8,4 @@
 module load cs5220
 cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=24
-./path-tiled.x -n 16 -i adj-tiled.dump -o output-tiled.dump
+./path-tiled.x -n 2048 -i adj-tiled.dump -o output-tiled.dump

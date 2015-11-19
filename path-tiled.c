@@ -14,15 +14,15 @@
 #endif
 
 #ifndef UNROLL_ROW
-  #define UNROLL_ROW 1
+  #define UNROLL_ROW 8
 #endif
 
 #ifndef UNROLL_COL
-  #define UNROLL_COL 1
+  #define UNROLL_COL 8
 #endif
 
 #ifndef UNROLL_STEP
-  #define UNROLL_STEP 1
+  #define UNROLL_STEP 8
 #endif
 
 #ifndef BLOCK_SIZE
@@ -40,6 +40,8 @@ void * _mm_calloc(int size, int alignment) {
 
 static inline
 void dump_array(int n, int ** restrict l, const char * fname) {
+  __assume_aligned(l, ALIGN_BOUND);
+
   FILE * fp = fopen(fname, "w+");
 
   if (fp == NULL) {
@@ -47,7 +49,6 @@ void dump_array(int n, int ** restrict l, const char * fname) {
     exit(-1);
   }
 
-  __assume_aligned(l, ALIGN_BOUND);
   for (int row = 0; row < n; ++row) {
     fprintf(fp, "%d ", l[row][0:n]);
     fprintf(fp, "\n");
@@ -58,27 +59,24 @@ void dump_array(int n, int ** restrict l, const char * fname) {
 
 static inline
 void infinitize(const int n, int ** restrict l) {
+  __assume_aligned(l, ALIGN_BOUND);
+
   const int PATH_VAL = n + 1;
 
-  __assume_aligned(l, ALIGN_BOUND);
   for (int row = 0; row < n; ++row) {
-    for (int col = 0; col < n; ++col) {
-      if (l[row][col] == 0) l[row][col] = PATH_VAL;
-    }
-
+    if (l[row][0:n] == 0) l[row][0:n] = PATH_VAL;
     l[row][row] = 0;
   }
 }
 
 static inline
 void deinfinitize(const int n, int ** restrict l) {
+  __assume_aligned(l, ALIGN_BOUND);
+
   const int PATH_VAL = n + 1;
 
-  __assume_aligned(l, ALIGN_BOUND);
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < n; ++j) {
-      if (l[i][j] == PATH_VAL) l[i][j] = 0;
-    }
+  for (int row = 0; row < n; ++row) {
+    if (l[row][0:n] == PATH_VAL) l[row][0:n] = 0;
   }
 }
 
@@ -145,6 +143,7 @@ void fwi_abc(const int n, int ** restrict a, int ** restrict b, int ** restrict 
   __assume_aligned(b, ALIGN_BOUND);
   __assume_aligned(c, ALIGN_BOUND);
 
+  #pragma omp parallel for collapse(2) schedule(static)
   for (int row = 0; row < n; row += UNROLL_ROW) {
     for (int col = 0; col < n; col += UNROLL_COL) {
       for (int step = 0; step < n; step += UNROLL_STEP) {
@@ -178,7 +177,7 @@ void fwi(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
   }
 }
 
-void fwt(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
+void shortest_paths(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
   const int num_blocks = n / BLOCK_SIZE;
 
   // Intiialize scratch arrays
@@ -192,7 +191,6 @@ void fwt(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
       fwi(BLOCK_SIZE, c_kk, c_kk, c_kk);
     block_to_src(k, k, c, c_kk);
 
-    #pragma omp parallel for
     for (int j = 0; j < num_blocks; ++j) {
       if (j != k) {
         src_to_block(k, j, c, c_kj);
@@ -201,7 +199,6 @@ void fwt(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
       }
     }
 
-    #pragma omp parallel for
     for (int i = 0; i < num_blocks; ++i) {
       if (i != k) {
         src_to_block(i, k, c, c_ik);
@@ -230,10 +227,6 @@ void fwt(const int n, int ** restrict a, int ** restrict b, int ** restrict c) {
   destroy_array(BLOCK_SIZE, c_ik);
   destroy_array(BLOCK_SIZE, c_kj);
   destroy_array(BLOCK_SIZE, c_kk);
-}
-
-void shortest_paths(const int n, int ** restrict l) {
-  fwt(n, l, l, l);
 }
 
 int ** gen_graph(const int n, const double p) {
@@ -313,7 +306,7 @@ int main(int argc, char ** argv) {
 
   // Time the shortest paths code
   const double t0 = omp_get_wtime();
-  shortest_paths(n, l);
+  shortest_paths(n, l, l, l);
   const double t1 = omp_get_wtime();
 
   // Clamp 'infinite' values in the output to zero.
@@ -322,7 +315,7 @@ int main(int argc, char ** argv) {
   printf("== OpenMP with %d threads\n", omp_get_max_threads());
   printf("n:     %d\n", n);
   printf("p:     %g\n", p);
-  printf("Time:  %g\n", t1-t0);
+  printf("Time:  %g\n", t1 - t0);
   printf("Check: %X\n", fletcher16(n, l));
 
   if (ofname) dump_array(n, l, ofname);

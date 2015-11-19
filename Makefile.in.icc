@@ -3,7 +3,7 @@ MPICC=mpiicc
 CFLAGS=-std=c99 -g -pedantic -Wall -Werror
 
 ANALYSIS=-qopt-report=5 -qopt-report-phase=vec -parallel-source-info=2
-OPTFLAGS=-O3 -no-prec-div -opt-prefetch -xHost -ansi-alias -ipo -restrict
+OPTFLAGS=-O3 -no-prec-div -opt-prefetch -xHost -ansi-alias -restrict -mkl -ipo
 
 CFLAGS+=$(OPTFLAGS) $(ANALYSIS)
 MPI_CFLAGS=$(CFLAGS)
