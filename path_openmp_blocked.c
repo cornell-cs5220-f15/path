@@ -7,6 +7,10 @@
 #include <omp.h>
 #include "mt19937p.h"
 
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE ((int) 32)
+#endif
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -39,26 +43,112 @@
  * identical, and false otherwise.
  */
 
+
+//Restrict Pointers: restrict is used to limit effects of pointer aliasing, aiding optimizations
+int basic_floyd(const int lda, const int M, const int N,
+                 const int * restrict l, const int * restrict lcopy, int * restrict lnew)
+{
+    
+    //Copy Optimization: Memory Aligned Buffers for Matrix Blocks
+    int l_buf[ BLOCK_SIZE * lda ] __attribute__((aligned( 32 )));
+    int lcopy_buf[ lda * BLOCK_SIZE ] __attribute__((aligned( 32 )));
+    int lnew_buf[ BLOCK_SIZE * BLOCK_SIZE ] __attribute__((aligned( 32 )));
+    
+    int i, j, k;
+    
+    //---Copy Blocks of l,lcopy and lnew into l_buf, lcopy_buf and lnew_buf respectively---//
+    
+    //Copy Block of l into l_buf in row-major form to aid vectorization of innermost loop
+    for( k = 0; k < lda; ++k ) {
+        for( i = 0; i < M; ++i ) {
+            l_buf[ lda * i + k ] = l[ i + lda * k ];
+        }
+    }
+    
+    for( j = 0; j < N; ++j ) {
+        for( k = 0; k < lda; ++k ) {
+            lcopy_buf[ k + lda * j ] = lcopy[ k + j * lda ];
+        }
+    }
+    
+    for( j = 0; j < N; ++j ) {
+        for( i = 0; i < M; ++i ) {
+            lnew_buf[ i + M * j ] = lnew[ i + lda * j ];
+        }
+    }
+    
+    //---End of Copy Optimization---//
+    
+    //---Vectorized Floyd Warshall Kernel: Process Rows of l_buf with Columns of lcopy_buf
+    // to produce Columns of lnew_buf---//
+    
+    int done = 1;
+    
+    for ( i = 0; i < M; ++i ) {
+        for ( j = 0; j < N; ++j ) {
+            
+            #pragma vector aligned
+            for ( k = 0; k < lda; ++k ) {
+                int lij = l_buf[ lda * i + k ] + lcopy_buf[ k + lda * j ];
+                if( lij < lnew_buf[ i + M * j ] ) {
+                    lnew_buf[ i + M * j ] = lij;
+                    done = 0;
+                }
+            }
+            
+        }
+    }
+    
+    //---End of Matrix Multiply Kernel---//
+    
+    //---Copy back the computed lnew_buf block into lnew---//
+    
+    for( j = 0; j < N; ++j ) {
+        for( i = 0; i < M; ++i ) {
+            lnew[ i + lda * j ] = lnew_buf[ i + M * j ];
+        }
+    }
+    
+    //---End of Copy Back---//
+    
+    return done;
+}
+
+int do_block(const int lda,
+              const int * restrict l, const int * restrict lcopy, int * restrict lnew,
+              const int i, const int j)
+{
+    const int M = ( i + BLOCK_SIZE > lda ? lda-i : BLOCK_SIZE );
+    const int N = ( j + BLOCK_SIZE > lda ? lda-j : BLOCK_SIZE );
+    
+    return basic_floyd( lda, M, N,
+                l + i, lcopy + lda * j, lnew + i + lda * j );
+}
+
+
+
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
+    //Copy Optimization for better cache hits in the parallel for
+    int* restrict lcopy = malloc(n*n*sizeof(int));
+    memcpy(lcopy, l, n*n * sizeof(int));
+    
+    //Blocking Into Tiles
+    const int n_blocks = n / BLOCK_SIZE + ( n % BLOCK_SIZE ? 1 : 0 );
+    
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
+    #pragma omp parallel for shared(l, lcopy, lnew) reduction(&& : done)
+    for (int bi = 0; bi < n_blocks; ++bi ) {
+        const int i = bi * BLOCK_SIZE;
+        for (int bj = 0; bj < n_blocks; ++bj ) {
+            const int j = bj * BLOCK_SIZE;
+            done = do_block( n, l, lcopy, lnew, i, j );
         }
     }
+
+    free(lcopy);
     return done;
 }
 
@@ -79,7 +169,7 @@ int square(int n,               // Number of nodes
 static inline void infinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0)
+        if (l[i] == 0 && i % (n + 1) != 0)
             l[i] = n+1;
 }
 
@@ -108,14 +198,15 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
-    for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;
-
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
+    int flag = 1;
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
+        done = flag ? square(n, l, lnew) : square(n, lnew, l);
+        flag = !flag;
+    }
+    if(!flag) {
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);
