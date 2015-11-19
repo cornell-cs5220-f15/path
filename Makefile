@@ -32,6 +32,11 @@ path-mpi.x: path-mpi.o mt19937p.o
 path-mpi.o: path-mpi.c
 	$(MPICC) -c $(MPI_CFLAGS) $<
 
+path-mpi_untuned.x: path-mpi_untuned.o mt19937p.o
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
+
+path-mpi_untuned.o: path-mpi_untuned.c
+	$(MPICC) -c $(MPI_CFLAGS) $< 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 

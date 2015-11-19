@@ -1,0 +1,5 @@
+== MPI with 10 threads
+n:     2000
+p:     0.05
+Time:  2.58001
+Check: 87D6

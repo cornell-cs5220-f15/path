@@ -52,8 +52,8 @@ int square_stripe(int n,               // Number of nodes
 {
     int done = 1;
     int end = min(n, (myid + 1) * ncolumns);
-/*       for (int i = 0; i < n; ++i) {
-   			for (int j = myid * ncolumns; j < end; ++j) {
+    for (int j = myid * ncolumns; j < end; ++j) {
+        for (int i = 0; i < n; ++i) {
             int lij = l[j*n+i];
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
@@ -63,27 +63,10 @@ int square_stripe(int n,               // Number of nodes
                     done = 0;
                 }
             }
-            lnew[(j-)*n+i] = lij;
+            lnew[(j-myid*ncolumns)*n+i] = lij;
         }
-  }
-*/
-
-	memcpy(lnew,l+n*myid*ncolumns,n*ncolumns*sizeof(int));
-	for (int k=0;k<n;++k){
-		for (int j = myid*ncolumns;j<end;j++){
-			int lkj = l[j*n+k];
-			for(int i = 0;i<n;++i){
-				int lik = l[k*n+i];
-				if(lik+lkj<lnew[(j-ncolumns*myid)*n+i]){
-            		lnew[(j-ncolumns*myid)*n+i] = lik+lkj;
-					done = 0;
-				}
-			}
-		}
-	
-	}
-
-  return done;
+    }
+    return done;
 }
 
 /**
