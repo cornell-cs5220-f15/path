@@ -320,7 +320,7 @@ int main(int argc, char** argv)
     printf("n:         %d\n", n);
     printf("p:         %g\n", p);
     printf("Time:      %g\n", t1-t0);
-    printf("Copy time: %g\n", t1_copy-t0_copy)
+    printf("Copy time: %g\n", t1_copy-t0_copy);
     printf("Check:     %X\n", fletcher16(l, n*n));
 
     // Generate output file
