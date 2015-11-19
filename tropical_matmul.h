@@ -28,7 +28,9 @@ static inline void deinfinitize(int n, int* l)
 
 void tropical_matsquare_partial(int *A, int *C, int offset, int width, int dim){
 	//do some copy optimization 
-	int * Abuf = (int*)malloc(dim*sizeof(int));
+	int * Abuf = (int*)_mm_malloc(dim*sizeof(int),64);
+	__assume_aligned(Abuf, 64);
+	//__assume_aligned(A, 64);
     #pragma omp parallel for shared(A, C)
 	for(int i = 0; i < dim; i ++){
 		
@@ -50,11 +52,14 @@ void tropical_matsquare_partial(int *A, int *C, int offset, int width, int dim){
 
 void tropical_matmul_partial(int *A, int *B, int *C, int offset, int width, int dim){
 
-    int *Abuf = (int*)malloc(dim*sizeof(int));
+    int *Abuf = (int*)_mm_malloc(dim*sizeof(int),64);
+
+    __assume_aligned(Abuf, 64);
+    //__assume_aligned(B, 64);
     #pragma omp parallel for shared(A, B, C)
     for(int i = 0; i < dim; i ++){
 	
-	for(int n = 0; n < dim; n++) Abuf[n] = A[i + n*dim];
+		for(int n = 0; n < dim; n++) Abuf[n] = A[i + n*dim];
 
         for(int j = offset; j < (offset + width); j ++){
                 int Cij = dim*dim;

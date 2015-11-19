@@ -2,7 +2,7 @@ CC=mpiicc
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
-OPTFLAGS=-O3 -no-prec-div  -ipo \
+OPTFLAGS=-O3 -restrict -no-prec-div  -ipo \
 
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS)
