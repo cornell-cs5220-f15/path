@@ -1,0 +1,16 @@
+#!/bin/sh -l
+
+#PBS -l nodes=en-cs-totient-05.coecis.cornell.edu:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N phitown
+#PBS -j oe
+
+# default args / control over what is submitted
+# usage example: qsub -v SIZE=900,THREADS=12 path.pbs
+P_SIZE=${SIZE:-2000}
+P_THREADS=${THREADS:-240} # aka omp max threads for node
+P_PROB=${PROB:-0.05}
+
+module load cs5220
+cd $PBS_O_WORKDIR
+./path-blocked-device-naive.x -n $P_SIZE -t $P_THREADS -p $P_PROB

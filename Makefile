@@ -44,6 +44,12 @@ path-blocked-device.x: path-blocked-device.o mt19937p.o
 path-blocked-device.o: path-blocked-device.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
+path-blocked-device-naive.x: path-blocked-device-naive.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-blocked-device-naive.o: path-blocked-device-naive.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 
