@@ -1,0 +1,15 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path
+#PBS -j oe
+set OMP_NM_THREADS = 4
+module load cs5220
+cd $PBS_O_WORKDIR
+mpirun -np 6 ./floyd-warshall -n 32
+mpirun -np 6 ./floyd-warshall -n 64
+mpirun -np 6 ./floyd-warshall -n 128
+mpirun -np 6 ./floyd-warshall -n 256
+mpirun -np 6 ./floyd-warshall -n 512
+mpirun -np 6 ./floyd-warshall -n 1024
