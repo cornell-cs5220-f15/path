@@ -8,4 +8,4 @@
 module load cs5220
 cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=24
-./path-base.x -n 2000 -i adj-base.dump -o output-base.dump
+./path-base.x -n 20 -i adj-base.dump -o output-base.dump
