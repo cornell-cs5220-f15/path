@@ -97,7 +97,7 @@ void worker(int m, int c, int t, int id, int* restrict graph) {
 
         MPI_Allreduce(&hup, &hasupdate, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         MPI_Allgather(newcols, c * m, MPI_INT, graph, c * m, MPI_INT, MPI_COMM_WORLD);
-    } while (!hasupdate);
+    } while (hasupdate);
 
     _mm_free(newcols);
     _mm_free(graphT);
