@@ -1,0 +1,45 @@
+\documentclass{hw}
+
+\title{CS 5220 -- Project 3: Shortest Paths}
+\author{Group 10: Ze Jin (zj58), Ben Shulman (bgs53), Michael Whittaker (mjw297)}
+\date{\today}
+\rhead{Group 10}
+
+\usepackage{caption}
+\usepackage{fancyvrb}
+\usepackage{subcaption}
+
+\newcommand{\secref}[1]{Section~\ref{sec:#1}}
+\newcommand{\icc}{\texttt{icc}}
+
+\newcommand{\rs}{\textsc{rs}}
+\newcommand{\rsomp}{\textsc{rs-omp}}
+\newcommand{\rsmpi}{\textsc{rs-mpi}}
+\newcommand{\rshybrid}{\textsc{rs-hybrid}}
+
+\newcommand{\block}{\textsc{block}}
+\newcommand{\blockomp}{\textsc{block-omp}}
+\newcommand{\blockmpi}{\textsc{block-mpi}}
+\newcommand{\blockhybrid}{\textsc{block-hybrid}}
+
+\newcommand{\fw}{\textsc{fw}}
+\newcommand{\fwomp}{\textsc{fw-omp}}
+\newcommand{\fwmpi}{\textsc{fw-mpi}}
+\newcommand{\fwhybrid}{\textsc{fw-hybrid}}
+
+\begin{document}
+\maketitle
+
+\input{intro.tex}
+\input{profiling.tex}
+\input{algorithms.tex}
+\input{parallelization.tex}
+\input{evaluation.tex}
+\input{conclusion.tex}
+
+% \input{tuning.tex}
+% \input{mpi.tex}
+% \input{hybrid.tex}
+% \input{fw.tex}
+
+\end{document}

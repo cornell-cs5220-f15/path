@@ -1,0 +1,111 @@
+\section{Profiling}\label{sec:profiling}
+The release implementation of all-pairs shortest paths is a naive
+implementation of repeated squares algorithm that uses OpenMP for
+parallelization. We profiled the release code using VTune Amplifier and the
+vectorization reports produced by \icc{}.
+
+\subsection{VTune Amplifier}
+The profiling results produced by VTune Amplifier are shown in \figref{vtune-a}
+and \figref{vtune-b}, which show that the release implementation spends
+most of its time inside the \texttt{square} function. The majority of the time
+in \texttt{square} is spent accessing the \texttt{l} array. Although in contrast
+to many applications that spend most of their time on computation, this is
+unsurprising as the only computation done in the release implementation is a
+single addition and comparison.
+
+These results suggest that we optimize our implementations to have good memory
+access patterns to take full advantage of the cache as much as possible. This
+optimization will be discussed in detail in \secref{algo}.
+
+\begin{figure}[h]
+\centering
+{
+\begin{BVerbatim}
+Function                  Module       CPU Time
+------------------------  -----------  --------
+square                    omp.x         41.807s
+__kmp_barrier             libiomp5.so   13.993s
+__kmpc_reduce_nowait      libiomp5.so    6.397s
+__kmp_fork_barrier        libiomp5.so    2.962s
+__intel_ssse3_rep_memcpy  omp.x          0.040s
+fletcher16                omp.x          0.030s
+gen_graph                 omp.x          0.020s
+__kmp_join_call           libiomp5.so    0.010s
+genrand                   omp.x          0.010s
+\end{BVerbatim}
+}
+\caption{%
+  A snippet of the vectorization report produced by VTune Amplifier that shows
+  the longest running functions.
+}
+\label{fig:vtune-a}
+\end{figure}
+
+\begin{figure}[h]
+{
+\scriptsize
+\begin{BVerbatim}
+Source Line  Source                                                              CPU Time
+-----------  ------------------------------------------------------------------  --------
+41           int square(int n,               // Number of nodes
+42                      int* restrict l,     // Partial distance at step s
+43                      int* restrict lnew)  // Partial distance at step s+1
+44           {
+45               int done = 1;
+46               #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+47               for (int j = 0; j < n; ++j) {
+48                   for (int i = 0; i < n; ++i) {                                 0.020s
+49                       int lij = lnew[j*n+i];                                    0.030s
+50                       for (int k = 0; k < n; ++k) {                             8.072s
+51                           int lik = l[k*n+i];                                  25.646s
+52                           int lkj = l[j*n+k];
+53                           if (lik + lkj < lij) {                                3.644s
+54                               lij = lik+lkj;
+55                               done = 0;                                         4.395s
+56                           }
+57                       }
+58                       lnew[j*n+i] = lij;
+59                   }
+60               }
+61               return done;
+62           }
+\end{BVerbatim}
+}
+\caption{%
+  A snippet of the vectorization report produced by VTune Amplifier that shows
+  the longest running sections of the \texttt{square} function.
+}
+\label{fig:vtune-b}
+\end{figure}
+
+\subsection{Vectorization Reports}
+A snippet of the \icc{} vectorization report is shown in
+\figref{icc-vec-report}, which shows that most loops in the release
+implementation are vectorized. However, the vectorized loops have unaligned
+memory accesses because \texttt{l} and \texttt{lnew} are not allocated into
+aligned memory. This suggested that we optimized our code to allocate memory
+at aligned addresses.
+
+\begin{figure}[h]
+\centering
+{
+\scriptsize
+\begin{BVerbatim}
+LOOP BEGIN at path.c(108,5) inlined into path.c(258,5)
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(110,13) ]
+   remark #15388: vectorization support: reference l has aligned access   [ path.c(110,13) ]
+   remark #15300: LOOP WAS VECTORIZED
+   remark #15448: unmasked aligned unit stride loads: 2
+   remark #15449: unmasked aligned unit stride stores: 1
+   remark #15475: --- begin vector loop cost summary ---
+   remark #15476: scalar loop cost: 14
+   remark #15477: vector loop cost: 1.250
+   remark #15478: estimated potential speedup: 9.830
+   remark #15479: lightweight vector operations: 10
+   remark #15488: --- end vector loop cost summary ---
+LOOP END
+\end{BVerbatim}
+}
+\caption{\icc{} vectorization report.}
+\label{fig:icc-vec-report}
+\end{figure}

@@ -1,0 +1,76 @@
+\section{Algorithms}\label{sec:algo}
+In this section, we describe the three algorithms we have implemented to compute
+all-pairs shortest paths.
+
+\subsection{Repeated Squares}
+The release implementation uses a simple repeated squares (\rs) dynamic
+programming algorithm. Let $l_{ij}^s$ represent the length of the shortest path
+from vertex $i$ to vertex $j$ of at most length $2^s$. \rs{} relies on the
+following recurrence:
+\[
+  l_{ij}^{s+1} = \min_k \group{l_{ik}^s + l_{kj}^s}
+\]
+
+The base case $l_{ij}^0$ is the weight of the edge from vertex $i$ to vertex
+$j$ or $\infty$ if no such edge exists. This recurrence is nearly identical to
+the formula used to compute the square of a matrix $A$:
+\[
+  a_{ij}^2 = \sum_k a_{ik} a_{kj}
+\]
+
+The algorithm initializes a distance matrix $L^0$ and iteratively computes
+$L^{s+1}$ by squaring $L^s$. The algorithm terminates once squaring $L$ reaches
+a fixpoint; that is, once $L^2 = L$. Each squaring requires $O(N^3)$ operations
+where $N$ is the number of vertices in the graph and the side-length of $L$. A
+shortest path can be of at most length $N$, so the algorithm terminates after
+at most $\log N$ iterations. Thus, the worst-case running time of \rs{} is
+$O(N^3 \log N)$.
+
+\subsection{Blocked Repeated Squares}
+The release implementation of \rs{} uses a naive matrix multiplication kernel
+to square $L$. We developed an optimized matrix multiplication kernel that
+implements a variety of optimizations. We use this kernel in an optimized
+repeated squares implementation that we call \block{}. In this subsection, we
+describe the optimizations implemented by \block{}.
+
+\paragraph{Blocking}
+A naive matrix multiplication kernel has very poor cache locality. \block{}
+implements a blocked matrix multiplication to greatly improve cache locality.
+The optimal block size of 128 was found empirically.
+
+\paragraph{Copy Optimization}
+When \block{} multiplies two sub-blocks, it first copies them into a smaller,
+aligned buffer, which allows the compiler to more aggressively
+vectorize loops over the sub-blocks and it makes memory accesses to the
+sub-blocks much more regular.
+
+\paragraph{Compile-Time Loop Bounds}
+If the size of a matrix is not divisible by the size of a block, then not all
+sub-blocks have the same size, and the size of a sub-blocks is only known
+at runtime. When \block{} multiplies two sub-blocks, it first checks to see if
+they are full-sized blocks, and if they are, it multiplies them using a kernel
+whose loop bounds are known at compile-time. By knowing loop-bounds at compile
+time, the compiler more aggressively optimizes this code path.  If the
+sub-blocks are not full-sized blocks, then it multiplies them using loops with
+bounds known at runtime. Since most blocks are full-sized blocks, \block{}
+often performs block multiplication with the fully optimized kernel.
+
+\paragraph{Vectorization}
+\block{} organizes all loops and array accesses to be fully vectorized.
+
+\subsection{Floyd-Warshall}
+The Floyd-Warshall algorithm (\fw{}) is a dynamic programming algorithm
+developed by Robert Floyd and Stephen Warshall in the 1960's. Consider a
+directed graph  with $N$ nodes ordered $1, \ldots, N$. Let $l_{i,j}^k$ be the
+length of the shortest path from vertex $i$ to vertex $j$ using only
+intermediate nodes from $\set{1, \ldots, k}$ or $\infty$ if no such path
+exists. \fw{} relies on the following recurrence:
+\[
+  l_{i,j}^{k+1} = \min \group{l_{i,j}^k, l_{i,k+1}^k + l_{k+1,j}^k}
+\]
+
+The base case $l_{i,j}^0$ is the weight of the edge from vertex $i$ to vertex
+$j$ or $\infty$ if no such edge exists. \fw{} initializes $L^0$ and
+iteratively computes $L^{k+1}$ from $L^{k}$ using the above recurrence.
+$L^{k+1}$ can be computed in $O(N^2)$ time and the algorithm terminates when it
+computes $L^N$. Thus, the algorithm runs in $O(N^3)$ time.

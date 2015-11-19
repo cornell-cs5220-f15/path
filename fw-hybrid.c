@@ -1,66 +1,16 @@
 #include <getopt.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <mpi.h>
 #include <unistd.h>
 #include <omp.h>
+#include <immintrin.h>
+
+#include "mem.h"
 #include "mt19937p.h"
-
-//ldoc on
-/**
- * # The basic recurrence
- *
- * At the heart of the method is the following basic recurrence.
- * If $l_{ij}^s$ represents the length of the shortest path from
- * $i$ to $j$ that can be attained in at most $2^s$ steps, then
- * $$
- *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}.
- * $$
- * That is, the shortest path of at most $2^{s+1}$ hops that connects
- * $i$ to $j$ consists of two segments of length at most $2^s$, one
- * from $i$ to $k$ and one from $k$ to $j$.  Compare this with the
- * following formula to compute the entries of the square of a
- * matrix $A$:
- * $$
- *   a_{ij}^2 = \sum_k a_{ik} a_{kj}.
- * $$
- * These two formulas are identical, save for the niggling detail that
- * the latter has addition and multiplication where the former has min
- * and addition.  But the basic pattern is the same, and all the
- * tricks we learned when discussing matrix multiplication apply -- or
- * at least, they apply in principle.  I'm actually going to be lazy
- * in the implementation of `square`, which computes one step of
- * this basic recurrence.  I'm not trying to do any clever blocking.
- * You may choose to be more clever in your assignment, but it is not
- * required.
- *
- * The return value for `square` is true if `l` and `lnew` are
- * identical, and false otherwise.
- */
-
-int square(int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
-{
-    int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
-        }
-    }
-    return done;
-}
 
 /**
  *
@@ -71,7 +21,7 @@ int square(int n,               // Number of nodes
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back 
+ * The functions `infinitize` and `deinfinitize` convert back
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
@@ -106,19 +56,43 @@ static inline void deinfinitize(int n, int* l)
 
 void shortest_paths(int n, int* restrict l)
 {
+    int num_p, rank, n_sub;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &num_p);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    // NOTE: We assume that problem size is divisible by number of processors.
+    assert (n % num_p == 0);
+    n_sub = n / num_p;
+
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
-    // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    memcpy(lnew, l, n*n * sizeof(int));
-    for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        memcpy(l, lnew, n*n * sizeof(int));
+    int* restrict lnew = (int*) _mm_calloc(n*n/num_p, sizeof(int), 64);
+    memcpy(lnew, l+n*rank*n_sub, n*n_sub * sizeof(int));
+
+    #pragma vector aligned
+    for (int k = 0; k < n; ++k) {
+        #pragma omp parallel for
+        #pragma vector aligned
+        for (int i = 0; i < n; ++i) {
+            #pragma vector aligned
+            for (int j = rank*n_sub; j < rank*n_sub + n_sub; ++j) {
+                int lij = lnew[(j-rank*n_sub)*n+i];
+                int lik = l[k*n+i];
+                int lkj = l[j*n+k];
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
+                }
+                lnew[(j-rank*n_sub)*n+i] = lij;
+                l[j*n+i] = lij;
+            }
+        }
+        MPI_Allgather(lnew, n*n_sub, MPI_INT, l, n*n_sub, MPI_INT, MPI_COMM_WORLD);
     }
-    free(lnew);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -135,7 +109,7 @@ void shortest_paths(int n, int* restrict l)
 
 int* gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    int* l = _mm_calloc(n*n, sizeof(int), 64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -174,16 +148,16 @@ int fletcher16(int* data, int count)
     return (sum2 << 8) | sum1;
 }
 
-void write_matrix(const char* fname, int n, int* a)
+void write_matrix(const char* fname, int rows, int cols, int* a)
 {
     FILE* fp = fopen(fname, "w+");
     if (fp == NULL) {
         fprintf(stderr, "Could not open output file: %s\n", fname);
         exit(-1);
     }
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) 
-            fprintf(fp, "%d ", a[j*n+i]);
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j)
+            fprintf(fp, "%d ", a[j*rows+i]);
         fprintf(fp, "\n");
     }
     fclose(fp);
@@ -203,6 +177,12 @@ const char* usage =
 
 int main(int argc, char** argv)
 {
+
+    int rank, num_p;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_p);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
@@ -226,25 +206,27 @@ int main(int argc, char** argv)
 
     // Graph generation + output
     int* l = gen_graph(n, p);
-    if (ifname)
-        write_matrix(ifname,  n, l);
+    if (ifname && rank == 0)
+        write_matrix(ifname,  n, n, l);
 
     // Time the shortest paths code
-    double t0 = omp_get_wtime();
+    double t0 = MPI_Wtime();
     shortest_paths(n, l);
-    double t1 = omp_get_wtime();
+    double t1 = MPI_Wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    if (rank == 0) {
+        // n, p, time, check, omp threads, mpi threads
+        printf("%d, %g, %g, %X, %d, %d\n",
+               n, p, t1-t0, fletcher16(l, n*n), omp_get_max_threads(), num_p);
 
-    // Generate output file
-    if (ofname)
-        write_matrix(ofname, n, l);
+        // Generate output file
+        if (ofname)
+            write_matrix(ofname, n, n, l);
+    }
 
     // Clean up
-    free(l);
+    _mm_free(l);
+    MPI_Finalize();
+
     return 0;
 }
