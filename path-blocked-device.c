@@ -70,103 +70,82 @@ void solve(int n,                    // Number of nodes
     USE_ALIGN(orig_l,    BYTE_ALIGN);
     USE_ALIGN(orig_lnew, BYTE_ALIGN);
 
-    // keep track of who is done and who is not (manual reduction)
-    int *even_done = (int *)alloca(n_threads*sizeof(int));
-    int *odd_done  = (int *)alloca(n_threads*sizeof(int));
-
     // since this is double buffering, we may have written the final results into the
     // alternate orig_lnew, and therefore need to copy them back at the end
     int copy_back = 0;
 
-    // avoid re-spawning threads for every iteration of the while(!done) scenario
-    #pragma omp parallel           \
-            num_threads(n_threads) \
-            shared(orig_l, orig_lnew, even_done, odd_done)
-    {
-        // buffered variables
-        int *l, *lnew, *done;
-        size_t step = 0;
+    // buffered variables
+    int *l, *lnew;
+    size_t step = 0;
 
-        // while(!done)
-        for(/* step = 0 */; /* true */ ; ++step) {
-            
-            // setup double buffers
-            int even = step % 2;
-            if(even) {
-                done = even_done;
-                l    = orig_l;
-                lnew = orig_lnew;
-            }
-            else {
-                done = odd_done;
-                l    = orig_lnew;
-                lnew = orig_l;
-            }
-
-            // assume the best
-            int idx = omp_get_thread_num();
-            done[idx] = 1;
-
-            // Major Blocks
-            #pragma omp for
-            for(int J = 0; J < n_height; ++J) {
-                for(int K = 0; K < n_height; ++K) {
-                    for(int I = 0; I < n_width; ++I){
-                        // Calculate ending indices for the set of blocks
-                        int j_end   = ((J+1)*height_size < n ? height_size : n - J*height_size);
-                        int k_end   = ((K+1)*height_size < n ? height_size : n - K*height_size);
-                        int i_end   = ((I+1)*width_size  < n ? width_size  : n - I*width_size);
-
-                        int j_init  = J*height_size*n;
-                        int kn_init = K*height_size*n;
-                        int k_init  = K*height_size;
-                        int i_init  = I*width_size;
-
-                        // Minor Blocks
-                        for(int j = 0; j < j_end; ++j) {
-                            int jn = j_init+j*n;
-                    
-                            for(int k = 0; k < k_end; ++k) {
-                                int kn  = kn_init+k*n;
-                                int lkj = l[jn+k_init+k];
-                                
-#ifdef __INTEL_COMPILER
-                                #pragma ivdep
-#endif
-                                for(int i = 0; i < i_end; ++i) {
-                                    int lij_ind = jn+i_init+i;
-                                    int lij = lnew[lij_ind];
-                                    int lik = l[kn+i_init+i];
-
-                                    if(lik + lkj < lij) {
-                                        lij = lik+lkj;
-                                        lnew[lij_ind] = lij;
-                                        done[idx] = 0;
-                                    }
-                                }
-                            }
-                        }// end Minor Blocks
-                    }
-                }
-            }// end Major Blocks (and omp for)
-
-            // need to sync all threads before we can determine if we are finished
-            #pragma omp barrier
-
-            // if any thread is not finished, then all threads continue
-            int finished = 1;
-            for(int i = 0; i < n_threads; ++i)
-                finished = finished && done[i];
-
-            if(finished) break;
-
+    // while(!done)
+    for(/* step = 0 */; /* true */ ; ++step) {
+        
+        // setup double buffers
+        int even = step % 2;
+        if(even) {
+            l    = orig_l;
+            lnew = orig_lnew;
+        }
+        else {
+            l    = orig_lnew;
+            lnew = orig_l;
         }
 
-        // if the array that we just wrote into is the locally allocated array, we need
-        // to copy this back to the original so that it gets transferred back to the host
-        #pragma omp single nowait
-        copy_back = step % 2 == 0;
-    }// end omp parallel
+        // Major Blocks
+        int done = 1;
+        #pragma omp parallel for       \
+                num_threads(n_threads) \
+                shared(l, lnew)        \
+                reduction(&& : done)
+        for(int J = 0; J < n_height; ++J) {
+            for(int K = 0; K < n_height; ++K) {
+                for(int I = 0; I < n_width; ++I){
+                    // Calculate ending indices for the set of blocks
+                    int j_end   = ((J+1)*height_size < n ? height_size : n - J*height_size);
+                    int k_end   = ((K+1)*height_size < n ? height_size : n - K*height_size);
+                    int i_end   = ((I+1)*width_size  < n ? width_size  : n - I*width_size);
+
+                    int j_init  = J*height_size*n;
+                    int kn_init = K*height_size*n;
+                    int k_init  = K*height_size;
+                    int i_init  = I*width_size;
+
+                    // Minor Blocks
+                    for(int j = 0; j < j_end; ++j) {
+                        int jn = j_init+j*n;
+                
+                        for(int k = 0; k < k_end; ++k) {
+                            int kn  = kn_init+k*n;
+                            int lkj = l[jn+k_init+k];
+                            
+#ifdef __INTEL_COMPILER
+                            #pragma ivdep
+#endif
+                            for(int i = 0; i < i_end; ++i) {
+                                int lij_ind = jn+i_init+i;
+                                int lij = lnew[lij_ind];
+                                int lik = l[kn+i_init+i];
+
+                                if(lik + lkj < lij) {
+                                    lij = lik+lkj;
+                                    lnew[lij_ind] = lij;
+                                    done = 0;
+                                }
+                            }
+                        }
+                    }// end Minor Blocks
+                }
+            }
+        }// end Major Blocks (and omp parallel for)
+
+        if(done) break;
+
+    }
+
+    // if the array that we just wrote into is the locally allocated array, we need
+    // to copy this back to the original so that it gets transferred back to the host
+    copy_back = step % 2 == 0;
 
     if(copy_back)
         memcpy(orig_l, orig_lnew, n*n * sizeof(int));
