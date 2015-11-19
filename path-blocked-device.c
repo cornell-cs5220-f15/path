@@ -68,15 +68,7 @@ void solve(int n,                    // Number of nodes
            int n_threads) {          // how many threads to use
 
     USE_ALIGN(orig_l,    BYTE_ALIGN);
-
-    // create the alt grid on the Phi so we don't have to transfer it over.
-    // we *will* have to wait for allocation, but will have to transfer half
-    // as much data initially and half has much back as well
-    // DEF_ALIGN(BYTE_ALIGN) int * restrict orig_lnew = (int * restrict)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
     USE_ALIGN(orig_lnew, BYTE_ALIGN);
-
-    // initial conditions
-    // memcpy(orig_lnew, orig_l, n*n * sizeof(int));
 
     // keep track of who is done and who is not (manual reduction)
     int *even_done = (int *)alloca(n_threads*sizeof(int));
@@ -175,8 +167,6 @@ void solve(int n,                    // Number of nodes
 
     if(copy_back)
         memcpy(orig_l, orig_lnew, n*n * sizeof(int));
-
-    // _mm_free(orig_lnew);
 }
 
 /**
@@ -226,11 +216,6 @@ static inline void deinfinitize(int n, int * restrict l) {
 void shortest_paths(int n, int * restrict l, int n_threads) {
     USE_ALIGN(l, BYTE_ALIGN);
 
-    DEF_ALIGN(BYTE_ALIGN) int *lnew = (int *)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
-    USE_ALIGN(lnew, BYTE_ALIGN);
-
-    // initial conditions
-    memcpy(lnew, l, n*n * sizeof(int));
 
     printf("-------------------------------------------\n");
     printf("Individual Squares:\n");
@@ -242,6 +227,11 @@ void shortest_paths(int n, int * restrict l, int n_threads) {
 
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
+
+    // double buffered; initial conditions
+    DEF_ALIGN(BYTE_ALIGN) int *lnew = (int *)_mm_malloc(n*n * sizeof(int), BYTE_ALIGN);
+    USE_ALIGN(lnew, BYTE_ALIGN);
+    memcpy(lnew, l, n*n * sizeof(int));
 
     const int n_width  = n / width_size  + (n % width_size  ? 1 : 0);
     const int n_height = n / height_size + (n % height_size ? 1 : 0);
