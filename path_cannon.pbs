@@ -1,6 +1,6 @@
 #!/bin/sh -l
 
-#PBS -l nodes=4:ppn=2
+#PBS -l nodes=2:ppn=3
 #PBS -l walltime=1:00:00
 #PBS -N path_cannon
 #PBS -j oe
@@ -8,4 +8,5 @@
 module load cs5220
 cd $PBS_O_WORKDIR
 
-mpirun -n 4 $PBS_O_WORKDIR/path_cannon.x -n 256
+mpirun -n 5 ./path_cannon.x -n 200
+
