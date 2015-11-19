@@ -4,30 +4,30 @@ Begin optimization report for: main(int, char **)
     Report from: Vector optimizations [vec]
 
 
-LOOP BEGIN at mt19937p.c(59,5) inlined into path-tiled.c(172,14)
+LOOP BEGIN at mt19937p.c(59,5) inlined into path-tiled.c(228,14)
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
    remark #15346: vector dependence: assumed FLOW dependence between mt line 60 and mt line 60
 LOOP END
 
-LOOP BEGIN at mt19937p.c(59,5) inlined into path-tiled.c(172,14)
+LOOP BEGIN at mt19937p.c(59,5) inlined into path-tiled.c(228,14)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at path-tiled.c(100,3) inlined into path-tiled.c(172,14)
-   remark #15527: loop was not vectorized: function call to _mm_malloc(size_t, size_t) cannot be vectorized   [ path-tiled.c(17,19) ]
+LOOP BEGIN at path-tiled.c(86,3) inlined into path-tiled.c(228,14)
+   remark #15527: loop was not vectorized: function call to _mm_malloc(size_t, size_t) cannot be vectorized   [ path-tiled.c(32,19) ]
 LOOP END
 
-LOOP BEGIN at path-tiled.c(103,3) inlined into path-tiled.c(172,14)
+LOOP BEGIN at path-tiled.c(167,3) inlined into path-tiled.c(228,14)
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
    remark #15346: vector dependence: assumed ANTI dependence between mt line 78 and mt line 83
    remark #15346: vector dependence: assumed FLOW dependence between mt line 83 and mt line 78
 
-   LOOP BEGIN at path-tiled.c(104,5) inlined into path-tiled.c(172,14)
+   LOOP BEGIN at path-tiled.c(168,5) inlined into path-tiled.c(228,14)
       remark #15344: loop was not vectorized: vector dependence prevents vectorization
       remark #15346: vector dependence: assumed ANTI dependence between mt line 78 and mt line 83
       remark #15346: vector dependence: assumed FLOW dependence between mt line 83 and mt line 78
 
-      LOOP BEGIN at mt19937p.c(77,9) inlined into path-tiled.c(172,14)
+      LOOP BEGIN at mt19937p.c(77,9) inlined into path-tiled.c(228,14)
          remark #15388: vectorization support: reference mt has aligned access   [ mt19937p.c(78,13) ]
          remark #15389: vectorization support: reference mt has unaligned access   [ mt19937p.c(78,13) ]
          remark #15388: vectorization support: reference mt has aligned access   [ mt19937p.c(79,13) ]
@@ -49,11 +49,11 @@ LOOP BEGIN at path-tiled.c(103,3) inlined into path-tiled.c(172,14)
          remark #15488: --- end vector loop cost summary ---
       LOOP END
 
-      LOOP BEGIN at mt19937p.c(77,9) inlined into path-tiled.c(172,14)
+      LOOP BEGIN at mt19937p.c(77,9) inlined into path-tiled.c(228,14)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at mt19937p.c(81,9) inlined into path-tiled.c(172,14)
+      LOOP BEGIN at mt19937p.c(81,9) inlined into path-tiled.c(228,14)
          remark #15389: vectorization support: reference mt has unaligned access   [ mt19937p.c(82,13) ]
          remark #15389: vectorization support: reference mt has unaligned access   [ mt19937p.c(82,13) ]
          remark #15389: vectorization support: reference mt has unaligned access   [ mt19937p.c(83,13) ]
@@ -73,87 +73,92 @@ LOOP BEGIN at path-tiled.c(103,3) inlined into path-tiled.c(172,14)
          remark #15488: --- end vector loop cost summary ---
       LOOP END
 
-      LOOP BEGIN at mt19937p.c(81,9) inlined into path-tiled.c(172,14)
+      LOOP BEGIN at mt19937p.c(81,9) inlined into path-tiled.c(228,14)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at path-tiled.c(45,3) inlined into path-tiled.c(175,3)
+LOOP BEGIN at path-tiled.c(47,3) inlined into path-tiled.c(230,15)
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(48,5) ]
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(49,5) ]
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed OUTPUT dependence between l line 47 and l line 50
-   remark #15346: vector dependence: assumed OUTPUT dependence between l line 50 and l line 47
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 48 and  line 49
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 49 and  line 48
 
-   LOOP BEGIN at path-tiled.c(46,5) inlined into path-tiled.c(175,3)
-      remark #15344: loop was not vectorized: vector dependence prevents vectorization
-      remark #15346: vector dependence: assumed FLOW dependence between l line 47 and l line 47
-      remark #15346: vector dependence: assumed ANTI dependence between l line 47 and l line 47
-   LOOP END
-
-   LOOP BEGIN at path-tiled.c(46,5) inlined into path-tiled.c(175,3)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at path-tiled.c(32,3) inlined into path-tiled.c(177,15)
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(33,5) ]
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(34,5) ]
-   remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 33 and  line 34
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 34 and  line 33
-
-   LOOP BEGIN at path-tiled.c(33,5) inlined into path-tiled.c(177,15)
+   LOOP BEGIN at path-tiled.c(48,5) inlined into path-tiled.c(230,15)
       remark #15527: loop was not vectorized: function call to fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized
    LOOP END
 LOOP END
 
-LOOP BEGIN at path-tiled.c(82,3) inlined into path-tiled.c(181,3)
+LOOP BEGIN at path-tiled.c(60,3) inlined into path-tiled.c(233,3)
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed OUTPUT dependence between l line 86 and l line 86
-   remark #15346: vector dependence: assumed OUTPUT dependence between l line 86 and l line 86
+   remark #15346: vector dependence: assumed ANTI dependence between l line 62 and l line 65
+   remark #15346: vector dependence: assumed FLOW dependence between l line 65 and l line 62
 
-   LOOP BEGIN at path-tiled.c(83,5) inlined into path-tiled.c(181,3)
+   LOOP BEGIN at path-tiled.c(61,5) inlined into path-tiled.c(233,3)
       remark #15344: loop was not vectorized: vector dependence prevents vectorization
-      remark #15346: vector dependence: assumed OUTPUT dependence between l line 86 and l line 86
-      remark #15346: vector dependence: assumed OUTPUT dependence between l line 86 and l line 86
-
-      LOOP BEGIN at path-tiled.c(84,7) inlined into path-tiled.c(181,3)
-         remark #15344: loop was not vectorized: vector dependence prevents vectorization
-         remark #15346: vector dependence: assumed FLOW dependence between l line 86 and l line 86
-         remark #15346: vector dependence: assumed ANTI dependence between l line 86 and l line 86
-      LOOP END
-
-      LOOP BEGIN at path-tiled.c(84,7) inlined into path-tiled.c(181,3)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at path-tiled.c(59,3) inlined into path-tiled.c(185,3)
-   remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed OUTPUT dependence between l line 61 and l line 61
-   remark #15346: vector dependence: assumed OUTPUT dependence between l line 61 and l line 61
-
-   LOOP BEGIN at path-tiled.c(60,5) inlined into path-tiled.c(185,3)
-      remark #15344: loop was not vectorized: vector dependence prevents vectorization
-      remark #15346: vector dependence: assumed FLOW dependence between l line 61 and l line 61
-      remark #15346: vector dependence: assumed ANTI dependence between l line 61 and l line 61
+      remark #15346: vector dependence: assumed FLOW dependence between l line 62 and l line 62
+      remark #15346: vector dependence: assumed ANTI dependence between l line 62 and l line 62
    LOOP END
 
-   LOOP BEGIN at path-tiled.c(60,5) inlined into path-tiled.c(185,3)
+   LOOP BEGIN at path-tiled.c(61,5) inlined into path-tiled.c(233,3)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at path-tiled.c(71,3) inlined into path-tiled.c(191,25)
+LOOP BEGIN at path-tiled.c(143,3) inlined into path-tiled.c(237,3)
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+   remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+
+   LOOP BEGIN at path-tiled.c(144,5) inlined into path-tiled.c(237,3)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+      remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+
+      LOOP BEGIN at path-tiled.c(145,7) inlined into path-tiled.c(237,3)
+         remark #15344: loop was not vectorized: vector dependence prevents vectorization
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+         remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+
+         LOOP BEGIN at path-tiled.c(146,9) inlined into path-tiled.c(237,3)
+            remark #15344: loop was not vectorized: vector dependence prevents vectorization
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+            remark #15346: vector dependence: assumed OUTPUT dependence between c line 148 and c line 148
+
+            LOOP BEGIN at path-tiled.c(147,11) inlined into path-tiled.c(237,3)
+            LOOP END
+         LOOP END
+      LOOP END
+   LOOP END
+LOOP END
+
+LOOP BEGIN at path-tiled.c(74,3) inlined into path-tiled.c(241,3)
+   remark #15344: loop was not vectorized: vector dependence prevents vectorization
+   remark #15346: vector dependence: assumed OUTPUT dependence between l line 76 and l line 76
+   remark #15346: vector dependence: assumed OUTPUT dependence between l line 76 and l line 76
+
+   LOOP BEGIN at path-tiled.c(75,5) inlined into path-tiled.c(241,3)
+      remark #15344: loop was not vectorized: vector dependence prevents vectorization
+      remark #15346: vector dependence: assumed FLOW dependence between l line 76 and l line 76
+      remark #15346: vector dependence: assumed ANTI dependence between l line 76 and l line 76
+   LOOP END
+
+   LOOP BEGIN at path-tiled.c(75,5) inlined into path-tiled.c(241,3)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at path-tiled.c(103,3) inlined into path-tiled.c(247,25)
    remark #15542: loop was not vectorized: inner loop was already vectorized
 
-   LOOP BEGIN at path-tiled.c(72,5) inlined into path-tiled.c(191,25)
+   LOOP BEGIN at path-tiled.c(104,5) inlined into path-tiled.c(247,25)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at path-tiled.c(72,5) inlined into path-tiled.c(191,25)
-      remark #15388: vectorization support: reference l has aligned access   [ path-tiled.c(73,7) ]
+   LOOP BEGIN at path-tiled.c(104,5) inlined into path-tiled.c(247,25)
+      remark #15388: vectorization support: reference l has aligned access   [ path-tiled.c(105,7) ]
       remark #15300: LOOP WAS VECTORIZED
       remark #15442: entire loop may be executed in remainder
       remark #15448: unmasked aligned unit stride loads: 1 
@@ -167,38 +172,38 @@ LOOP BEGIN at path-tiled.c(71,3) inlined into path-tiled.c(191,25)
       remark #15488: --- end vector loop cost summary ---
    LOOP END
 
-   LOOP BEGIN at path-tiled.c(72,5) inlined into path-tiled.c(191,25)
+   LOOP BEGIN at path-tiled.c(104,5) inlined into path-tiled.c(247,25)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at path-tiled.c(129,3) inlined into path-tiled.c(191,25)
+LOOP BEGIN at path-tiled.c(185,3) inlined into path-tiled.c(247,25)
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed ANTI dependence between sum2 line 131 and sum2 line 131
-   remark #15346: vector dependence: assumed FLOW dependence between sum2 line 131 and sum2 line 131
+   remark #15346: vector dependence: assumed ANTI dependence between sum2 line 187 and sum2 line 187
+   remark #15346: vector dependence: assumed FLOW dependence between sum2 line 187 and sum2 line 187
 LOOP END
 
-LOOP BEGIN at path-tiled.c(32,3) inlined into path-tiled.c(193,15)
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(33,5) ]
-   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(34,5) ]
+LOOP BEGIN at path-tiled.c(47,3) inlined into path-tiled.c(249,15)
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(48,5) ]
+   remark #15382: vectorization support: call to function fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized   [ path-tiled.c(49,5) ]
    remark #15344: loop was not vectorized: vector dependence prevents vectorization
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 33 and  line 34
-   remark #15346: vector dependence: assumed OUTPUT dependence between  line 34 and  line 33
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 48 and  line 49
+   remark #15346: vector dependence: assumed OUTPUT dependence between  line 49 and  line 48
 
-   LOOP BEGIN at path-tiled.c(33,5) inlined into path-tiled.c(193,15)
+   LOOP BEGIN at path-tiled.c(48,5) inlined into path-tiled.c(249,15)
       remark #15527: loop was not vectorized: function call to fprintf(FILE *__restrict__, const char *__restrict__, ...) cannot be vectorized
    LOOP END
 LOOP END
 
-LOOP BEGIN at path-tiled.c(114,3) inlined into path-tiled.c(196,3)
-   remark #15527: loop was not vectorized: function call to _mm_free(void *) cannot be vectorized   [ path-tiled.c(114,31) ]
+LOOP BEGIN at path-tiled.c(94,3) inlined into path-tiled.c(252,3)
+   remark #15527: loop was not vectorized: function call to _mm_free(void *) cannot be vectorized   [ path-tiled.c(94,31) ]
 LOOP END
 
 
 Non-optimizable loops:
 
 
-LOOP BEGIN at path-tiled.c(159,3)
-   remark #15535: loop was not vectorized: loop contains switch statement. Consider using if-else statement.   [ path-tiled.c(160,5) ]
+LOOP BEGIN at path-tiled.c(215,3)
+   remark #15535: loop was not vectorized: loop contains switch statement. Consider using if-else statement.   [ path-tiled.c(216,5) ]
 LOOP END
 ===========================================================================
