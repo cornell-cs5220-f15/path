@@ -151,9 +151,9 @@ Although the scaling studies for the tuned parallel implementation times show si
 \label{fig:ws_elliot}
 \end{figure}
 
-The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. 
+The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. \\
 
-We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, wheras the naive finished in 11.0959, which means we had roughly \textbf{11 times speedup}! 
+We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, whereas the naive finished in 11.0959, leading to a speedup factor of 11. \\
 
 Looking at the vectorization report, the large majority of the computationally heavy calculations were being vectorized, resulting in a large speedup. However, we have not yet generalized this code and this can only run for some fixed problem sizes and fixed thread sizes. We plan to do this in the future. Therefore, we ran the strong scaling studying on a 2048 x 2048 graph. The weak scaling study varies the problem size but keeps the problem size per processor constant at a 512 x 512 board. We could only run it using a small number of threads: 1, 4, and 16 on the compute node.
 
