@@ -13,11 +13,6 @@
 #define ALIGNBY 32
 #endif
 
-#pragma offload_attribute(push,target(mic))
-int nthreads;
-#pragma offload_attribute(pop)
-#define NTHREADS nthreads
-
 //ldoc on
 /**
  * # The basic recurrence
@@ -53,11 +48,11 @@ int nthreads;
 #pragma offload_attribute(push,target(mic))
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
+           int* restrict lnew,int nthreads)  // Partial distance at step s+1
 {
   int done = 1;
 
-#pragma omp parallel for shared(l, lnew) reduction(&& : done) num_threads(NTHREADS)
+#pragma omp parallel for shared(l, lnew) reduction(&& : done) num_threads(nthreads)
   for (int j = 0; j < n; ++j) {
     for (int k = 0; k < n; ++k) {
       __assume_aligned(l,ALIGNBY);
@@ -121,7 +116,7 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+void shortest_paths(int n, int* restrict l, int nthreads)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
@@ -138,7 +133,7 @@ void shortest_paths(int n, int* restrict l)
       memcpy(lnew, l, n*n * sizeof(int));
       
       for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
+        done = square(n, l, lnew, nthreads);
         memcpy(l, lnew, n*n * sizeof(int));
       }
       /* free(lnew); */
@@ -230,6 +225,7 @@ const char* usage =
 int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
+    int nthreads = 200;
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
@@ -258,7 +254,7 @@ int main(int argc, char** argv)
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
-    shortest_paths(n, l);
+    shortest_paths(n, l, nthreads);
     double t1 = omp_get_wtime();
 
     /* printf("== OpenMP with %d threads\n", omp_get_max_threads()); */
