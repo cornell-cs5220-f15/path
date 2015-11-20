@@ -40,11 +40,9 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 
 Since the Floyd-Warshall algorithm is structured very similarly to matrix multiplication, we decided to try taking some of the tuning methods used in the first project on matrix multiplication, and applying them to the Floyd-Warshall algorithm. \\
 
-The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon. \\
+The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently.  \\
 
 The second method changes the loop ordering, so that in the innermost loop, memory is being accessed with unit stride, which increases performance. \\
-
-As the project goes on, we also hope to add other optimizations attempted in the matrix multiplication project, such as copying the blocks into a contiguous chunk of memory. \\
 
 \subsection{Message Passing Interface}\label{sec:mpi}
 
@@ -171,6 +169,13 @@ Looking at the vectorization report, the large majority of the computationally h
 \end{figure}
 
 \subsection{MPI Implementation}
+
+\subsubsection{Profiling}
+
+Profiling of the MPI implementation running on a graph with 1000 nodes with 10 processors shows that the bottleneck of the implementation is in the \texttt{mult} function which performs the row column 'squaring' operation. The spin times correspond to the blocking operations of MPI required to synchronize graph state across processes. 
+
+\lstinputlisting[basicstyle=\tiny\ttfamily]{./profiling/profile_mpi.txt}
+
 
 \subsubsection{Scaling Study}
 

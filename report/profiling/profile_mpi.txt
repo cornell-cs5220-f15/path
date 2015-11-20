@@ -1,9 +1,12 @@
-Function        Module          CPU Time  CPU Time:Idle  CPU Time:Poor  CPU Time:Ok  CPU Time:Ideal  CPU Time:Over  Spin Time  Overhead Time
---------------  --------------  --------  -------------  -------------  -----------  --------------  -------------  ---------  -------------
-mult            path-mpi.x        0.669s             0s         0.669s           0s              0s             0s         0s             0s
-PMPI_Recv       libmpi.so.12.0    0.091s             0s         0.091s           0s              0s             0s     0.091s             0s
-PMPI_Finalize   libmpi.so.12.0    0.080s         0.050s         0.030s           0s              0s             0s     0.070s             0s
-PMPI_Allgather  libmpi.so.12.0    0.040s             0s         0.040s           0s              0s             0s     0.040s             0s
-PMPI_Send       libmpi.so.12.0    0.020s         0.020s             0s           0s              0s             0s     0.020s             0s
-genrand         path-mpi.x        0.010s             0s         0.010s           0s              0s             0s         0s             0s
-__intel_memset  pmi_proxy         0.010s             0s         0.010s           0s              0s             0s         0s             0s
+_______________________________________________________________________________________
+|                                |                  CPU Time              |           |
+| Function        Module         |   Total     Idle     Poor    Ok  Ideal | Spin Time |
+| --------------  -------------- |--------  -------  -------  ----  ----- | --------- |
+| mult            path-mpi.x     |  0.669s       0s   0.669s    0s     0s |        0s |
+| PMPI_Recv       libmpi.so.12.0 |  0.091s       0s   0.091s    0s     0s |    0.091s |
+| PMPI_Finalize   libmpi.so.12.0 |  0.080s   0.050s   0.030s    0s     0s |    0.070s |
+| PMPI_Allgather  libmpi.so.12.0 |  0.040s       0s   0.040s    0s     0s |    0.040s |
+| PMPI_Send       libmpi.so.12.0 |  0.020s   0.020s       0s    0s     0s |    0.020s |
+| genrand         path-mpi.x     |  0.010s       0s   0.010s    0s     0s |        0s |
+| __intel_memset  pmi_proxy      |  0.010s       0s   0.010s    0s     0s |        0s |
+---------------------------------------------------------------------------------------
