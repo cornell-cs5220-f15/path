@@ -3,8 +3,8 @@
 \usepackage[margin=1in]{geometry}
 
 \lstset{
-    language=bash,
-        keywordstyle=\ttfamily
+	    language=bash,
+		        keywordstyle=\ttfamily
 }
 
 \title{Parallelzing an All-Pairs Shortest Path Algorithm}
@@ -83,18 +83,30 @@ After each processor has finished updating it's corresponding columns in
 the update $l_{ij}^{s+1} = \min_k \{ l^s_{ik} + l^s_{jk} \}$, we call
 \emph{MPI\_Allgather} so that each processor gets the fully updated $l^{s+1}$
 for the next step.  Each processor also keeps a local ``done'' flag that will
-be true if nothing was updated.  In order to determine whether to terminate
-or not, we call \emph{MPI\_Allreduce} with a logical AND operator on the local
-done flags.
+	be true if nothing was updated.  In order to determine whether to terminate
+	or not, we call \emph{MPI\_Allreduce} with a logical AND operator on the local
+	done flags.
 
-\subsection*{Scaling Study}
+	\subsection*{Scaling Study}
 
-We plan to include a scaling study of the MPI implementation.  However, at this time the 
-code is performing very poorly, so we will wait until it has been tuned further to show 
-the results.
+	We plan to include a scaling study of the MPI implementation.  However, at this time the 
+	code is performing very poorly, so we will wait until it has been tuned further to show 
+	the results.
 
-\section*{Future Work}
 
-For the final report, we plan to focus on tuning our paralell implementation.
+	\section{Tuning}
+	Since this problem is closely related to the matrix multiplication, we used the same trick as we did in the matrix multiplication, which are copy optimization and blocking. Using copy optimization, we store the transpose of the matrix and it increases the possibility of cache hit. Implementing it will give us 3x to 4x speed up. Similarly, by using blocking, we can better parallel independent jobs and increase the possibility of catch hit. Combining these two methods together, we can get the epeed up plot in Figure~\ref{su}. As you can see, the speedup can be up to 10x.
+	\begin{figure}
+	\caption{speed up for the tuning code}
+	\label{su}
+	\includegraphics[height=0.4\textwidth, width=\textwidth]{speed_up.png}
+	\end{figure}
 
-\end{document}
+
+
+	The benchmark is the original code using OpenMP with 24 threads.
+	\section*{Future Work}
+
+	For the final report, we plan to focus on tuning our paralell implementation.
+
+	\end{document}
