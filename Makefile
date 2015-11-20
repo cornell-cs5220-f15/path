@@ -38,6 +38,12 @@ path_elliot.x: path_elliot.o mt19937p.o
 path_elliot.o: path_elliot.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
+path-offload.x: path-offload.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-offload.o: path-offload.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
 
