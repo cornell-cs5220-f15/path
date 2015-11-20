@@ -427,6 +427,7 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 	\begin{center}
 		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
 			set logscale y
+			set yr[1.0:100]
 			plot "./benchmarking/blocked/strong/p025strong.txt" u 1:2 t 'Blocked p = 0.025' w lp, \
 			"./benchmarking/blocked/strong/p05strong.txt" u 1:2 t 'Blocked p = 0.050' w lp, \
 			"./benchmarking/vectorized/strong/p025strong.txt" u 1:2 t 'Initial p = 0.025' w lp, \
@@ -593,6 +594,59 @@ inout(lnew : length(first_iter*n*n) ...
 
 \noindent We present now a strong and weak scaling study demonstrating the results of this approach:
 
+
+\begin{figure}[h]
+	\begin{center}
+		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
+			#set key at 15.8,41
+			set size 1.0,0.75              
+			unset log                          
+			unset label                          
+			#set xtic auto offset 0,-0.5 font ",10"                     
+			#set ytic 25 font ",10" 
+			#Set Info
+			set xlabel "Number of Threads"
+			#set xlabel offset 0,-0.5
+			set ylabel "Scaling Efficiency"
+			#set ylabel offset -1.25,0
+			#set xr [0.0:16.0]
+			set yr [0.0:1.5]
+			plot "./benchmarking/blocked_phi/strong/p025strong.txt" u 1:(1350.99216/$2/$1*8) t 'p = 0.025' w linespoints, \
+			"./benchmarking/blocked_phi/strong/p05strong.txt" u 1:(1790.88339304/$2/$1*4) t 'p = 0.050' w lp, \
+			"./benchmarking/blocked_phi/strong/p10strong.txt" u 1:(1807.047016/$2/$1*4) t 'p = 0.100' w lp, \
+			"./benchmarking/blocked_phi/strong/p30strong.txt" u 1:(1767.469844/$2/$1*4) t 'p = 0.300' w lp
+		\end{gnuplot}
+		\caption{Strong scaling for OpenMP parallelized path algorithm with blocked submatrices computed on the Xeon Phi coprocessors. The problem size was $\mathtt{n} = 11111$.}
+		\label{blocked_device_ss}
+	\end{center}
+\end{figure}
+
+
+\begin{figure}[h]
+	\begin{center}
+		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
+			#set key at 15.8,41
+			set size 1.0,0.75              
+			unset log                          
+			unset label                          
+			#set xtic auto offset 0,-0.5 font ",10"                     
+			#set ytic 25 font ",10" 
+			#Set Info
+			set xlabel "Number of Threads"
+			#set xlabel offset 0,-0.5
+			set ylabel "Weak Scaling"
+			#set ylabel offset -1.25,0
+			#set xr [0.0:16.0]
+			set yr [0.0:1.2]
+			plot "./benchmarking/blocked_phi/weak/p025weak.txt" u 1:(13.64914/$2) t 'p = 0.025' w linespoints, \
+			"./benchmarking/blocked_phi/weak/p05weak.txt" u 1:(13.99326205/$2) t 'p = 0.050' w lp, \
+			"./benchmarking/blocked_phi/weak/p10weak.txt" u 1:(9.705235004/$2) t 'p = 0.100' w lp, \
+			"./benchmarking/blocked_phi/weak/p30weak.txt" u 1:(10.184929132/$2) t 'p = 0.300' w lp
+		\end{gnuplot}
+		\caption{\Huge Put parameters of study here for weak scaling or make a table and refer to it.}
+		\label{blocked_device_ws}
+	\end{center}
+\end{figure}
 \begin{center}
 	{\Huge PLOT PLOT PLOT}
 \end{center}
