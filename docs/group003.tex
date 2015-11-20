@@ -620,7 +620,7 @@ inout(lnew : length(first_iter*n*n) ...
 			"./benchmarking/blocked_phi/strong/p10strong.txt" u 1:(1807.047016/$2/$1*4) t 'p = 0.100' w lp, \
 			"./benchmarking/blocked_phi/strong/p30strong.txt" u 1:(1767.469844/$2/$1*4) t 'p = 0.300' w lp
 		\end{gnuplot}
-		\caption{Strong scaling for OpenMP parallelized path algorithm with blocked submatrices computed on the Xeon Phi coprocessors. The problem size was $\mathtt{n} = 11111$.}
+		\caption{Strong scaling for OpenMP parallelized path algorithm with blocked submatrices computed on the Xeon Phi coprocessors. The problem size was $\mathtt{n} = 11111$. We start at \texttt{threads}=4 because this is equivalent to using one core on the Phi, as well as the probability that the task will complete with using one thread on the Phi is very small given the roughly two times slower clock rates.}
 		\label{blocked_device_ss}
 	\end{center}
 \end{figure}
@@ -838,21 +838,15 @@ _mm_free(orig_lnew);
 \begin{figure}[h]
 	\begin{center}
 		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
-			#set key at 15.8,41
 			set size 1.0,0.75              
 			unset log                          
 			unset label                          
-			#set xtic auto offset 0,-0.5 font ",10"                     
-			#set ytic 25 font ",10" 
 			#Set Info
 			set xlabel "Number of Threads"
-			#set xlabel offset 0,-0.5
-			set ylabel "Scaling Efficiency"
-			#set ylabel offset -1.25,0
-			#set xr [0.0:16.0]
-			set yr [0.0:1.5]
-			plot "./benchmarking/blocked_phi/strong/p025strong.txt" u 1:(1350.999216079712/$2/$1) t 'p = 0.025' w linespoints, \
-			"./benchmarking/blocked_phi/large_nodep025strong.txt" u 1:(1685.584415912628/$2/$1) t 'p = 0.025' w lp, \
+			set ylabel "Time in Seconds"
+			set yr [0.0:1700]
+			plot "./benchmarking/blocked_phi/strong/p025strong.txt" u 1:2 t 'p = 0.025' w linespoints, \
+			"./benchmarking/blocked_phi/large_nodep025strong.txt" u 1:2 t 'p = 0.025' w lp, \
 		\end{gnuplot}
 		\caption{A comparison of the strong scaling for OpenMP parallelized path algorithm with blocked submatrices on the Xeon Phi Coprocessors and the Xeon Nodes. The problem size was $\mathtt{n} = 11111$, and the probability was $p = 0.025$.}
 		\label{blocked_comparison}
