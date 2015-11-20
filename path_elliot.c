@@ -1,4 +1,3 @@
-#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +5,10 @@
 #include <unistd.h>
 #include <omp.h>
 #include "mt19937p.h"
+
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE ((int) 16)
+#endif
 
 //ldoc on
 /**
@@ -39,7 +42,47 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
+ int basic(int lda,                  // Number of nodes in whole domain
+           int* restrict l,         // Partial distance at step s
+           int* restrict lnew,      // Partial distance at step s+1
+           int i0, int j0, int k0)  // Position of subdomain
+{
+    int done = 1;
+    for (int j = j0; j < j0+BLOCK_SIZE; ++j) {
+        for (int k = k0; k < k0+BLOCK_SIZE; ++k) {
+            int lkj = l[j*lda+k];
+            for (int i = i0; i < i0+BLOCK_SIZE; ++i) {
+                int lik = l[k*lda+i];
+                if (lik + lkj < lnew[j*lda+i]) {
+                    lnew[j*lda+i] = lik+lkj;
+                    done = 0;
+                }
+            }
+        }
+    }
+    return done;
+}
+
+ int square(int n, int* restrict l, int* restrict lnew)
+ {
+    int n_blocks = n / BLOCK_SIZE;
+    int done = 1; 
+
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    for (int bj = 0; bj < n_blocks; ++bj) {
+        int j = bj*BLOCK_SIZE;
+        for (int bi = 0; bi < n_blocks; ++bi) {
+            int i = bi*BLOCK_SIZE;
+            for (int bk = 0; bk < n_blocks; ++bk) {
+                int k = bk*BLOCK_SIZE;
+                done = basic(n,l,lnew,i,j,k);
+            }
+        }
+    }
+    return done;
+ }
+
+ int square_ref(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
@@ -61,6 +104,7 @@ int square(int n,               // Number of nodes
     }
     return done;
 }
+
 
 /**
  *
@@ -93,7 +137,7 @@ static inline void deinfinitize(int n, int* l)
 /**
  *
  * Of course, any loop-free path in a graph with $n$ nodes can
- * at most pass through every node in the graph.  Therefore,
+ * at most pass theough every node in the graph.  Therefore,
  * once $2^s \geq n$, the quantity $l_{ij}^s$ is actually
  * the length of the shortest path of any number of hops.  This means
  * we can compute the shortest path lengths for all pairs of nodes
@@ -116,6 +160,24 @@ void shortest_paths(int n, int* restrict l)
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
         done = square(n, l, lnew);
+        memcpy(l, lnew, n*n * sizeof(int));
+    }
+    free(lnew);
+    deinfinitize(n, l);
+}
+
+void shortest_paths_ref(int n, int* restrict l)
+{
+    // Generate l_{ij}^0 from adjacency matrix representation
+    infinitize(n, l);
+    for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;
+
+    // Repeated squaring until nothing changes
+    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    memcpy(lnew, l, n*n * sizeof(int));
+    for (int done = 0; !done; ) {
+        done = square_ref(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);
@@ -154,7 +216,7 @@ int* gen_graph(int n, double p)
  * arithmetic, we should get bitwise identical results from run to
  * run, even if we do optimizations that change the associativity of
  * our computations.  The function `fletcher16` computes a simple
- * [simple checksum][wiki-fletcher] over the output of the
+ * [simple checksum][wiki-fletcher].  over the output of the
  * `shortest_paths` routine, which we can then use to quickly tell
  * whether something has gone wrong.  The `write_matrix` routine
  * actually writes out a text representation of the matrix, in case we
@@ -189,18 +251,6 @@ void write_matrix(const char* fname, int n, int* a)
     fclose(fp);
 }
 
-/**
- * # The `main` event
- */
-
-const char* usage =
-    "path.x -- Parallel all-pairs shortest path on a random graph\n"
-    "Flags:\n"
-    "  - n -- number of nodes (200)\n"
-    "  - p -- probability of including edges (0.05)\n"
-    "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
-
 void strong_scaling(int n, int p) {
     FILE *fp;
     fp = fopen("strong_scaling.csv", "w+");
@@ -227,11 +277,12 @@ void weak_scaling(int n, int p) {
     FILE *fp;
     fp = fopen("weak_scaling.csv", "w+");
     double t_start, t_end, t_threadrun;
-    int thread_max = 20, runs = 1, i, j, *l;
+    int thread_max = 50, runs = 1, i, j, k, *l;
     int problem_size = n * n;
     int n_scaled;
 
-    for (i = 1; i <= thread_max; i++) {
+    for (k = 1; k <= sqrt(thread_max); k++) {
+        i = k*k;
         omp_set_num_threads(i);
         n_scaled = ceil(sqrt(problem_size * i));
         t_threadrun = 0.0;
@@ -248,9 +299,21 @@ void weak_scaling(int n, int p) {
     fclose(fp);
 }
 
+/**
+ * # The `main` event
+ */
+
+const char* usage =
+    "path.x -- Parallel all-pairs shortest path on a random graph\n"
+    "Flags:\n"
+    "  - n -- number of nodes (200)\n"
+    "  - p -- probability of including edges (0.05)\n"
+    "  - i -- file name where adjacency matrix should be stored (none)\n"
+    "  - o -- file name where output matrix should be stored (none)\n";
+
 int main(int argc, char** argv)
 {
-    int n    = 200;            // Number of nodes
+    int n    = 512;            // Number of nodes
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
@@ -276,16 +339,26 @@ int main(int argc, char** argv)
     if (ifname)
         write_matrix(ifname,  n, l);
 
+    // Create a copy of l in lref
+    int* lref = calloc(n*n, sizeof(int));
+    memcpy(lref,l,n*n*sizeof(int));
+
     // Time the shortest paths code
     double t0 = omp_get_wtime();
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
+    double t0_ref = omp_get_wtime();
+    shortest_paths_ref(n,lref);
+    double t1_ref = omp_get_wtime();
+
     printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    printf("Time:           %g\n", t1-t0);
+    printf("Reference Time: %g\n", t1_ref-t0_ref);
+    printf("Checksum:           %X\n", fletcher16(l, n*n));
+    printf("Reference Checksum: %X\n", fletcher16(lref, n*n));
 
     // Generate output file
     if (ofname)
@@ -293,8 +366,10 @@ int main(int argc, char** argv)
 
     // Clean up
     free(l);
+    free(lref);
 
-    /* strong_scaling(n, p); */
-    weak_scaling(1000, p);
+    strong_scaling(n, p);
+    weak_scaling(512, p);
+    
     return 0;
 }

@@ -1,0 +1,12 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path-mpi-ampl
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+# mpirun -np 4 ./path-mpi.x -n 64 -i adj_mat -o out_mat
+amplxe-cl -collect hotspots \
+mpirun -np 10 ./path-mpi.x -n 1000
