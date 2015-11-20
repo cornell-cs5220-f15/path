@@ -6,6 +6,31 @@
 #include <unistd.h>
 #include <omp.h>
 #include "mt19937p.h"
+#include <mpi.h>
+#include <immintrin.h>
+
+// Global definitions
+
+#define MASK_1 0xffffffffffffffff
+#define MASK_0 0x0000000000000000
+
+// Number of 32b words in vector width. Determine based on what platform
+// we're running on. Also set the corresponding AVX intrinsics and data
+// types.
+
+#define VECTOR_NWORDS 8
+#define VECTOR_NBYTES 32
+#define vec         __m256i
+#define vec_set     _mm256_set_epi32
+#define vec_set1    _mm256_set1_epi32
+#define vec_load    _mm256_load_si256
+#define vec_add     _mm256_add_epi32
+#define vec_cmpgt   _mm256_cmpgt_epi32
+#define vec_setzero _mm256_setzero_si256
+#define vec_and     _mm256_and_si256
+#define vec_testc   _mm256_testc_si256
+#define vec_andnot  _mm256_andnot_si256
+#define vec_store   _mm256_store_si256
 
 void transpose_array(int M, int *A, int *copied)
 {
@@ -57,6 +82,7 @@ int square(int n,               // Number of nodes
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
+    int vec_blocks = n / VECTOR_NWORDS;
     #pragma omp parallel for collapse(2) shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
@@ -64,16 +90,47 @@ int square(int n,               // Number of nodes
             int j_start = j*n;
 
             int lij = l[j_start + i];
-            for (int k = 0; k < n; ++k) {
-                // int lik = l[k*n+i];
-                int lik = l_transposed[i_start + k];
-                int lkj = l[j_start + k];
-                
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
+            int* sums = _mm_malloc(VECTOR_NWORDS * sizeof(int), VECTOR_NBYTES);
+
+            for (int kb = 0; kb < vec_blocks; ++kb) {
+                int kb_offset = kb * VECTOR_NWORDS;
+                int *lik_vec_addr = l_transposed + i_start + kb_offset;
+                int *lkj_vec_addr = l + j_start + kb_offset;
+
+                vec lij_vec = vec_set1(lij);
+                vec lik_vec = vec_load((vec *)lik_vec_addr);
+                vec lkj_vec = vec_load((vec *)lkj_vec_addr);
+
+                vec sum_vec = vec_add(lik_vec, lkj_vec);
+
+                vec mask_vec = vec_cmpgt(lij_vec, sum_vec);
+                vec zero_vec = vec_setzero();
+
+                // we assume that there is no junk
+
+                if (!vec_testc(mask_vec, zero_vec)){
+                    done = 0;  
+                    vec_store((vec *)sums, sum_vec);
+                    for (int z = 0; z < VECTOR_NWORDS; z++){
+                        if (sums[z] < lij){
+                            lij = sums[z];
+                        }
+                    }
                 }
             }
+
+            _mm_free(sums);
+
+            // for (int k = 0; k < n; ++k) {
+            //     // int lik = l[k*n+i];
+            //     int lik = l_transposed[i_start + k];
+            //     int lkj = l[j_start + k];
+                
+            //     if (lik + lkj < lij) {
+            //         lij = lik+lkj;
+            //         done = 0;
+            //     }
+            // }
             lnew[j_start+i] = lij;
         }
     }
@@ -230,7 +287,7 @@ const char* usage =
 int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
-    double p = 0.1;           // Edge probability
+    double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
 

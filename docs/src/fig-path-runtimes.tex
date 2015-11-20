@@ -1,0 +1,15 @@
+%=========================================================================
+% fig-path-runtimes.tex
+%=========================================================================
+
+\begin{figure}[h]
+
+  \centering
+  \includegraphics[width=0.9\tw]{fig-path-comp.png}
+
+  \caption{\textbf{Performance comparison of MPI implementation with copy-optimized Open MP and the initial (un-optimized) Open MP implementation on graphs of size n = 200 to n = 8000 --} Performance of MPI surpasses that of Optimized Open MP at n = 2000 and below, where it benefits from running the computation on multiple processors. As n increases > 2000, the overheads from synchronizing memory access between the processors outweighs the performance gains and we see Optimized OpenMP performing better than MPI.}
+
+  \label{fig-path-runtime}
+
+\end{figure}
+ 
