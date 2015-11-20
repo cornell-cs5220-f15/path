@@ -1,0 +1,12 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+
+mpirun -np 20 ./path-mpi.x -n 200 -x 5 -y 4 -o matrix.out -i matrix.in
+
