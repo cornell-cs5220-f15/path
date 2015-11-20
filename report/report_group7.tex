@@ -44,7 +44,7 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 
 Since the Floyd-Warshall algorithm is structured very similarly to matrix multiplication, we decided to try taking some of the tuning methods used in the first project on matrix multiplication, and applying them to the Floyd-Warshall algorithm. \\
 
-The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon.
+The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon. 
 
 The second method changes the loop ordering, so that in the innermost loop, memory is being accessed with unit stride, which increases performance.
 
@@ -79,19 +79,18 @@ Therefore, we do an \texttt{MPI\_Allgather} operation which gathers the $i^{th}$
 \label{fig:row_col}
 \end{figure}
 
-The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether any update was made across all processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached.
+The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether \textit{any} update was made across \textit{all} processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached. \\
+
+The MPI implementation can be found in \texttt{path-mpi.c}. 
 
 \subsubsection{Advantages}
 
-The MPI approach improves upon a serial implementation of the algorithm due to its ability to compute updates to multiple regions of the graph in parallel.
+The MPI approach improves upon a serial implementation of the algorithm due to its ability to compute updates to multiple regions of the graph in parallel. \\
  
-The MPI approach makes each processor be responsible of a contiguous sequence of columns in the graph. To update a a square block in this sequence of columns, the processor needs to recreate only the corresponding sequence of rows. Therefore, if the width of the sequence of columns is $d$ and the side length of the graph is $n$, each processor only needs to hold $2nd$ information in memory instead of $n^2$. On larger graphs, this decrease in memory footprint will prevent thrashing since the space scales as $O(n)$ instead of $O(n^2)$ and will show improvements in performance over the OpenMP version.
+The MPI approach makes each processor be responsible of a contiguous sequence of columns in the graph. To update a a square block in this sequence of columns, the processor needs to recreate only the corresponding sequence of rows. Therefore, if the width of the sequence of columns is $d$ and the side length of the graph is $n$, each processor only needs to hold $2nd$ information in memory instead of $n^2$. On larger graphs, this decrease in memory footprint will prevent thrashing since the space scales as $O(n)$ instead of $O(n^2)$ and will show improvements in performance over the OpenMP version. 
 
 \subsubsection{Disadvantages}
 On smaller graphs, the communication and synchronization overhead  of MPI may cause a decrease in performance.
-
-\subsubsection{Implementation}
-The MPI implementation can be found in \texttt{path-mpi.c}. We are still in the process of ironing out bugs in the implementation and hope to have a complete solution by the final report. Furthermore, if time permits, we aim to explore the Cannon's algorithm to improve upon the current MPI scheme. \cite{cannon}
 
 \section{Analysis}
 
@@ -151,9 +150,9 @@ Although the scaling studies for the tuned parallel implementation times show si
 \label{fig:ws_elliot}
 \end{figure}
 
-The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. 
+The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. \\
 
-We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, wheras the naive finished in 11.0959, which means we had roughly \textbf{11 times speedup}! 
+We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, whereas the naive finished in 11.0959, leading to a speedup factor of 11. \\
 
 Looking at the vectorization report, the large majority of the computationally heavy calculations were being vectorized, resulting in a large speedup. We ran the strong scaling studying on a 2048 x 2048 graph. The weak scaling study varies the problem size but keeps the problem size per processor constant at a 512 x 512 board. We could only run it using a small number of threads: 1, 4, and 16 on the compute node.
 
@@ -171,12 +170,15 @@ Looking at the vectorization report, the large majority of the computationally h
 \label{fig:ws_eric}
 \end{figure}
 
+<<<<<<< HEAD
+=======
 However, a problem with this blocking implementation means that we have to perform a copy optimization so that we can run the \texttt{shortest\_paths} function on a problem size that works for our problem. Our current implementation prints out how much time it takes to perform the copying. The amount of time needed to perform the copying is trivial for small problem sizes. On a 255 x 255 grid, it took 6.07967e-05 time to perform the copying. However, as the size of the matrix increases, the amount of time needed to perform the copying scales with the size of the matrix squared. For example, the time taken to perform the copying on a 2000 x 2000 matrix is 0.00843501, which several orders of magnitude larger. Relative to the amount of time needed to perform the shortest paths calculation, this is still trivial. On 2000 x 2000 matrix, we finished in 1.04781 time.
 
 \section{Future Work}
 
 In addition to completing the MPI implementation outlined in Section~\ref{sec:mpi}, we aim to explore the Cannon's algorithm \cite{cannon} to further decrease the memory footprint in each processor and improve parallelization. 
 
+>>>>>>> bc4ac072d63973d0cf5d254ac2e25a62c32166d1
 \begin{thebibliography}{9}
 \bibitem{writeup}
 Bindel, D. \textit{All-Pairs Shortest Paths}. Retrieved November 10, 2015, from \url{https://github.com/sheroze1123/path/blob/master/main.pdf}
