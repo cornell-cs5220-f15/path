@@ -168,6 +168,25 @@ Looking at the vectorization report, the large majority of the computationally h
 \label{fig:ws_eric}
 \end{figure}
 
+\paragraph{Offloading of Tuned Approach II}
+We then took our most tuned OpenMP approach, and ran it on the Xeon Phi coprocessors. Since the coprocessors have many more cores than the nodes, we hoped this would give us more data for scaling studies, and would be able to run the same problem faster overall given the higher theoretical peak flop rate. The weak study was done with a constant workload of a 200 x 200 graph per processor, while the strong scaling study was done with a 2000 x 2000 graph.The results can be found in the following figures:
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/strong_scaling_offload.png}
+\caption{Strong scaling study of the tuned parallel solution on the Xeon Phi coprocessor}
+\label{fig:ss_offload}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/weak_scaling_offload.png}
+\caption{Weak scaling study of the tuned parallel solution on the Xeon Phi coprocessor}
+\label{fig:ws_offload}
+\end{figure}
+
+While our strong scaling study is surprisingly not always monotone, we do see that we are able to get a maximum speedup of almost 20 over the serial implementation.
+
 \subsection{MPI Implementation}
 
 \subsubsection{Profiling}
