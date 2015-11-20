@@ -4,8 +4,11 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include <omp.h>
+#include <mpi.h>
 #include "mt19937p.h"
+
+//I hate c
+#define min(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 //ldoc on
 /**
@@ -39,17 +42,15 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
+int square(int irank, int imin,int imax,
+	   int jmin, int jmax, int n, // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
+    for (int j = jmin; j <= jmax; ++j) {
+        for (int i = imin; i <= imax; ++i) {
             int lij = lnew[j*n+i];
-
-            #pragma vector aligned
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
                 int lkj = l[j*n+k];
@@ -106,7 +107,7 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+void shortest_paths(int n, int* restrict l, int irank, int imin, int imax, int jmin, int jmax)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
@@ -115,11 +116,14 @@ void shortest_paths(int n, int* restrict l)
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    memcpy(lnew, l, n*n * sizeof(int));
+    MPI_Allreduce(l,lnew,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        memcpy(l, lnew, n*n * sizeof(int));
+        int idone = square(irank,imin,imax,jmin,jmax,n, l, lnew);
+        MPI_Allreduce(&idone,&done,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+        MPI_Allreduce(lnew,l,n*n,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
     }
+
     free(lnew);
     deinfinitize(n, l);
 }
@@ -209,10 +213,14 @@ int main(int argc, char** argv)
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
+    int nprocs, irank;
+    int imin, imax, jmin, jmax;
+    int npy, npx;
+    double t0, t1;
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:x:y:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -223,6 +231,8 @@ int main(int argc, char** argv)
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
+        case 'x': npx = atoi(optarg); break;
+        case 'y': npy = atof(optarg); break;
         }
     }
 
@@ -231,16 +241,28 @@ int main(int argc, char** argv)
     if (ifname)
         write_matrix(ifname,  n, l);
 
-    // Time the shortest paths code
-    double t0 = omp_get_wtime();
-    shortest_paths(n, l);
-    double t1 = omp_get_wtime();
+    MPI_Init(&argc,&argv);
+    MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD,&irank);
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    imin =  (irank % npx)*(n/npx + 1);
+    imax = min(imin + (n/npx), n - 1);
+    jmin = floor((irank)/npx)*(n/npy + 1);
+    jmax = min(jmin + (n/npy), n - 1);
+
+    // Time the shortest paths code
+    if(irank == 0) t0 = MPI_Wtime();
+    //ok, now probably just each processor computes some shortest paths and then broadcasts 
+    shortest_paths(n, l, irank, imin, imax, jmin, jmax);
+
+    if(irank == 0) {
+    t1 = MPI_Wtime();
+        printf("== MPI with %d threads\n", nprocs);
+        printf("n:     %d\n", n);
+        printf("p:     %g\n", p);
+        printf("Time:  %g\n", t1-t0);
+        printf("Check: %X\n", fletcher16(l, n*n));
+    }
 
     // Generate output file
     if (ofname)
@@ -248,6 +270,6 @@ int main(int argc, char** argv)
 
     // Clean up
     free(l);
-
+    MPI_Finalize();
     return 0;
 }

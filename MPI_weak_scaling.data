@@ -1,0 +1,20 @@
+== MPI with 1 threads
+n:     200
+p:     0.05
+Time:  0.00890207
+Check: 9F8F
+== MPI with 4 threads
+n:     400
+p:     0.05
+Time:  0.0264859
+Check: 4312
+== MPI with 9 threads
+n:     600
+p:     0.05
+Time:  0.08815
+Check: 5FD6
+== MPI with 16 threads
+n:     800
+p:     0.05
+Time:  0.4054
+Check: C008
