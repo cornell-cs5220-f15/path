@@ -44,7 +44,7 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 
 Since the Floyd-Warshall algorithm is structured very similarly to matrix multiplication, we decided to try taking some of the tuning methods used in the first project on matrix multiplication, and applying them to the Floyd-Warshall algorithm. \\
 
-The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon.
+The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon. 
 
 The second method changes the loop ordering, so that in the innermost loop, memory is being accessed with unit stride, which increases performance.
 
@@ -79,19 +79,18 @@ Therefore, we do an \texttt{MPI\_Allgather} operation which gathers the $i^{th}$
 \label{fig:row_col}
 \end{figure}
 
-The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether any update was made across all processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached.
+The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether \textit{any} update was made across \textit{all} processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached. \\
+
+The MPI implementation can be found in \texttt{path-mpi.c}. 
 
 \subsubsection{Advantages}
 
-The MPI approach improves upon a serial implementation of the algorithm due to its ability to compute updates to multiple regions of the graph in parallel.
+The MPI approach improves upon a serial implementation of the algorithm due to its ability to compute updates to multiple regions of the graph in parallel. \\
  
-The MPI approach makes each processor be responsible of a contiguous sequence of columns in the graph. To update a a square block in this sequence of columns, the processor needs to recreate only the corresponding sequence of rows. Therefore, if the width of the sequence of columns is $d$ and the side length of the graph is $n$, each processor only needs to hold $2nd$ information in memory instead of $n^2$. On larger graphs, this decrease in memory footprint will prevent thrashing since the space scales as $O(n)$ instead of $O(n^2)$ and will show improvements in performance over the OpenMP version.
+The MPI approach makes each processor be responsible of a contiguous sequence of columns in the graph. To update a a square block in this sequence of columns, the processor needs to recreate only the corresponding sequence of rows. Therefore, if the width of the sequence of columns is $d$ and the side length of the graph is $n$, each processor only needs to hold $2nd$ information in memory instead of $n^2$. On larger graphs, this decrease in memory footprint will prevent thrashing since the space scales as $O(n)$ instead of $O(n^2)$ and will show improvements in performance over the OpenMP version. 
 
 \subsubsection{Disadvantages}
 On smaller graphs, the communication and synchronization overhead  of MPI may cause a decrease in performance.
-
-\subsubsection{Implementation}
-The MPI implementation can be found in \texttt{path-mpi.c}. We are still in the process of ironing out bugs in the implementation and hope to have a complete solution by the final report. Furthermore, if time permits, we aim to explore the Cannon's algorithm to improve upon the current MPI scheme. \cite{cannon}
 
 \section{Analysis}
 
@@ -170,10 +169,6 @@ Looking at the vectorization report, the large majority of the computationally h
 \caption{Weak scaling study of the tuned parallel solution}
 \label{fig:ws_eric}
 \end{figure}
-
-\section{Future Work}
-
-In addition to completing the MPI implementation outlined in Section~\ref{sec:mpi}, we aim to explore the Cannon's algorithm \cite{cannon} to further decrease the memory footprint in each processor and improve parallelization. 
 
 \begin{thebibliography}{9}
 \bibitem{writeup}
