@@ -65,14 +65,14 @@ The serial versions of both programs were so slow that we plotted them on a sepa
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=.8\textwidth]{mpi_omp_comparison.pdf}
+	\includegraphics[width=.7\textwidth]{mpi_omp_comparison.pdf}
 	\caption{Speed of the OpenMP and MPI implementations as the problem size and number of processors changes.}
 	\label{fig:mpi-omp}
 \end{figure}
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=.8\textwidth]{serial.pdf}
+	\includegraphics[width=.6\textwidth]{serial.pdf}
 	\caption{Speed of the OpenMP and MPI implementations with only one processor.}
 	\label{fig:serial}
 \end{figure}
@@ -120,6 +120,70 @@ Figure \ref{fig:size-comparison} shows that the optimized kernel gives us modest
 
 \subsection{Strong Scaling Study}
 
+Next, we measured how much paralellism our code is able to exploit by setting up a strong scaling study.
+We chose a fixed problem size of n=3072 because this seemed to be a large enough problem for parallelism to make a difference, without being one of the sizes that causes problems for OpenMP.
+Figure \ref{fig:strong-scaling-time} shows how the completion time of the problem decreases as we add more processors, while Figure \ref{fig:strong-scaling-speedup} shows the speedup of each program over the serial version of that program.
+
+With an ideal parallel implementation, speedup would increase linearly as the number of processors increases.
+However, all of these implementations show speedups that level out as the number of processors increases due to synchronization overheads.
+For all implementations, the largest speedup (and largest change in running time) occurs with the change from 1 to 4 processors.
+Additional parallelism after 4 is less effective, especially for our tuned MPI implementation.
+This is probably the result of the fact that our tuned MPI implementation has a more efficient kernel and thus has less serial work to do per iteration (as evidenced by its far lower runtime for the single-threaded case), so there is less work to be split among processors and less room for speedup compared to the single-threaded version.
+In fact, with 16 processors our tuned MPI implementation actually runs slightly slower than with 9 processors, which reflects the additional communication overhead of more processors (and more communication groups) dominating the speedup gained by splitting the matrix into more parallel blocks.
+On the other hand, our non-tuned MPI implementation has a speedup that is closer to linear than the OpenMP implementation, which confirms our prediction that splitting the matrix by both rows and columns would decrease communication overhead compared to the column-only decomposition used in the OpenMP code.
+
+\begin{figure*}[ht]
+	\centering
+	\begin{subfigure}[b]{.45\textwidth}
+		\includegraphics[width=\textwidth]{strong-scaling-time.pdf}
+		\caption{Scaling measured by total running time}
+		\label{fig:strong-scaling-time}
+	\end{subfigure}
+	\begin{subfigure}[b]{.45\textwidth}
+		\includegraphics[width=\textwidth]{strong-scaling-speedup.pdf}
+		\caption{Scaling measured by speedup}
+		\label{fig:strong-scaling-speedup}
+	\end{subfigure}
+	\caption{Strong scaling study results for the three algorithms with n=3072}
+	\label{fig:strong-scaling}
+\end{figure*}
+
 \subsection{Weak Scaling Study}
+
+We also measured our code's scaling efficiency by setting up a weak scaling study.
+We chose a per-processor problem size of n=1024, so that the larger numbers of processors would have large enough problem sizes to show a benefit from parallelism (i.e. 3072, 4096).
+Figure \ref{fig:weak-scaling-time} shows the completion times of each implementation as both the problem size and the number of processors increases, and Figure \ref{fig:weak-scaling-percent} shows the scaled speedup, or efficiency, of each implementation as a percentage of the ideal linear scaling. 
+Note that the problem size we chose meant that the OpenMP code encountered its severe failure case of n=4096, taking 695 seconds to complete with 16 threads.
+In order to make Figure \ref{fig:weak-scaling-time} readable, we truncated the y-axis at 250, and do not show the data point for OpenMP with 16 processors.
+
+\begin{figure*}[ht]
+	\centering
+	\begin{subfigure}[b]{.45\textwidth}
+		\includegraphics[width=\textwidth]{weak-scaling-time.pdf}
+		\caption{Scaling measured by total running time}
+		\label{fig:weak-scaling-time}
+	\end{subfigure}
+	\begin{subfigure}[b]{.45\textwidth}
+		\includegraphics[width=\textwidth]{weak-scaling-percent.pdf}
+		\caption{Scaling measured by weak scaling efficiency}
+		\label{fig:weak-scaling-percent}
+	\end{subfigure}
+	\caption{Weak scaling study results for the three algorithms with per-processor block dimensions of 1024 (n=1024$\sqrt{p}$)}
+	\label{fig:weak-scaling}
+\end{figure*}
+
+With an ideal parallel implementation, the completion time of the problems would remain constant as the problem size increases (since the amount of work per processor remains constant).
+This would correspond to 100\% efficiency in the speedup graph.
+However, all of these algorithms show gradually increasing runtime as the problem size increases, due to synchronization and communication overheads.
+The OpenMP code shows the worst scaling, jumping dramatically in runtime as soon as more than one processor is added, due to the high synchronization and communication costs incurred by its rather naive algorithm.
+Our MPI code scales better, and the primary benefit seems to be from the better communication pattern, as the initial and tuned MPI implementations are much closer to each other than to the OpenMP implementation.
+Fortunately, our tuned MPI code does have some advantage, maintaining better efficiency at large numbers of processors.
+This is likely due to its cache-friendliness, since larger numbers of processors mean more memory traffic (and hence longer delays) at the same rate of cache misses per processor.
+
+\section{Future Work}
+There is more that we could do with our MPI implementation if we had more time. 
+For example, we could add additional blocking logic to accommodate non-square numbers of processors; the solution we had planned on implementing would be to round up the number of large blocks to the next largest square number, and assign multiple blocks to each processor to make up the difference.
+This would entail putting a single processor in more than one row or column, however, so we would need to develop a strategy to reduce the communication stress on multi-block processors in this case.
+We would also like to test the performance of the second-level blocking at different sizes for the small blocks, to ensure they are properly tuned to the cache size of the Xeon processors.
 
 \end{document}
