@@ -1,4 +1,21 @@
 \section{Evaluation}\label{sec:evaluation}
+\subsection{Performance Model}
+We build a performance model as follows: (We referred to GROUP 11)\\
+
+Serial Performance \\
+$S = N^3 * T$\\
+
+Parallel Speedup \\
+$ Speedup = S / ( Overhead + S / p ) $\\
+
+where $N$ is the number of vertices $T$ is time to execute atomic operations,
+$Overhead$ is the overhead time for parallelization such as communicating and
+$p$ is the number of cores we can use.
+
+The basic intuition behind this simple model is that as we can increase the
+$N$, the number of vertices, we could achieve the higher speed up, and the
+overhead becomes smaller relatively. 
+
 %Justin%
 \subsection{OpenMP Scaling}
 

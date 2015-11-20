@@ -1,25 +1,25 @@
 \section{Introduction}\label{sec:intro}
 %Taejoon%
-The Floyd\textendash Warshall algorithm, in computer science, is an alogorithm
-for finding the minimum patahs in a weighted graph. (i.e. All-pairs shortest
+The Floyd\textendash Warshall algorithm, in computer science, is an algorithm
+for finding the minimum paths in a weighted graph. (i.e. All-pairs shortest
     path problem)
 
 Our goal in this assignment includes:
 
 \begin{enumerate}
   \item Profiling: To find the bottleneck of the code.
-  \item Paralleization : To make it paralle by using MPI.
+  \item Parallelization : To make it parallel by using MPI.
   \item Optimization (Tuning) : Finally, tune it aggressively to get highest
                                 performance.
 \end{enumerate}
 
 
 The rest of the report is organized as follows. In
-Section~\ref{sec:timing},
+Section~\ref{sec:profile},
 we introduce a baseline timing result from initial copy, and show our
 profiling result. 
 Section~\ref{sec:parallel} discusses our approach for
 parallelization-related work and Section~\ref{sec:vector} discusses
-vectorization. Our evaluation result will be shown in
-Section~\ref{sec:evaluation}. Finally, Section~\ref{sec:future} suggestes what
-should be done more after peer reviews.
+vectorization and parallelization. Our evaluation result will be shown in
+Section~\ref{sec:evaluation}. Finally, Section~\ref{sec:summary} concludes the
+report.
