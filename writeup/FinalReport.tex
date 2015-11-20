@@ -12,7 +12,7 @@
 \usepackage{epstopdf}
 
 \begin{document}
-\title{CS 5220 Project 3 Preliminary Report}
+\title{CS 5220 Project 3 Final Report}
 \author{Team 15 - Xiang Long (XL483), Yalcin Ozhabes (AO294), Bryce Evans (BAE43)}
 
 \maketitle
@@ -83,7 +83,7 @@ This blocking strategy worked well and we got up to 12x speed up.
 \end{figure}
 
 \section{MPI Implementation}
-For our MPI implementation, we divide the workload for multiple compute nodes as follows. Each node is assigned a region of the matrix in the form of a column set to optimize, and all the nodes have the same copy of the whole matrix. The nodes independently find the best values for the elements within their assigned region based on its view of the matrix. Here thread-level parallelization are utilized to find the optimal values for multiple elements in the assigned region simultaneously. The finished regions from each node is then broadcasted to all other nodes. There is therefore a barrier at these points, where all nodes wait to receive updates from all other nodes before continuing to do the next iteration. 
+For our MPI implementation, we divide the workload for multiple compute nodes as follows. Each node is assigned a region of the matrix in the form of a column set to optimize, and all the nodes have the same copy of the whole matrix. The nodes independently find the best values for the elements within their assigned region based on its view of the matrix. The finished regions from each node is then broadcasted to all other nodes. There is therefore a barrier at these points, where all nodes wait to receive updates from all other nodes before continuing to do the next iteration. Since there seems to be a general problem of running MPI across multiple boards on the Totient cluster, we were only limited to utilizing the available 24 cores on the same board. More processes created beyond this number (e.g. 32) can be illustrative for what happens when there are more processes in contention than the number of cores.
 
  \begin{figure}[h]
   \centering
