@@ -48,6 +48,8 @@ int square(int n,               // Number of nodes
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
+
+            #pragma vector aligned
             for (int k = 0; k < n; ++k) {
                 int lik = l[k*n+i];
                 int lkj = l[j*n+k];
@@ -246,5 +248,6 @@ int main(int argc, char** argv)
 
     // Clean up
     free(l);
+
     return 0;
 }
