@@ -277,7 +277,7 @@ where $p$ is the number if processors. To enable easy comparison, we will use th
 			24 & 4899 \\ \hline
 		\end{tabular}
 	\end{center}
-	\caption{Table of weak scaling parameters for number of threads and the squart root of the problem size ($n$)}
+	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$)}
 	\label{mpi_ws_tab}
 \end{table}
 
@@ -356,7 +356,7 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 \end{figure}
 \noindent A couple of comments can be made about the parallel efficiency shown in Figure~\ref{mpi_ss}. First, there is a stark decrease in scaling efficiency between 8 and 16 threads. This is most likely due to an increase in communication costs, as running the program with 8 threads only requires communication on the same Xeon chip, while 16 threads spans two Xeon chips. For all probabilities presented here, this actually leads to the program completing quicker when run with only 8 processors as opposed to 16. It is interesting to note that this discontinuity in scaling between 8 and 16 processors does not appear for OpenMP (see Figure~\ref{omp_ss}), possibly due to optimized communications inside the OpenMP library itself. A second comment that can be made is that scaling efficiency appears to be independent of the probability parameter. \\
 
-\noindent Typically, weak scaling is used to view the communication costs associated with parallelizing a program since the algorithmic work should remain constant per processor during the study. This should allow us to see if communications become a dominant source of time in our program, requiring us to rethink our MPI parallelization strategy. The parameters for our weak scaling study can be seen in Table~\ref{mpi_ws_tab}, where each parameter configuration was one again run for probabilities of 0.025, 0.05, 0.1, and 0.3. The results of the study are shown in Figure~\ref{mpi_ws}
+\noindent Typically, weak scaling is used to view the communication costs associated with parallelizing a program since the algorithmic work should remain constant per processor during the study. This should allow us to see if communications become a dominant source of time in our program, requiring us to rethink our MPI parallelization strategy. The parameters for our weak scaling study can be seen in Table~\ref{mpi_ws_tab}, where each parameter configuration was one again run for probabilities of 0.025, 0.05, 0.1, and 0.3. The results of the study are shown in Figure~\ref{mpi_ws}.\\
 
 \begin{figure}[h]
 	\begin{center}
@@ -647,13 +647,29 @@ inout(lnew : length(first_iter*n*n) ...
 			"./benchmarking/blocked_phi/weak/p10weak.txt" u 1:(9.705235004/$2) t 'p = 0.100' w lp, \
 			"./benchmarking/blocked_phi/weak/p30weak.txt" u 1:(10.184929132/$2) t 'p = 0.300' w lp
 		\end{gnuplot}
-		\caption{\Huge Put parameters of study here for weak scaling or make a table and refer to it.}
+		\caption{A weak scaling study for the OpenMP parallelized path algorithm with blocked submatrices computed on the Xeon Phi coprocessors.  See Table ~\ref{phi_ws_tab} for the parameters.}
 		\label{blocked_device_ws}
 	\end{center}
 \end{figure}
-\begin{center}
-	{\Huge PLOT PLOT PLOT}
-\end{center}
+\begin{table}[h]
+	\begin{center}
+		\begin{tabular}{|c| c|}
+			\hline
+			\# of Threads & n \\ \hline
+			4 & 2000 \\ \hline
+			8 & 2828 \\ \hline
+			16 & 4000 \\ \hline
+			24 & 4899 \\ \hline
+			48 & 6928\\ \hline
+			96 & 9797\\ \hline
+			192 & 13856\\ \hline
+			216 & 14696\\ \hline
+			240 & 15492\\ \hline
+		\end{tabular}
+	\end{center}
+	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$)}
+	\label{phi_ws_tab}
+\end{table}
 
 \subsubsection{Offloading to the Phi -- A New Perspective}
 
