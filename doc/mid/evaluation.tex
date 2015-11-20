@@ -1,82 +1,75 @@
 \section{Evaluation}\label{sec:evaluation}
 %Justin%
-\subsection{Timing After Vectorization}
+\subsection{OpenMP Scaling}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/1_analysis.png}
-    \caption{Profile Analysis After Vectorization}
-    \label{vectorized_profile_result_0}
+    \includegraphics[width=0.8\textwidth]{figs/MPI_job_scaling.png}
+    \caption{OpenMP Job Scaling with 1 Node - 24 Threads}
 \end{figure}
 
-As show in the picture, for the same problem size, the function \texttt{square} is more than 5
-times faster than it was before, when we are running it with in Vtune, where one core is used to
-trace other threads. In fact, running it with command line and time it with build in function
-\texttt{omp\_get\_time()} shows the saving gives us a factor of more than 9 times faster.
+The picture shows the scaling paradigm of the original code and optimized OpenMP code. From this picture, we can
+see there is a factor of 10 improvement after our optimization. This picture also gives information about the
+scaling of the calculation. Non-linear regression fit of this curve gives a result of $O(N^{3.22})$. \\
+
+In theory, this algorithm should have a $O(N^{3})$ scaling with respect to one single iteration. The result
+different from the idea case because for a smaller graph, it can be fit into cache.
+
+\subsection{MPI Scaling}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/1_timing.png}
-    \caption{Timing Result After Vectorization}
-    \label{vectorized_profile_result_1}
+    \includegraphics[width=0.6\textwidth]{figs/MPI_strong_scaling.png}
+    \caption{MPI Strong Scaling Naive}
 \end{figure}
 
+This is our first implementation of MPI code, tested with 2000 by 2000 graph. This strong scaling diagram shows the communication
+overhead is very big, and it's performance is no better than serial code at very large number of ranks. 
+
+\subsection{Non-Blocking Communication}
+
+Notice that we don't need the whole column and row of the matrix to begin the shortest path calculation, we just need the first
+column block and first row block, then we can do the calculation. So we implemented a new version of MPI based on non-blocking
+communication \textcolor{blue}{MPI\_Ibcast}. The procedure is as follows:
+\begin{enumerate}
+\item The rank owning the first column block or row block do a blocking board-cast.
+\item The rank owning the second column block or row block do a non-blocking board-cast.
+\item Wait for the first column block and row block.
+\item Update the graph based on the first column block and row block.
+\item The rank owning the third column block or row block do a non-blocking board-cast.
+\item Wait for the second column block and row block.
+\item Go to the 4th step.
+\end{enumerate}
+
+After the optimization, we can see improvement.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/1_assembly.png}
-    \caption{Assembly Analysis After Vectorization}
-    \label{vectorized_profile_result_2}
+    \includegraphics[width=0.6\textwidth]{figs/strong_scaling.png}
+    \caption{MPI Strong Scaling Non-Blocking}
 \end{figure}
 
-The assembly analysis is more informative as it tells how well our functions have been vectorized
-as well as the timing. From the assembly analysis after vectorization, we can tell that the computations
-in the inner has been vectorized. Which is where the savings come from.
+\subsection{MPI Weak Scaling}
+Since this algorithm is not linear scaling, it is hard to define weak scaling, because the problem size grows $O(N^{3})$.
+The data tested is listed below:
+\begin{equation*}
+\begin{tabular}{c|ccccc}
+      & 1      & 4 & 9 & 16 & 25       \\
+\hline 
+2000  & 0.84   &   &   &    &          \\
+4000  & 5.74  &  2.79 &   &   &       \\
+6000  & 13.30  &   &  16.40 &    &     \\
+8000  & 23.59   &   &   &  68.91  &    \\
+10000 & 33.18   &   &   &    &  162.419  \\
+\end{tabular}
+\end{equation*}
 
-
-
-\subsection{Data-Type Optimization}
-As we went through tests, we found that the maximum distance between two vertices is
-always below 20, even when we are calculating a 10000 by 10000 graph. Then it naturally
-follows that, we don't necessarily need a 4-byte \textcolor{blue}{int} to store the
-distance information. \\
-
-To fit more data into register so that we can carry out more operation per cycle, we used
-a prototype called \textcolor{blue}{ddt}, which can be any data type such as \textcolor{blue}{long},
-\textcolor{blue}{short}, and \textcolor{blue}{char}. In fact, this gives us 30\% saving when we are
-using \textcolor{blue}{char} to store the distance between two vertices. \\
-
-Notice in Figure 8, we printed out a variable called \texttt{ddt\_upper\_range} which tells us the largest
-distance we can have, in order to use one certain data-type. In the case with \textcolor{blue}{char}, the
-largest distance is 127, which is proved to be more than enough by our tests.
-
-
-
-\subsection{Midterm Profile Result}
-
+From this graph, we can calculate the speed up factor represented in the following graph.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/2_assembly.png}
-    \caption{Initial Assembly Result}
-    \label{ddt_profile_result_1}
+    \includegraphics[width=0.45\textwidth]{figs/MPI_effective.png}
+    \caption{MPI Effective}
 \end{figure}
 
-The assembly analysis after using data-type \textcolor{blue}{char} is down below. Comparing with Figure
-\ref{vectorized_profile_result_2}, we can tell that the major saving comes from the addition between 
-\texttt{lij} and \texttt{ljk}, which consist with what we would expect, since we can now fit more additions
-into vector register to be calculated in one cycle.
-
-
-
-\subsection{Initial Timing Result}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\textwidth]{figs/2_timing.png}
-    \caption{Midterm Timing Result}
-    \label{ddt_profile_result_2}
-\end{figure}
-
-Midterm timing result is shown in Figure \ref{ddt_profile_result_2}. As we
-can see the program is running with 8 threads using OpenMP and it takes 0.7976
-seconds for 2000 vertices.
-
+From the result above, MPI is not used effectively. We think one reason is that the calculation of
+one single job is too small, because this algorithm uses additions to update the graph. So the
+fraction of Communication vs Calculation will be really high. \\

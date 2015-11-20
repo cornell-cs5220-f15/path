@@ -1,0 +1,7 @@
+Strong Scaling
+nproc   time(s)
+01      0.84
+04      0.69
+09      0.60
+16      0.73
+25      1.01

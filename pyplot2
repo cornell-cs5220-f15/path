@@ -1,0 +1,39 @@
+#!/usr/local/anaconda/bin/python
+
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+
+with open(sys.argv[1]) as f1:
+    reading1 = f1.read()
+
+with open(sys.argv[2]) as f2:
+    reading2 = f2.read()
+
+ori_data1 = reading1.split('\n')
+ori_data2 = reading2.split('\n')
+
+data1 = ori_data1[2:-1]
+data2 = ori_data2[2:-1]
+
+x1 = [row.split()[0] for row in data1]
+y1 = [row.split()[1] for row in data1]
+
+x2 = [row.split()[0] for row in data2]
+y2 = [row.split()[1] for row in data2]
+
+
+fig = plt.figure()
+
+ax1 = fig.add_subplot(111)
+
+ax1.set_title(ori_data1[0])    
+ax1.set_xlabel(ori_data1[1].split()[0])
+ax1.set_ylabel(ori_data1[1].split()[1])
+
+ax1.plot(x1, y1, marker='o', linestyle='--', color='r', label=sys.argv[3])
+ax1.plot(x1, y2, marker='*', linestyle=':', color='b', label=sys.argv[4])
+
+leg = ax1.legend()
+
+plt.show()

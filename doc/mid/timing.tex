@@ -1,9 +1,11 @@
-\section{Timing}\label{sec:timing}
+\section{Profiling}\label{sec:profiling}
 %Taejoon%
 \subsection{Profiling}
 In order to find the bottlenecks of path, we first profiled our code
 using Intel's VTune Amplifier (It was broken in cluster, so we used
 it on local machie), as shown in Figure \ref{amplxe-command}.
+
+\vspace{0.3cm}
 
 \begin{figure}[H]
 \footnotesize
@@ -15,7 +17,7 @@ amplxe-cl -report hotspots -source-object function=<NAME>
 \label{amplxe-command}
 \end{figure}
 
-\subsection{Initial Profile Result}
+\subsection{Initial Profiling Result}
 Initial profile result can be found at Figure \ref{initial_profile_result_0},
 and more detail in Figure \ref{initial_profile_result_1}.
 
@@ -24,14 +26,14 @@ steps for this program, so this point is where we started to tune the code.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/0_analysis.png}
+    \includegraphics[width=0.65\textwidth]{figs/0_analysis.png}
     \caption{Initial Profile Analysis}
     \label{initial_profile_result_0}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figs/0_assembly.png}
+    \includegraphics[width=0.65\textwidth]{figs/0_assembly.png}
     \caption{Initial Assembly Result}
     \label{initial_profile_result_1}
 \end{figure}
