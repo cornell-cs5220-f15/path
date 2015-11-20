@@ -427,7 +427,6 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 	\begin{center}
 		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
 			set logscale y
-			set yr[1.0:100]
 			plot "./benchmarking/blocked/strong/p025strong.txt" u 1:2 t 'Blocked p = 0.025' w lp, \
 			"./benchmarking/blocked/strong/p05strong.txt" u 1:2 t 'Blocked p = 0.050' w lp, \
 			"./benchmarking/vectorized/strong/p025strong.txt" u 1:2 t 'Initial p = 0.025' w lp, \
@@ -597,10 +596,27 @@ inout(lnew : length(first_iter*n*n) ...
 	\item Simply return immediately, let both be copied back, and let the Node decide if \texttt{lnew} needs to be copied back into \texttt{l} as is currently done.
 \end{enumerate}
 
-\noindent We present now a strong and weak scaling study demonstrating the results of this approach:
-
 \newpage
-
+\noindent We present now a strong and weak scaling study, Figures~\ref{blocked_device_ss} and~\ref{blocked_device_ws}, demonstrating the results of this approach:
+\begin{table}[h]
+	\begin{center}
+		\begin{tabular}{|c| c|}
+			\hline
+			\# of Threads & n \\ \hline
+			4 & 2000 \\ \hline
+			8 & 2828 \\ \hline
+			16 & 4000 \\ \hline
+			24 & 4899 \\ \hline
+			48 & 6928\\ \hline
+			96 & 9797\\ \hline
+			192 & 13856\\ \hline
+			216 & 14696\\ \hline
+			240 & 15492\\ \hline
+		\end{tabular}
+	\end{center}
+	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$).  We start at \texttt{threads}=4 because this is equivalent to using one core on the Phi, as well as the probability that the task will complete with using one thread on the Phi is very small given the roughly two times slower clock rates.}
+	\label{phi_ws_tab}
+\end{table}
 \begin{figure}[h]
 	\begin{center}
 		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
@@ -653,30 +669,11 @@ inout(lnew : length(first_iter*n*n) ...
 		\label{blocked_device_ws}
 	\end{center}
 \end{figure}
-\begin{table}[h]
-	\begin{center}
-		\begin{tabular}{|c| c|}
-			\hline
-			\# of Threads & n \\ \hline
-			4 & 2000 \\ \hline
-			8 & 2828 \\ \hline
-			16 & 4000 \\ \hline
-			24 & 4899 \\ \hline
-			48 & 6928\\ \hline
-			96 & 9797\\ \hline
-			192 & 13856\\ \hline
-			216 & 14696\\ \hline
-			240 & 15492\\ \hline
-		\end{tabular}
-	\end{center}
-	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$).  We start at \texttt{threads}=4 because this is equivalent to using one core on the Phi, as well as the probability that the task will complete with using one thread on the Phi is very small given the roughly two times slower clock rates.}
-	\label{phi_ws_tab}
-\end{table}
 
+\newpage
 \subsubsection{Offloading to the Phi -- A New Perspective}
 
-\noindent At this point, we decided that a more optimal implementation would be to avoid the Node driving the Phi computation altogether, and just use a single \texttt{offload target(mic)} statement that will not terminate until the results are in.  The major difference being to basically take the \texttt{for(int done=0; !done;)} loop and put it in \texttt{square}.  At this point the purpose of the method has changed enough that it warrants a renaming (to \texttt{solve}), with additional parameters.
-\newpage
+\noindent At this point, we decided that a more optimal implementation would be to avoid the Node driving the Phi computation altogether, and just use a single \texttt{offload target(mic)} statement that will not terminate until the results are in.  The major difference being to basically take the \texttt{for(int done=0; !done;)} loop and put it in \texttt{square}.  At this point the purpose of the method has changed enough that it warrants a renaming (to \texttt{solve}), with additional parameters:
 \begin{lstlisting}
 TARGET_MIC
 void solve(int n,                    // Number of nodes
@@ -860,7 +857,7 @@ _mm_free(orig_lnew);
 	\item Improper / unnecessary data transfer (e.g. why the line is almost flat -- our task is memory bound)
 \end{enumerate}
 
-\noindent The only other explanation we see as reasonable is that our \texttt{matmul-} style blocking incorporated in the Phi code likely does not wield the amount of threads available to us.  That is, were there more time, we would also experiment with doing smaller blocks / sub-blocks to see how the performance changes.
+\noindent The only other explanation we see as reasonable is that our \texttt{matmul-} style blocking incorporated in the Phi code likely does not wield the amount of threads available to us.  That is, were there more time, we would experiment with doing smaller sub-blocks to see how the performance changes.
 
 \subsection{Conclusion}
 Over the course of this project, we have implemented an MPI parallelization scheme, as well as tuned the initial OpenMP code. After seeing the superior performance of OpenMP due to its use of shared memory, we focused our efforts on tuning the OpenMP version of the code. This was mainly done through the implementation of blocking in the \texttt{square} function, which increased cache locality and sped the code up by an order of magnitude for the moderate case of $n = 4000$. We then focused on offloading the computation to the Xeon Phi co-processors, however were not able to effectively use them due to large amount of memory transfers, which have a significant amount of time associated with them. While our improvements did not have a significant impact on strong or weak scaling, parallelization alongside tuning has led to significant speed up of the shortest path algorithm and a substantial increase in performance.
