@@ -21,10 +21,10 @@ include Makefile.in.$(PLATFORM)
 exe: path.x
 
 path.x: path.o mt19937p.o
-	$(CC) $(OMP_CFLAGS) $^ -o $@
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
 path.o: path.c
-	$(CC) -c $(OMP_CFLAGS) $<
+	$(MPICC) -c $(MPI_CFLAGS) $<
 
 path-mpi.x: path-mpi.o mt19937p.o
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
