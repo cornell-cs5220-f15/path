@@ -9,3 +9,4 @@ OPTFLAGS=-O3 -no-prec-div -xcore-avx2 -ipo \
 CFLAGS+=$(OPTFLAGS)
 MPI_CFLAGS=$(CFLAGS)
 OMP_CFLAGS=$(CFLAGS) -openmp
+
