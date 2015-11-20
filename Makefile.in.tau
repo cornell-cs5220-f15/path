@@ -1,0 +1,10 @@
+CC=tau_cc.sh
+MPICC=mpiicc
+CFLAGS=-std=c99 -g
+
+# If you're using icc, these are good flags to try
+OPTFLAGS=-O3 -no-prec-div -ipo
+
+CFLAGS+=$(OPTFLAGS)
+MPI_CFLAGS=$(CFLAGS) -openmp
+OMP_CFLAGS=$(CFLAGS) -openmp

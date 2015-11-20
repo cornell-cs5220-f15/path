@@ -1,9 +1,10 @@
 CC=gcc
+MPICC=mpicc
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
-OPTFLAGS=-O3 -march=native
+OPTFLAGS=-O3 #-march=native
 
 CFLAGS+=$(OPTFLAGS)
-MPI_CFLAGS=$(CFLAGS)
+MPI_CFLAGS=$(CFLAGS) -fopenmp
 OMP_CFLAGS=$(CFLAGS) -fopenmp
