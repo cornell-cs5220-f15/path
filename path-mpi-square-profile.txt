@@ -1,0 +1,26 @@
+Source Line  Source                                                               CPU Time  CPU Time:Idle  CPU Time:Poor  CPU Time:Ok  CPU Time:Ideal  CPU Time:Over  Spin Time  Overhead Time
+-----------  -------------------------------------------------------------------  --------  -------------  -------------  -----------  --------------  -------------  ---------  -------------
+44                      int* restrict l,     // Partial distance at step s                                                                                                                    
+45                      int* restrict lnew,                                                                                                                                                   
+46                      int jlow, int jup)  // Partial distance at step s+1                                                                                                                   
+47           {                                                                                                                                                                                
+48           //    printf("l %d\n",l);                                                                                                                                                        
+49               int done = 1;                                                      2.749s             0s         2.749s           0s              0s             0s         0s             0s
+50           //    #pragma omp parallel for shared(l, lnew) reduction(&& : done)                                                                                                              
+51               for (int j = jlow; j < jup; ++j) {                                                                                                                                           
+52                   for (int i = 0; i < n; ++i) {                                                                                                                                            
+53                       int lij = lnew[(j-jlow)*n+i];                              0.020s             0s         0.020s           0s              0s             0s         0s             0s
+54                       for (int k = 0; k < n; ++k) {                              4.665s             0s         4.665s           0s              0s             0s         0s             0s
+55                           int lik = l[k*n+i];                                   13.771s             0s        13.771s           0s              0s             0s         0s             0s
+56                           int lkj = l[j*n+k];                                                                                                                                              
+57                           if (lik + lkj < lij) {                                 1.958s             0s         1.958s           0s              0s             0s         0s             0s
+58                               lij = lik+lkj;                                                                                                                                               
+59                               done = 0;                                          0.060s             0s         0.060s           0s              0s             0s         0s             0s
+60                           }                                                                                                                                                                
+61                       }                                                                                                                                                                    
+62                       lnew[(j-jlow)*n+i] = lij;                                                                                                                                            
+63                   }                                                                                                                                                                        
+64               }                                                                                                                                                                            
+65               return done;                                                                                                                                                                 
+66           }                                                                                                                                                                                
+67                                                                                                                                                                                            

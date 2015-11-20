@@ -3,7 +3,7 @@ MPICC=mpiicc
 CFLAGS=-std=c99 -g
 
 # If you're using icc, these are good flags to try
-OPTFLAGS=-O3 -no-prec-div -xcore-avx2 -ipo \
+OPTFLAGS=-O3 -axcore-avx2 -march=core-avx2 -unroll-aggressive -m64 -ipo -no-prec-div -ansi-alias \
 	-qopt-report=5 -qopt-report-phase=vec
 
 CFLAGS+=$(OPTFLAGS)
