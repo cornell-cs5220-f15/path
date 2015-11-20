@@ -27,10 +27,11 @@ This goal of this project is to optimize the parallelization of the Floyd-Warsha
 
 A base parallelized C code using openMP was provided. From this, the objectives are to profile and tune the existing code, and to implement the parallelization of the algorithm using MPI.  
 
-\section{Base OpenMP Code}
+\section{OpenMP Code}
 
-\subsection{Profiling}
+\subsection{Baseline Profiling}
 A look into performance of the code was conducted by using Intel's VTUNE on Totient. Due to some technical issues with the cluster, we could not run the "advanced-hotspots" for profiling. 
+
 	\begin{figure}[h!]
 		\begin{center}
 			\includegraphics[width=0.7\columnwidth]{amplxe}
@@ -41,6 +42,19 @@ A look into performance of the code was conducted by using Intel's VTUNE on Toti
 	
 From looking at VTUNE, it appears that the most time spent in the program was done on the square function which finds the minimum path between the nodes. This is not surprising, as there are plenty of nested for loops in the code, which undoubtedly takes a while to run through, as can be seen in Figure~\ref{square}.
 
+\subsection{Vectorized Profiling}
+
+One way to further increase the performance of the square function is to implement vectorization, which aligns data to promote efficiency. From the results, it appears that this does indeed increase performance slightly, as time in square is slightly less than it was previously. 
+
+	\begin{figure}[h!]
+		\begin{center}
+			\includegraphics[width=.7\columnwidth]{amplxe_vector}
+			\caption{OpenMP Code with vectorization.}
+			\label{amplxe_vector}
+		\end{center}
+	\end{figure}
+			
+	
 	\begin{figure}[h!]
 		\begin{center}
 			\includegraphics[width=0.5\columnwidth]{square}
@@ -48,7 +62,7 @@ From looking at VTUNE, it appears that the most time spent in the program was do
 			\label{square}
 		\end{center}
 	\end{figure}
-		
+
 \subsection{Scaling}
 Strong scaling is defined as below, as the ratio of the time for a case to run in serial compared to a case with a given number of processors in parallel:
 \begin{equation}
@@ -84,7 +98,6 @@ Both strong and weak scaling studies were performed for the openMP code.
 			\label{wk_mp_g}
 		\end{center}
 	\end{figure}
-	
 
 \clearpage
 \section{OpenMPI}
