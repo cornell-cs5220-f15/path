@@ -39,26 +39,97 @@
  * identical, and false otherwise.
  */
 
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE ((int) 200)
+#endif
+
+
+int basic_dgemm(const int lda, const int M, const int N, const int K,
+		const int * A, const int *B, int* C)
+{
+	int i, j, k;
+	int done = 1;
+	for (i = 0; i < M; ++i) {
+		for (j = 0; j < N; ++j) {
+			int cij = C[j*lda+i];
+			for (k = 0; k < K; ++k) {
+				int Aki = A[i * lda + k];
+				int Bjk = B[j * lda + k];
+				if (Aki + Bjk < cij) { 
+					cij = Aki + Bjk;
+					done = 0;
+				}
+			}
+			C[j*lda+i] = cij;
+		}
+	}
+	return done;
+}
+
+int do_block(const int lda,
+		const int* A, const int* B, int* C,
+		const int i, const int j, const int k)
+{
+	const int M = (i+BLOCK_SIZE > lda? lda-i : BLOCK_SIZE);
+	const int N = (j+BLOCK_SIZE > lda? lda-j : BLOCK_SIZE);
+	const int K = (k+BLOCK_SIZE > lda? lda-k : BLOCK_SIZE);
+	return basic_dgemm(lda, M, N, K,
+			A + k + i*lda, B + k + j*lda, C + i + j*lda);
+}
+
+int square_dgemm(const int M, const int* A, const int* B, int *C)
+{
+	int done = 1;
+	const int n_blocks = M / BLOCK_SIZE + (M%BLOCK_SIZE? 1 : 0);
+	#pragma omp parallel for collapse(2) shared(A, B, C) reduction(&& : done)
+	for (int bi = 0; bi < n_blocks; ++bi) {
+		for (int bj = 0; bj < n_blocks; ++bj) {
+			const int i = bi * BLOCK_SIZE;
+			const int j = bj * BLOCK_SIZE;
+			for (int bk = 0; bk < n_blocks; ++bk) {
+				const int k = bk * BLOCK_SIZE;
+				done = do_block(M, A, B, C, i, j, k);
+			}
+		}
+	}
+	return done;
+}
+
+
+/*
+int square_with_blocks(const int M, const int *A, const int *B, int *C)
+{
+	// int BLOCK_SIZE = ceil(M/floor(sqrt(omp_get_max_threads())));
+	const int n_blocks = M / BLOCK_SIZE + (M%BLOCK_SIZE? 1 : 0);
+	int done = 1;
+#pragma omp parallel for collapse(2) shared(A, B, C) reduction(&& : done)
+	for (int bi = 0; bi < n_blocks; ++bi) {
+		for (int bj = 0; bj < n_blocks; ++bj) {
+			const int i = bi * BLOCK_SIZE;
+			const int j = bj * BLOCK_SIZE;
+			for (int bk = 0; bk < n_blocks; ++bk) {
+				const int k = bk * BLOCK_SIZE;
+				done = do_block(M, A, B, C, i, j, k);
+			}
+		}
+	}
+
+	return done;
+}
+*/
+
+
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
     int done = 1;
-
-    // copy optimization
-    int* restrict temp = malloc(n * n * sizeof(int));
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            temp[i * n + j] = l[j * n + i];
-        }
-    }
-
+	#pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) {
-                //int lik = l[k*n+i];
-                int lik = temp[i*n+k];
+                int lik = l[k*n+i];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
@@ -68,7 +139,6 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
-    free(temp);
     return done;
 }
 
@@ -121,16 +191,25 @@ void shortest_paths(int n, int* restrict l)
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
 
+	int* restrict lTran = malloc(n * n * sizeof(int));
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = (int*) calloc(n * n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
+		for (int i = 0; i < n; ++i) {
+			for (int j = 0; j < n; ++j) {
+				lTran[i * n + j] = l[j * n + i];
+			}
+		}
+        done = square_dgemm(n, lTran, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
+	free(lTran);
     free(lnew);
     deinfinitize(n, l);
 }
+
+
 
 /**
  * # The random graph model
@@ -245,7 +324,7 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== Serial implementation\n");
+    printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);

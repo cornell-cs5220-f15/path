@@ -1,0 +1,38 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -N path
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=2
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  ./path-openmp.x -n 2016
+done
+
+export OMP_NUM_THREADS=4
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  ./path-openmp.x -n 2016
+done
+
+export OMP_NUM_THREADS=8
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  ./path-openmp.x -n 2016
+done
+
+export OMP_NUM_THREADS=16
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  ./path-openmp.x -n 2016
+done
+
+export OMP_NUM_THREADS=24
+for (( i = 1 ; i <= 10 ; i++ )); do
+  sleep 1
+  ./path-openmp.x -n 2016
+done

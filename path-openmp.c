@@ -43,7 +43,6 @@ int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
-    int done = 1;
 
     // copy optimization
     int* restrict temp = malloc(n * n * sizeof(int));
@@ -53,6 +52,8 @@ int square(int n,               // Number of nodes
         }
     }
 
+    int done = 1;
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
@@ -245,7 +246,7 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== Serial implementation\n");
+    printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);

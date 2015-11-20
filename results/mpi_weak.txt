@@ -1,0 +1,236 @@
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  57.6448
+Check: B0AC
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  58.0098
+Check: 4DFC
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  57.641
+Check: 6EF2
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  58.0673
+Check: 4BF3
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  58.0188
+Check: 5E19
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  58.0323
+Check: 5DB9
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  58.137
+Check: D8D5
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  58.1157
+Check: 77F7
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  57.9033
+Check: 63BE
+== MPI with 2 threads
+n:     2496
+p:     0.05
+Time:  57.7017
+Check: 93DF
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  38.3973
+Check: 90B8
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  38.153
+Check: C9B3
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  39.1092
+Check: 8917
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  38.7104
+Check: 332
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  37.8027
+Check: 5659
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  37.9121
+Check: 5AE5
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  38.6123
+Check: 2FC0
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  37.7628
+Check: CDD4
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  38.0193
+Check: 8A78
+== MPI with 4 threads
+n:     3116
+p:     0.05
+Time:  37.6451
+Check: ED62
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.4509
+Check: 5D3B
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.2675
+Check: A2ED
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.5247
+Check: 725A
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.2683
+Check: 15BA
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.4164
+Check: 14CB
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.2196
+Check: 7948
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.2386
+Check: E7D8
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.4053
+Check: EF8E
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.4918
+Check: 2E42
+== MPI with 8 threads
+n:     3888
+p:     0.05
+Time:  41.2776
+Check: EB45
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  130.241
+Check: 4B09
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  129.713
+Check: 4349
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  129.274
+Check: 2CF5
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  130.6
+Check: 4388
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  129.743
+Check: C44F
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  129.971
+Check: 3899
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  130.987
+Check: 671A
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  130.311
+Check: DE96
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  128.901
+Check: EE47
+== MPI with 16 threads
+n:     4864
+p:     0.05
+Time:  129.839
+Check: 1E2D
+== MPI with 24 threads
+n:     5544
+p:     0.05
+Time:  119.015
+Check: D63
+== MPI with 24 threads
+n:     5544
+p:     0.05
+Time:  118.881
+Check: 6C6E
+== MPI with 24 threads
+n:     5544
+p:     0.05
+Time:  118.923
+Check: 6F25
+== MPI with 24 threads
+n:     5544
+p:     0.05
+Time:  118.881
+Check: 4518
+== MPI with 24 threads
+n:     5544
+p:     0.05
+Time:  118.913
+Check: 2EBB
+== MPI with 24 threads
+n:     5544
+p:     0.05
+Time:  118.882
+Check: E858
+== MPI with 24 threads
+n:     5544
+p:     0.05
+Time:  118.831
+Check: C4DB
+=>> PBS: job killed: walltime 3622 exceeded limit 3600

@@ -1,0 +1,250 @@
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.2939
+Check: 70F1
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.34245
+Check: 65ED
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.26877
+Check: E96A
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.35892
+Check: 2F37
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.39836
+Check: BDC7
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.35036
+Check: 3894
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.20755
+Check: DB7A
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.3344
+Check: 3822
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  4.22416
+Check: 5BF
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  3.69882
+Check: 4C91
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.53755
+Check: 57F6
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.61058
+Check: 77A8
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.46613
+Check: 8E5F
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.56697
+Check: BDB5
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.42173
+Check: FD18
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.42447
+Check: 552B
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.48496
+Check: B641
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.45338
+Check: 7FDB
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.40962
+Check: 15D4
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  2.49841
+Check: A37E
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.46362
+Check: 6782
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.48354
+Check: B43D
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.41675
+Check: 7F6B
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.47194
+Check: 1D99
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.42267
+Check: 9D20
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.457
+Check: AC27
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.4875
+Check: 4362
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.45748
+Check: 8EFA
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.47119
+Check: 675A
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  1.45291
+Check: 4504
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.828443
+Check: 42CE
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.814633
+Check: DBE4
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.822404
+Check: CBB2
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  1.29221
+Check: 7542
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.80147
+Check: D5BC
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.813966
+Check: A86C
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.789265
+Check: E6BF
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.797035
+Check: C73B
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.806184
+Check: 193
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.803927
+Check: D16E
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.758717
+Check: 7DF4
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.726144
+Check: A070
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.702964
+Check: 4BA
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.908987
+Check: 22F8
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.930464
+Check: D8AE
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.933486
+Check: 37EC
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.621694
+Check: 9F65
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  1.07062
+Check: 8C03
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.756338
+Check: 5AAC
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.680672
+Check: 4B5E

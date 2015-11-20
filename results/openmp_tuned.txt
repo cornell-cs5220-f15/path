@@ -1,0 +1,250 @@
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.13895
+Check: 2AD0
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.05445
+Check: 9321
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.10066
+Check: 3BB2
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.04761
+Check: E9A6
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.07193
+Check: A07B
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.07042
+Check: CD96
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.07403
+Check: F369
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.10052
+Check: 2BC2
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.07569
+Check: 7B89
+== OpenMP with 2 threads
+n:     2016
+p:     0.05
+Time:  2.12903
+Check: 455C
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.1231
+Check: 20C5
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.10405
+Check: 7240
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.11229
+Check: 40B6
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.33376
+Check: EFE3
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.13545
+Check: A2C4
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.08052
+Check: 66DD
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.10477
+Check: 5149
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.09505
+Check: 1D0
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.09693
+Check: C3D6
+== OpenMP with 4 threads
+n:     2016
+p:     0.05
+Time:  1.08652
+Check: 5763
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.587228
+Check: 4D7
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.602797
+Check: 554B
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.609979
+Check: 7E08
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.587781
+Check: 8F50
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.916419
+Check: 3BAD
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.625368
+Check: EB05
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.604364
+Check: E527
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.588924
+Check: 22CF
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.917084
+Check: F4D1
+== OpenMP with 8 threads
+n:     2016
+p:     0.05
+Time:  0.591327
+Check: 3642
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.699213
+Check: 162A
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.63872
+Check: 10AD
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.671895
+Check: 1812
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.711486
+Check: 8F47
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.729272
+Check: 875A
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.72039
+Check: 6822
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.716553
+Check: B8A
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.696797
+Check: B29B
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.699278
+Check: 5306
+== OpenMP with 16 threads
+n:     2016
+p:     0.05
+Time:  0.692208
+Check: 688B
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.666979
+Check: 66A7
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.507883
+Check: 50B8
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.664841
+Check: 818B
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.612747
+Check: A3F1
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.732288
+Check: 2E2A
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.679405
+Check: B89E
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.599432
+Check: A2AA
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.616398
+Check: AF5E
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.753716
+Check: C530
+== OpenMP with 24 threads
+n:     2016
+p:     0.05
+Time:  0.829294
+Check: 19B6
