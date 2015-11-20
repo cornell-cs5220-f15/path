@@ -7,7 +7,6 @@
 #include <mpi.h>
 #include "mt19937p.h"
 
-
 //ldoc on
 /**
  * # The basic recurrence
@@ -45,26 +44,23 @@ int square(int n,               // Number of nodes
            int numRows, // number of rows intervals[p]/n
            int* restrict l,     // Partial distance at step s
            int* restrict lnew, // Partial distance at step s+1
-		   int* restrict lp, // rectangular part of l at step s
-		   int sp, // constant off set for lnew
-		   int lplen) // length of lp
+           int* restrict lp, // rectangular part of l at step s
+           int sp, // constant off set for lnew
+           int lplen) // length of lp
 {
     int done = 1;
-    #pragma vector aligned
     for (int i = 0; i <numRows ; ++i) {
-        #pragma vector aligned
         for (int j = 0; j < lplen; ++j) {
-//            int lij = lnew[i*n+j+sp];
-            #pragma vector aligned
+            int lij = lnew[i*n+j+sp];
             for (int k = 0; k < n; ++k) {
-//                int lik = l[i*n + k];
-//				int lkj = lp[j*n + k];
-                if (l[i*n + k] + lp[j*n + k] < lnew[i*n+j+sp]) {
-                    lnew[i*n+j+sp] = l[i*n + k] + lp[j*n + k];
+                int lik = l[i*n + k];
+                int lkj = lp[j*n + k];
+                if (lik + lkj < lij) {
+                    lij = lik+lkj;
                     done = 0;
                 }
             }
-//			lnew[i*n+j+sp] = lij;
+            lnew[i*n+j+sp] = lij;
         }
     }
     return done;
@@ -79,14 +75,13 @@ int square(int n,               // Number of nodes
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back 
+ * The functions `infinitize` and `deinfinitize` convert back
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
 
 static inline void infinitize(int n, int* l)
 {
-    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
@@ -94,7 +89,6 @@ static inline void infinitize(int n, int* l)
 
 static inline void deinfinitize(int n, int* l)
 {
-    #pragma vector aligned
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
             l[i] = 0;
@@ -113,7 +107,7 @@ static inline void deinfinitize(int n, int* l)
 
 int* gen_graph(int n, double p)
 {
-    int* l = _mm_malloc(n*n * sizeof(int), 32);
+    int* l = calloc(n*n, sizeof(int));
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -146,8 +140,8 @@ int fletcher16(int* data, int count)
     int sum1 = 0;
     int sum2 = 0;
     for(int index = 0; index < count; ++index) {
-          sum1 = (sum1 + data[index]) % 255;
-          sum2 = (sum2 + sum1) % 255;
+        sum1 = (sum1 + data[index]) % 255;
+        sum2 = (sum2 + sum1) % 255;
     }
     return (sum2 << 8) | sum1;
 }
@@ -160,7 +154,7 @@ void write_matrix(const char* fname, int n, int* a)
         exit(-1);
     }
     for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) 
+        for (int j = 0; j < n; ++j)
             fprintf(fp, "%d ", a[j*n+i]);
         fprintf(fp, "\n");
     }
@@ -183,14 +177,14 @@ void write_matrix(const char* fname, int n, int* a)
 
 void shortest_paths(int n, int* restrict l, int size, int rank)
 {
-	int sizework = size-1; // divide work up into # processors - 1
-	int masterrank = sizework; // last processor is master processor all others are slaves
-    int* restrict intervals = (int*) _mm_malloc(size * sizeof(int), 32); //Does this need to be #size - 1 % # elem
-    int* restrict displacements = (int*) _mm_malloc(size * sizeof(int), 32); //Does this need to be #size - 1 % mem loc
+    int sizework = size-1; // divide work up into # processors - 1
+    int masterrank = sizework; // last processor is master processor all others are slaves
+    int* restrict intervals = (int*) calloc(size, sizeof(int)); //Does this need to be #size - 1 % # elem
+    int* restrict displacements = (int*) calloc(size, sizeof(int)); //Does this need to be #size - 1 % mem loc
     int numRows = n/sizework; // divide rows up evenly
     int extraRows = n%sizework;//find extra rows last couple of processors will have
     MPI_Request request;
-	MPI_Status status;
+    MPI_Status status;
     // divide up the work amonst all processes
     if (rank==masterrank) {
         displacements[0] = 0;
@@ -209,74 +203,74 @@ void shortest_paths(int n, int* restrict l, int size, int rank)
     MPI_Bcast(intervals, size, MPI_INT, masterrank, MPI_COMM_WORLD);
     MPI_Bcast(displacements, size, MPI_INT, masterrank, MPI_COMM_WORLD);
     //make lnew
-	int* restrict lnew ;
-	if(rank!=masterrank){
+    int* restrict lnew ;
+    if(rank!=masterrank){
         //make lnew the appropriate length for slave nodes
-		lnew = (int*) _mm_malloc(intervals[rank] * sizeof(int), 32);
-		//memcpy(lnew, l + displacements[rank], intervals[rank] * sizeof(int));
-	}
-	else{
+        lnew = (int*) calloc(intervals[rank], sizeof(int));
+        //memcpy(lnew, l + displacements[rank], intervals[rank] * sizeof(int));
+    }
+    else{
         // make lnew same size as l for master node
-		lnew = (int*) _mm_malloc(n*n * sizeof(int), 32);
-	}
+        lnew = (int*) calloc(n*n, sizeof(int));
+    }
     //lp is going to be the tranpose of l
-	int* restrict lp = (int*) _mm_malloc(n*n * sizeof(int), 32);
+    int* restrict lp = (int*) calloc(n*n, sizeof(int));
     //scatter l subdomains that need to go into lnew
     MPI_Scatterv(l, intervals, displacements, MPI_INT, lnew, intervals[rank], MPI_INT, masterrank, MPI_COMM_WORLD);
-
-//    MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    //    MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
     for (int done = 0; !done; ) {
-		int notdoneLocal=0;
-		if(rank!=masterrank){
+        int notdoneLocal=0;
+        if(rank!=masterrank){
             //lnew is copied over to l in the first chunk
-			memcpy(l,lnew,intervals[rank] * sizeof(int));
-		}
+            memcpy(l,lnew,intervals[rank] * sizeof(int));
+        }
         //Lp is the transpose of L
-		else{
-			for(int j=0;j<n;++j){
-				for(int i=0;i<intervals[0]/n;++i){ //loops through n/sizework+1 times
-					lp[j+i*n]=l[i+j*n];
-				}
-			}
-		}
+        else{
+            for(int j=0;j<n;++j){
+                for(int i=0;i<intervals[0]/n;++i){ //loops through n/sizework+1 times
+                    lp[j+i*n]=l[i+j*n];
+                }
+            }
+        }
         //cast Lp to all processors
-		MPI_Bcast(lp, intervals[0], MPI_INT, masterrank, MPI_COMM_WORLD);
+        MPI_Bcast(lp, intervals[0], MPI_INT, masterrank, MPI_COMM_WORLD);
         // cut up Lp into chunks
-		for(int p=1;p<sizework;++p){
-			if(rank==masterrank){
-				for(int j=0;j<n;++j){
+        for(int p=1;p<sizework;++p){
+            if(rank==masterrank){
+                for(int j=0;j<n;++j){
                     //i = displacement[p]/n while i < displacement[p]/n + interval[p]
-					for(int i=displacements[p]/n;i<displacements[p]/n+intervals[p]/n;++i){
-						lp[j+i*n]=l[i+j*n]; //it's being cycled but I'm not 100% sure
-					}
-				}
+                    for(int i=displacements[p]/n;i<displacements[p]/n+intervals[p]/n;++i){
+                        lp[j+i*n]=l[i+j*n]; //lp is being cycled
+                    }
+                }
                 //broadcast the new cycled lp out
-				MPI_Ibcast(lp+displacements[p], intervals[p], MPI_INT, masterrank, MPI_COMM_WORLD, &request);
-				MPI_Wait(&request, &status);
-			}
-			else{
+                MPI_Ibcast(lp+displacements[p], intervals[p], MPI_INT, masterrank, MPI_COMM_WORLD, &request);
+                MPI_Wait(&request, &status);
+            }
+            else{
                 //receive the cycled lp for processor p
-				MPI_Ibcast(lp+displacements[p], intervals[p], MPI_INT, masterrank, MPI_COMM_WORLD, &request);
-				//compute the local square of the length of the previous lp
-				notdoneLocal += 1-square(n, displacements[rank], intervals[rank]/n, l, lnew,lp+displacements[p-1],displacements[p-1]/n,intervals[p-1]/n);
-				MPI_Wait(&request, &status);
-			}
-		}
-		if(rank!=masterrank){
+                MPI_Ibcast(lp+displacements[p], intervals[p], MPI_INT, masterrank, MPI_COMM_WORLD, &request);
+                //compute the local square of the length of the previous lp
+                notdoneLocal += 1-square(n, displacements[rank], intervals[rank]/n, l, lnew,lp+displacements[p-1],displacements[p-1]/n,intervals[p-1]/n);
+                MPI_Wait(&request, &status);
+            }
+        }
+        if(rank!=masterrank){
             //compute the local square at the last processor that isn't the master processor
-			notdoneLocal += 1-square(n, displacements[rank], intervals[rank]/n, l, lnew,lp+displacements[sizework-1],displacements[sizework-1]/n,intervals[sizework-1]/n);
-		}
+            notdoneLocal += 1-square(n, displacements[rank], intervals[rank]/n, l, lnew,lp+displacements[sizework-1],displacements[sizework-1]/n,intervals[sizework-1]/n);
+        }
         //gather up all the lnew and transfer it to the l var for the master processor
-		MPI_Gatherv(lnew, intervals[rank], MPI_INT, l, intervals, displacements, MPI_INT, masterrank, MPI_COMM_WORLD);
-		//reduce all the done using the logicals
+        MPI_Gatherv(lnew, intervals[rank], MPI_INT, l, intervals, displacements, MPI_INT, masterrank, MPI_COMM_WORLD);
+        //reduce all the done using the logicals
         MPI_Allreduce(&notdoneLocal, &done, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         done= !done;
     }
     //free up all the variables that we allocated earlier
-    _mm_free(lnew);
-    _mm_free(lp);
-    _mm_free(intervals);
-    _mm_free(displacements);
+    free(lnew);
+    free(lp);
+    free(intervals);
+    free(displacements);
     if (rank == masterrank)
         deinfinitize(n, l);
 }
@@ -286,43 +280,43 @@ void shortest_paths(int n, int* restrict l, int size, int rank)
  */
 
 const char* usage =
-    "path.x -- Parallel all-pairs shortest path on a random graph\n"
-    "Flags:\n"
-    "  - n -- number of nodes (200)\n"
-    "  - p -- probability of including edges (0.05)\n"
-    "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+"path.x -- Parallel all-pairs shortest path on a random graph\n"
+"Flags:\n"
+"  - n -- number of nodes (200)\n"
+"  - p -- probability of including edges (0.05)\n"
+"  - i -- file name where adjacency matrix should be stored (none)\n"
+"  - o -- file name where output matrix should be stored (none)\n";
 
 int main(int argc, char** argv)
 {
     MPI_Init(&argc, &argv);
     int rank, size;
     int* l;
-
+    
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+    
     int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
-
+    
     // Option processing
     extern char* optarg;
     const char* optstring = "hn:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
-        case 'h':
-            fprintf(stderr, "%s", usage);
-            return -1;
-        case 'n': n = atoi(optarg); break;
-        case 'p': p = atof(optarg); break;
-        case 'o': ofname = optarg;  break;
-        case 'i': ifname = optarg;  break;
+            case 'h':
+                fprintf(stderr, "%s", usage);
+                return -1;
+            case 'n': n = atoi(optarg); break;
+            case 'p': p = atof(optarg); break;
+            case 'o': ofname = optarg;  break;
+            case 'i': ifname = optarg;  break;
         }
     }
-
+    
     if (rank == size-1) {
         // Graph generation + output
         l = gen_graph(n, p);
@@ -333,30 +327,30 @@ int main(int argc, char** argv)
         for (int i = 0; i < n*n; i += n+1)
             l[i] = 0;
     } else {
-        l = _mm_malloc(n*n * sizeof(int), 32);
+        l = calloc(n*n, sizeof(int));
     }
-
     
-
+    
+    
     // Time the shortest paths code
     double t0 = MPI_Wtime();
     shortest_paths(n, l, size, rank);
     double t1 = MPI_Wtime();
-
+    
     if (rank == size-1) {
         printf("== MPI with %d processes\n", size);
         printf("n:     %d\n", n);
         printf("p:     %g\n", p);
         printf("Time:  %g\n", t1-t0);
         printf("Check: %X\n", fletcher16(l, n*n));
-
+        
         // Generate output file
         if (ofname)
             write_matrix(ofname, n, l);
     }
-
+    
     // Clean up
-    _mm_free(l);
+    free(l);
     MPI_Finalize();
     return 0;
 }

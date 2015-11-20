@@ -241,7 +241,7 @@ void shortest_paths(int n, int* restrict l, int size, int rank)
 				for(int j=0;j<n;++j){
                     //i = displacement[p]/n while i < displacement[p]/n + interval[p]
 					for(int i=displacements[p]/n;i<displacements[p]/n+intervals[p]/n;++i){
-						lp[j+i*n]=l[i+j*n]; //it's being cycled but I'm not 100% sure
+						lp[j+i*n]=l[i+j*n]; //lp is being cycled
 					}
 				}
                 //broadcast the new cycled lp out
