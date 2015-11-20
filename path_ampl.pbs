@@ -7,5 +7,5 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-
-./path.x -n 256
+amplxe-cl -collect concurrency \
+  ./path.x -n 2000

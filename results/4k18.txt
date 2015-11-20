@@ -1,0 +1,18 @@
+3
+== OpenMP with 18 threads
+n:     4095
+p:     0.05
+Time:  5.44638
+Check: 4149
+3
+== OpenMP with 18 threads
+n:     4096
+p:     0.05
+Time:  4.99719
+Check: 6B72
+3
+== OpenMP with 18 threads
+n:     4097
+p:     0.05
+Time:  5.21484
+Check: 14F1

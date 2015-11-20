@@ -1,0 +1,18 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=2:00:00
+#PBS -N path
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+
+for t in $(seq 6 8); do
+    export OMP_NUM_THREADS=$t
+    
+    ./path.x -n 8191
+    ./path.x -n 8192
+    ./path.x -n 8193
+done
+

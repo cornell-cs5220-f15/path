@@ -1,0 +1,144 @@
+2
+== OpenMP with 17 threads
+n:     8191
+p:     0.05
+Time:  24.296
+Check: 890A
+2
+== OpenMP with 17 threads
+n:     8192
+p:     0.05
+Time:  23.9509
+Check: DE4C
+3
+== OpenMP with 17 threads
+n:     8193
+p:     0.05
+Time:  37.531
+Check: 47A4
+2
+== OpenMP with 18 threads
+n:     8191
+p:     0.05
+Time:  23.5288
+Check: 890A
+2
+== OpenMP with 18 threads
+n:     8192
+p:     0.05
+Time:  24.189
+Check: DE4C
+3
+== OpenMP with 18 threads
+n:     8193
+p:     0.05
+Time:  35.6003
+Check: 47A4
+2
+== OpenMP with 19 threads
+n:     8191
+p:     0.05
+Time:  23.8155
+Check: 890A
+2
+== OpenMP with 19 threads
+n:     8192
+p:     0.05
+Time:  23.315
+Check: DE4C
+3
+== OpenMP with 19 threads
+n:     8193
+p:     0.05
+Time:  36.0695
+Check: 47A4
+2
+== OpenMP with 20 threads
+n:     8191
+p:     0.05
+Time:  22.9752
+Check: 890A
+2
+== OpenMP with 20 threads
+n:     8192
+p:     0.05
+Time:  22.8652
+Check: DE4C
+3
+== OpenMP with 20 threads
+n:     8193
+p:     0.05
+Time:  35.9052
+Check: 47A4
+2
+== OpenMP with 21 threads
+n:     8191
+p:     0.05
+Time:  22.1507
+Check: 890A
+2
+== OpenMP with 21 threads
+n:     8192
+p:     0.05
+Time:  22.0866
+Check: DE4C
+3
+== OpenMP with 21 threads
+n:     8193
+p:     0.05
+Time:  33.7699
+Check: 47A4
+2
+== OpenMP with 22 threads
+n:     8191
+p:     0.05
+Time:  21.9189
+Check: 890A
+2
+== OpenMP with 22 threads
+n:     8192
+p:     0.05
+Time:  22.5226
+Check: DE4C
+3
+== OpenMP with 22 threads
+n:     8193
+p:     0.05
+Time:  33.4712
+Check: 47A4
+2
+== OpenMP with 23 threads
+n:     8191
+p:     0.05
+Time:  21.4941
+Check: 890A
+2
+== OpenMP with 23 threads
+n:     8192
+p:     0.05
+Time:  22.7407
+Check: DE4C
+3
+== OpenMP with 23 threads
+n:     8193
+p:     0.05
+Time:  32.4839
+Check: 47A4
+2
+== OpenMP with 24 threads
+n:     8191
+p:     0.05
+Time:  22.6708
+Check: 890A
+2
+== OpenMP with 24 threads
+n:     8192
+p:     0.05
+Time:  23.3544
+Check: DE4C
+3
+== OpenMP with 24 threads
+n:     8193
+p:     0.05
+Time:  31.646
+Check: 47A4

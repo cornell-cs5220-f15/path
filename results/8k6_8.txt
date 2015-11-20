@@ -1,0 +1,54 @@
+2
+== OpenMP with 6 threads
+n:     8191
+p:     0.05
+Time:  40.8002
+Check: 890A
+2
+== OpenMP with 6 threads
+n:     8192
+p:     0.05
+Time:  40.0724
+Check: DE4C
+3
+== OpenMP with 6 threads
+n:     8193
+p:     0.05
+Time:  59.2677
+Check: 47A4
+2
+== OpenMP with 7 threads
+n:     8191
+p:     0.05
+Time:  35.5728
+Check: 890A
+2
+== OpenMP with 7 threads
+n:     8192
+p:     0.05
+Time:  34.9922
+Check: DE4C
+3
+== OpenMP with 7 threads
+n:     8193
+p:     0.05
+Time:  52.6747
+Check: 47A4
+2
+== OpenMP with 8 threads
+n:     8191
+p:     0.05
+Time:  32.1281
+Check: 890A
+2
+== OpenMP with 8 threads
+n:     8192
+p:     0.05
+Time:  31.4796
+Check: DE4C
+3
+== OpenMP with 8 threads
+n:     8193
+p:     0.05
+Time:  47.357
+Check: 47A4

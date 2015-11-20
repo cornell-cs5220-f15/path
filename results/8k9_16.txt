@@ -1,0 +1,144 @@
+2
+== OpenMP with 9 threads
+n:     8191
+p:     0.05
+Time:  30.5143
+Check: 890A
+2
+== OpenMP with 9 threads
+n:     8192
+p:     0.05
+Time:  30.329
+Check: DE4C
+3
+== OpenMP with 9 threads
+n:     8193
+p:     0.05
+Time:  45.0082
+Check: 47A4
+2
+== OpenMP with 10 threads
+n:     8191
+p:     0.05
+Time:  27.1208
+Check: 890A
+2
+== OpenMP with 10 threads
+n:     8192
+p:     0.05
+Time:  27.6567
+Check: DE4C
+3
+== OpenMP with 10 threads
+n:     8193
+p:     0.05
+Time:  40.5002
+Check: 47A4
+2
+== OpenMP with 11 threads
+n:     8191
+p:     0.05
+Time:  25.986
+Check: 890A
+2
+== OpenMP with 11 threads
+n:     8192
+p:     0.05
+Time:  25.0377
+Check: DE4C
+3
+== OpenMP with 11 threads
+n:     8193
+p:     0.05
+Time:  37.7318
+Check: 47A4
+2
+== OpenMP with 12 threads
+n:     8191
+p:     0.05
+Time:  28.8855
+Check: 890A
+2
+== OpenMP with 12 threads
+n:     8192
+p:     0.05
+Time:  23.8057
+Check: DE4C
+3
+== OpenMP with 12 threads
+n:     8193
+p:     0.05
+Time:  37.3929
+Check: 47A4
+2
+== OpenMP with 13 threads
+n:     8191
+p:     0.05
+Time:  30.3104
+Check: 890A
+2
+== OpenMP with 13 threads
+n:     8192
+p:     0.05
+Time:  29.4485
+Check: DE4C
+3
+== OpenMP with 13 threads
+n:     8193
+p:     0.05
+Time:  45.2362
+Check: 47A4
+2
+== OpenMP with 14 threads
+n:     8191
+p:     0.05
+Time:  27.2861
+Check: 890A
+2
+== OpenMP with 14 threads
+n:     8192
+p:     0.05
+Time:  28.1358
+Check: DE4C
+3
+== OpenMP with 14 threads
+n:     8193
+p:     0.05
+Time:  41.919
+Check: 47A4
+2
+== OpenMP with 15 threads
+n:     8191
+p:     0.05
+Time:  26.6931
+Check: 890A
+2
+== OpenMP with 15 threads
+n:     8192
+p:     0.05
+Time:  26.5485
+Check: DE4C
+3
+== OpenMP with 15 threads
+n:     8193
+p:     0.05
+Time:  39.9484
+Check: 47A4
+2
+== OpenMP with 16 threads
+n:     8191
+p:     0.05
+Time:  25.5017
+Check: 890A
+2
+== OpenMP with 16 threads
+n:     8192
+p:     0.05
+Time:  24.8547
+Check: DE4C
+3
+== OpenMP with 16 threads
+n:     8193
+p:     0.05
+Time:  38.5994
+Check: 47A4

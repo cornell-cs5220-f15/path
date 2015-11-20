@@ -1,0 +1,144 @@
+4
+== OpenMP with 22 threads
+n:     127
+p:     0.05
+Time:  0.152015
+Check: 3C69
+4
+== OpenMP with 22 threads
+n:     128
+p:     0.05
+Time:  0.123341
+Check: 8C4A
+4
+== OpenMP with 22 threads
+n:     129
+p:     0.05
+Time:  0.086097
+Check: CDBA
+3
+== OpenMP with 22 threads
+n:     255
+p:     0.05
+Time:  0.0108402
+Check: 3E0B
+3
+== OpenMP with 22 threads
+n:     256
+p:     0.05
+Time:  0.0797601
+Check: 4974
+3
+== OpenMP with 22 threads
+n:     257
+p:     0.05
+Time:  0.015063
+Check: 8371
+3
+== OpenMP with 22 threads
+n:     383
+p:     0.05
+Time:  0.0752339
+Check: FECD
+3
+== OpenMP with 22 threads
+n:     384
+p:     0.05
+Time:  0.0736139
+Check: 8DC0
+3
+== OpenMP with 22 threads
+n:     385
+p:     0.05
+Time:  0.101279
+Check: 618D
+3
+== OpenMP with 22 threads
+n:     511
+p:     0.05
+Time:  0.083195
+Check: 21B6
+3
+== OpenMP with 22 threads
+n:     512
+p:     0.05
+Time:  0.0838881
+Check: 29BB
+3
+== OpenMP with 22 threads
+n:     513
+p:     0.05
+Time:  0.197038
+Check: 9156
+3
+== OpenMP with 22 threads
+n:     767
+p:     0.05
+Time:  0.204248
+Check: E44
+3
+== OpenMP with 22 threads
+n:     768
+p:     0.05
+Time:  0.0971022
+Check: AE4F
+3
+== OpenMP with 22 threads
+n:     769
+p:     0.05
+Time:  0.0586841
+Check: 43C6
+3
+== OpenMP with 22 threads
+n:     1023
+p:     0.05
+Time:  0.207896
+Check: 57BD
+3
+== OpenMP with 22 threads
+n:     1024
+p:     0.05
+Time:  0.0844371
+Check: 5E94
+3
+== OpenMP with 22 threads
+n:     1025
+p:     0.05
+Time:  0.0993838
+Check: ADD8
+3
+== OpenMP with 22 threads
+n:     1535
+p:     0.05
+Time:  0.298744
+Check: BE00
+3
+== OpenMP with 22 threads
+n:     1536
+p:     0.05
+Time:  0.367647
+Check: 63F8
+3
+== OpenMP with 22 threads
+n:     1537
+p:     0.05
+Time:  0.278479
+Check: 1E62
+3
+== OpenMP with 22 threads
+n:     2047
+p:     0.05
+Time:  0.556255
+Check: 8915
+3
+== OpenMP with 22 threads
+n:     2048
+p:     0.05
+Time:  0.95051
+Check: 7C32
+3
+== OpenMP with 22 threads
+n:     2049
+p:     0.05
+Time:  0.830279
+Check: C9EA

@@ -1,0 +1,144 @@
+4
+== OpenMP with 5 threads
+n:     127
+p:     0.05
+Time:  0.00522113
+Check: 3C69
+4
+== OpenMP with 5 threads
+n:     128
+p:     0.05
+Time:  0.00224209
+Check: 8C4A
+4
+== OpenMP with 5 threads
+n:     129
+p:     0.05
+Time:  0.012583
+Check: CDBA
+3
+== OpenMP with 5 threads
+n:     255
+p:     0.05
+Time:  0.00630593
+Check: 3E0B
+3
+== OpenMP with 5 threads
+n:     256
+p:     0.05
+Time:  0.00573802
+Check: 4974
+3
+== OpenMP with 5 threads
+n:     257
+p:     0.05
+Time:  0.0100729
+Check: 8371
+3
+== OpenMP with 5 threads
+n:     383
+p:     0.05
+Time:  0.014709
+Check: FECD
+3
+== OpenMP with 5 threads
+n:     384
+p:     0.05
+Time:  0.0121272
+Check: 8DC0
+3
+== OpenMP with 5 threads
+n:     385
+p:     0.05
+Time:  0.0201449
+Check: 618D
+3
+== OpenMP with 5 threads
+n:     511
+p:     0.05
+Time:  0.0381801
+Check: 21B6
+3
+== OpenMP with 5 threads
+n:     512
+p:     0.05
+Time:  0.0379908
+Check: 29BB
+3
+== OpenMP with 5 threads
+n:     513
+p:     0.05
+Time:  0.04635
+Check: 9156
+3
+== OpenMP with 5 threads
+n:     767
+p:     0.05
+Time:  0.076519
+Check: E44
+3
+== OpenMP with 5 threads
+n:     768
+p:     0.05
+Time:  0.0747941
+Check: AE4F
+3
+== OpenMP with 5 threads
+n:     769
+p:     0.05
+Time:  0.091855
+Check: 43C6
+3
+== OpenMP with 5 threads
+n:     1023
+p:     0.05
+Time:  0.16904
+Check: 57BD
+3
+== OpenMP with 5 threads
+n:     1024
+p:     0.05
+Time:  0.164626
+Check: 5E94
+3
+== OpenMP with 5 threads
+n:     1025
+p:     0.05
+Time:  0.203474
+Check: ADD8
+3
+== OpenMP with 5 threads
+n:     1535
+p:     0.05
+Time:  0.536712
+Check: BE00
+3
+== OpenMP with 5 threads
+n:     1536
+p:     0.05
+Time:  0.533354
+Check: 63F8
+3
+== OpenMP with 5 threads
+n:     1537
+p:     0.05
+Time:  0.609176
+Check: 1E62
+3
+== OpenMP with 5 threads
+n:     2047
+p:     0.05
+Time:  1.52747
+Check: 8915
+3
+== OpenMP with 5 threads
+n:     2048
+p:     0.05
+Time:  1.23772
+Check: 7C32
+3
+== OpenMP with 5 threads
+n:     2049
+p:     0.05
+Time:  1.3699
+Check: C9EA

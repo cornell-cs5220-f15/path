@@ -1,0 +1,144 @@
+4
+== OpenMP with 20 threads
+n:     127
+p:     0.05
+Time:  0.0352311
+Check: 3C69
+4
+== OpenMP with 20 threads
+n:     128
+p:     0.05
+Time:  0.176847
+Check: 8C4A
+4
+== OpenMP with 20 threads
+n:     129
+p:     0.05
+Time:  0.0937068
+Check: CDBA
+3
+== OpenMP with 20 threads
+n:     255
+p:     0.05
+Time:  0.089689
+Check: 3E0B
+3
+== OpenMP with 20 threads
+n:     256
+p:     0.05
+Time:  0.0837219
+Check: 4974
+3
+== OpenMP with 20 threads
+n:     257
+p:     0.05
+Time:  0.114483
+Check: 8371
+3
+== OpenMP with 20 threads
+n:     383
+p:     0.05
+Time:  0.0836561
+Check: FECD
+3
+== OpenMP with 20 threads
+n:     384
+p:     0.05
+Time:  0.154302
+Check: 8DC0
+3
+== OpenMP with 20 threads
+n:     385
+p:     0.05
+Time:  0.098635
+Check: 618D
+3
+== OpenMP with 20 threads
+n:     511
+p:     0.05
+Time:  0.14323
+Check: 21B6
+3
+== OpenMP with 20 threads
+n:     512
+p:     0.05
+Time:  0.125182
+Check: 29BB
+3
+== OpenMP with 20 threads
+n:     513
+p:     0.05
+Time:  0.200374
+Check: 9156
+3
+== OpenMP with 20 threads
+n:     767
+p:     0.05
+Time:  0.182197
+Check: E44
+3
+== OpenMP with 20 threads
+n:     768
+p:     0.05
+Time:  0.237521
+Check: AE4F
+3
+== OpenMP with 20 threads
+n:     769
+p:     0.05
+Time:  0.185939
+Check: 43C6
+3
+== OpenMP with 20 threads
+n:     1023
+p:     0.05
+Time:  0.225618
+Check: 57BD
+3
+== OpenMP with 20 threads
+n:     1024
+p:     0.05
+Time:  0.287367
+Check: 5E94
+3
+== OpenMP with 20 threads
+n:     1025
+p:     0.05
+Time:  0.244542
+Check: ADD8
+3
+== OpenMP with 20 threads
+n:     1535
+p:     0.05
+Time:  0.484474
+Check: BE00
+3
+== OpenMP with 20 threads
+n:     1536
+p:     0.05
+Time:  0.496522
+Check: 63F8
+3
+== OpenMP with 20 threads
+n:     1537
+p:     0.05
+Time:  0.305202
+Check: 1E62
+3
+== OpenMP with 20 threads
+n:     2047
+p:     0.05
+Time:  0.70182
+Check: 8915
+3
+== OpenMP with 20 threads
+n:     2048
+p:     0.05
+Time:  0.60688
+Check: 7C32
+3
+== OpenMP with 20 threads
+n:     2049
+p:     0.05
+Time:  1.12655
+Check: C9EA

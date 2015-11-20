@@ -1,0 +1,144 @@
+4
+== OpenMP with 8 threads
+n:     127
+p:     0.05
+Time:  0.00311303
+Check: 3C69
+4
+== OpenMP with 8 threads
+n:     128
+p:     0.05
+Time:  0.00271201
+Check: 8C4A
+4
+== OpenMP with 8 threads
+n:     129
+p:     0.05
+Time:  0.00371504
+Check: CDBA
+3
+== OpenMP with 8 threads
+n:     255
+p:     0.05
+Time:  0.00635719
+Check: 3E0B
+3
+== OpenMP with 8 threads
+n:     256
+p:     0.05
+Time:  0.00575185
+Check: 4974
+3
+== OpenMP with 8 threads
+n:     257
+p:     0.05
+Time:  0.0077579
+Check: 8371
+3
+== OpenMP with 8 threads
+n:     383
+p:     0.05
+Time:  0.012224
+Check: FECD
+3
+== OpenMP with 8 threads
+n:     384
+p:     0.05
+Time:  0.0111978
+Check: 8DC0
+3
+== OpenMP with 8 threads
+n:     385
+p:     0.05
+Time:  0.014236
+Check: 618D
+3
+== OpenMP with 8 threads
+n:     511
+p:     0.05
+Time:  0.0190539
+Check: 21B6
+3
+== OpenMP with 8 threads
+n:     512
+p:     0.05
+Time:  0.0190418
+Check: 29BB
+3
+== OpenMP with 8 threads
+n:     513
+p:     0.05
+Time:  0.023828
+Check: 9156
+3
+== OpenMP with 8 threads
+n:     767
+p:     0.05
+Time:  0.0480311
+Check: E44
+3
+== OpenMP with 8 threads
+n:     768
+p:     0.05
+Time:  0.0507548
+Check: AE4F
+3
+== OpenMP with 8 threads
+n:     769
+p:     0.05
+Time:  0.0641119
+Check: 43C6
+3
+== OpenMP with 8 threads
+n:     1023
+p:     0.05
+Time:  0.109848
+Check: 57BD
+3
+== OpenMP with 8 threads
+n:     1024
+p:     0.05
+Time:  0.109193
+Check: 5E94
+3
+== OpenMP with 8 threads
+n:     1025
+p:     0.05
+Time:  0.126093
+Check: ADD8
+3
+== OpenMP with 8 threads
+n:     1535
+p:     0.05
+Time:  0.331294
+Check: BE00
+3
+== OpenMP with 8 threads
+n:     1536
+p:     0.05
+Time:  0.33842
+Check: 63F8
+3
+== OpenMP with 8 threads
+n:     1537
+p:     0.05
+Time:  0.375347
+Check: 1E62
+3
+== OpenMP with 8 threads
+n:     2047
+p:     0.05
+Time:  1.22255
+Check: 8915
+3
+== OpenMP with 8 threads
+n:     2048
+p:     0.05
+Time:  1.10678
+Check: 7C32
+3
+== OpenMP with 8 threads
+n:     2049
+p:     0.05
+Time:  0.845914
+Check: C9EA

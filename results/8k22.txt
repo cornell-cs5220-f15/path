@@ -1,0 +1,18 @@
+2
+== OpenMP with 22 threads
+n:     8191
+p:     0.05
+Time:  22.8385
+Check: 890A
+2
+== OpenMP with 22 threads
+n:     8192
+p:     0.05
+Time:  22.222
+Check: DE4C
+3
+== OpenMP with 22 threads
+n:     8193
+p:     0.05
+Time:  33.9756
+Check: 47A4

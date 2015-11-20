@@ -1,0 +1,144 @@
+4
+== OpenMP with 10 threads
+n:     127
+p:     0.05
+Time:  0.011055
+Check: 3C69
+4
+== OpenMP with 10 threads
+n:     128
+p:     0.05
+Time:  0.00976491
+Check: 8C4A
+4
+== OpenMP with 10 threads
+n:     129
+p:     0.05
+Time:  0.00558209
+Check: CDBA
+3
+== OpenMP with 10 threads
+n:     255
+p:     0.05
+Time:  0.00637293
+Check: 3E0B
+3
+== OpenMP with 10 threads
+n:     256
+p:     0.05
+Time:  0.00737095
+Check: 4974
+3
+== OpenMP with 10 threads
+n:     257
+p:     0.05
+Time:  0.00745296
+Check: 8371
+3
+== OpenMP with 10 threads
+n:     383
+p:     0.05
+Time:  0.0113978
+Check: FECD
+3
+== OpenMP with 10 threads
+n:     384
+p:     0.05
+Time:  0.010196
+Check: 8DC0
+3
+== OpenMP with 10 threads
+n:     385
+p:     0.05
+Time:  0.012548
+Check: 618D
+3
+== OpenMP with 10 threads
+n:     511
+p:     0.05
+Time:  0.01794
+Check: 21B6
+3
+== OpenMP with 10 threads
+n:     512
+p:     0.05
+Time:  0.01754
+Check: 29BB
+3
+== OpenMP with 10 threads
+n:     513
+p:     0.05
+Time:  0.0341151
+Check: 9156
+3
+== OpenMP with 10 threads
+n:     767
+p:     0.05
+Time:  0.0448458
+Check: E44
+3
+== OpenMP with 10 threads
+n:     768
+p:     0.05
+Time:  0.044513
+Check: AE4F
+3
+== OpenMP with 10 threads
+n:     769
+p:     0.05
+Time:  0.056076
+Check: 43C6
+3
+== OpenMP with 10 threads
+n:     1023
+p:     0.05
+Time:  0.093749
+Check: 57BD
+3
+== OpenMP with 10 threads
+n:     1024
+p:     0.05
+Time:  0.117295
+Check: 5E94
+3
+== OpenMP with 10 threads
+n:     1025
+p:     0.05
+Time:  0.113338
+Check: ADD8
+3
+== OpenMP with 10 threads
+n:     1535
+p:     0.05
+Time:  0.28509
+Check: BE00
+3
+== OpenMP with 10 threads
+n:     1536
+p:     0.05
+Time:  0.292417
+Check: 63F8
+3
+== OpenMP with 10 threads
+n:     1537
+p:     0.05
+Time:  0.32796
+Check: 1E62
+3
+== OpenMP with 10 threads
+n:     2047
+p:     0.05
+Time:  0.648637
+Check: 8915
+3
+== OpenMP with 10 threads
+n:     2048
+p:     0.05
+Time:  0.846042
+Check: 7C32
+3
+== OpenMP with 10 threads
+n:     2049
+p:     0.05
+Time:  1.27692
+Check: C9EA

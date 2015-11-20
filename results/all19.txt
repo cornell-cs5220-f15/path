@@ -1,0 +1,144 @@
+4
+== OpenMP with 19 threads
+n:     127
+p:     0.05
+Time:  0.112749
+Check: 3C69
+4
+== OpenMP with 19 threads
+n:     128
+p:     0.05
+Time:  0.083885
+Check: 8C4A
+4
+== OpenMP with 19 threads
+n:     129
+p:     0.05
+Time:  0.010323
+Check: CDBA
+3
+== OpenMP with 19 threads
+n:     255
+p:     0.05
+Time:  0.016556
+Check: 3E0B
+3
+== OpenMP with 19 threads
+n:     256
+p:     0.05
+Time:  0.0133419
+Check: 4974
+3
+== OpenMP with 19 threads
+n:     257
+p:     0.05
+Time:  0.013592
+Check: 8371
+3
+== OpenMP with 19 threads
+n:     383
+p:     0.05
+Time:  0.011615
+Check: FECD
+3
+== OpenMP with 19 threads
+n:     384
+p:     0.05
+Time:  0.0160501
+Check: 8DC0
+3
+== OpenMP with 19 threads
+n:     385
+p:     0.05
+Time:  0.065675
+Check: 618D
+3
+== OpenMP with 19 threads
+n:     511
+p:     0.05
+Time:  0.0667319
+Check: 21B6
+3
+== OpenMP with 19 threads
+n:     512
+p:     0.05
+Time:  0.0232129
+Check: 29BB
+3
+== OpenMP with 19 threads
+n:     513
+p:     0.05
+Time:  0.0567739
+Check: 9156
+3
+== OpenMP with 19 threads
+n:     767
+p:     0.05
+Time:  0.0449562
+Check: E44
+3
+== OpenMP with 19 threads
+n:     768
+p:     0.05
+Time:  0.0505152
+Check: AE4F
+3
+== OpenMP with 19 threads
+n:     769
+p:     0.05
+Time:  0.119003
+Check: 43C6
+3
+== OpenMP with 19 threads
+n:     1023
+p:     0.05
+Time:  0.0926809
+Check: 57BD
+3
+== OpenMP with 19 threads
+n:     1024
+p:     0.05
+Time:  0.0951929
+Check: 5E94
+3
+== OpenMP with 19 threads
+n:     1025
+p:     0.05
+Time:  0.106803
+Check: ADD8
+3
+== OpenMP with 19 threads
+n:     1535
+p:     0.05
+Time:  0.477871
+Check: BE00
+3
+== OpenMP with 19 threads
+n:     1536
+p:     0.05
+Time:  0.347362
+Check: 63F8
+3
+== OpenMP with 19 threads
+n:     1537
+p:     0.05
+Time:  0.311351
+Check: 1E62
+3
+== OpenMP with 19 threads
+n:     2047
+p:     0.05
+Time:  0.631651
+Check: 8915
+3
+== OpenMP with 19 threads
+n:     2048
+p:     0.05
+Time:  0.876767
+Check: 7C32
+3
+== OpenMP with 19 threads
+n:     2049
+p:     0.05
+Time:  0.689709
+Check: C9EA

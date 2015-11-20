@@ -1,0 +1,18 @@
+3
+== OpenMP with 3 threads
+n:     4095
+p:     0.05
+Time:  15.9475
+Check: 4149
+3
+== OpenMP with 3 threads
+n:     4096
+p:     0.05
+Time:  15.8627
+Check: 6B72
+3
+== OpenMP with 3 threads
+n:     4097
+p:     0.05
+Time:  16.5778
+Check: 14F1

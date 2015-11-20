@@ -1,0 +1,9 @@
+#!/bin/sh -l
+
+#PBS -l nodes=4:ppn=1
+#PBS -l walltime=0:30:00
+#PBS -N mpitest
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+mpirun ./mpitest.x -n 4

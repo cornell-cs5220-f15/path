@@ -4,11 +4,8 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include <getopt.h>
 #include <omp.h>
 #include "mt19937p.h"
-
-#define BLOCK_SIZE 64
 
 //ldoc on
 /**
@@ -42,132 +39,36 @@
  * identical, and false otherwise.
  */
 
-int basic_square(const int * restrict A, const int * restrict B, int * restrict C) {
-    __assume_aligned(A, 64);
-    __assume_aligned(B, 64);
-    __assume_aligned(C, 64);
-    
-    int oi, oj, ok;
-    int ta, tb, tc;
-    int done = 1;
-    
-    for (int j = 0; j < BLOCK_SIZE; ++j) {
-        oj = j * BLOCK_SIZE;
-        for (int k = 0; k < BLOCK_SIZE; ++k) {
-            ok = k * BLOCK_SIZE;
-            tb = B[oj+k];
-            for (int i = 0; i < BLOCK_SIZE; ++i) {
-                if (A[ok+i] + tb < C[oj+i]) {
-                    C[oj+i] = A[ok+i] + tb;
-                    done = 0;
-                }
-            }
-        }
-    }
-    
-    return done;
-}
-
-int square(int n,               // Number of nodes
-           int * restrict l,     // Partial distance at step s
-           int * restrict lnew)  // Partial distance at step s+1
+int square(int n,              
+           int* restrict l,    
+           int* restrict lnew) 
 {
-    int done = 1;
-    int blocks = n / BLOCK_SIZE + (n % BLOCK_SIZE ? 1 : 0);
-    int totalblocks = blocks * blocks;
-    int totalblocksize = BLOCK_SIZE * BLOCK_SIZE;
-    
-    // Copied l matrix
-    int * CL __attribute__((aligned(64))) =
-        (int *) malloc(totalblocks * totalblocksize * sizeof(int));
-    // Copied lnew matrix
-    int * CN __attribute__((aligned(64))) =
-        (int *) malloc(totalblocks * totalblocksize * sizeof(int));
-        
-    #pragma omp parallel shared(CL, CN, done)
-        {
-    
-    // Copy over
-        int copyoffset = 0;
-    //for (int bi = 0; bi < blocks; ++bi) {
-        //for (int bj = 0; bj < blocks; ++bj) {
-        #pragma omp for
-        for (int bc = 0; bc < blocks * blocks; ++bc) {
-            // Compute block position
-            int bi = bc / blocks;
-            int bj = bc % blocks;
-            
-            int oi = bi * BLOCK_SIZE;
-            int oj = bj * BLOCK_SIZE;
-            copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
-            for (int j = 0; j < BLOCK_SIZE; ++j) {
-                for (int i = 0; i < BLOCK_SIZE; ++i) {
-                    int offset = (oi + i) + (oj + j) * n;
-                    // Check bounds
-                    if (oi + i < n && oj + j < n) {
-                        CL[copyoffset] = l[offset];
-                    }
-                    else {
-                        CL[copyoffset] = n + 1;
-                    }
-                    CN[copyoffset] = CL[copyoffset];
-                    copyoffset++;
-                }
-            }
-        }
-    //}
-    
-    //memcpy(CN, CL, totalblocks * totalblocksize * sizeof(int));
-    
-    // Perform square
-        #pragma omp for
-        for (int bc = 0; bc < blocks * blocks; ++bc) {
-            // Compute block position
-            int bi = bc / blocks;
-            int bj = bc % blocks;
-            
-            for (int bk = 0; bk < blocks; ++bk) {
-                int td = basic_square(
-                    CL + (bi + bk * blocks) * BLOCK_SIZE * BLOCK_SIZE,
-                    CL + (bk + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE,
-                    CN + (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE
-                );
-                
-                if (done == 1 && td == 0) {
-                    #pragma omp critical
-                    done = 0;
-                }
-            }
-        }
-    //}
-    
-    // Copy back
-    copyoffset = 0;
-    //for (int bi = 0; bi < blocks; ++bi) {
-        //for (int bj = 0; bj < blocks; ++bj) {
-        #pragma omp for
-        for (int bc = 0; bc < blocks * blocks; ++bc) {
-            // Compute block position
-            int bi = bc / blocks;
-            int bj = bc % blocks;
-            
-            int oi = bi * BLOCK_SIZE;
-            int oj = bj * BLOCK_SIZE;
-            copyoffset = (bi + bj * blocks) * BLOCK_SIZE * BLOCK_SIZE;
-            for (int j = 0; j < BLOCK_SIZE; ++j) {
-                for (int i = 0; i < BLOCK_SIZE; ++i) {
-                    int offset = (oi + i) + (oj + j) * n;
-                    if (oi + i < n && oj + j < n) {
-                        lnew[offset] = CN[copyoffset];
-                    }
-                    copyoffset++;
-                }
-            }
-        }
-    //}
+
+  int* restrict l_copy = malloc(n*n*sizeof(int));
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      l_copy[i*n + j] = l[j*n + i];
     }
+  }
     
-    return done;
+  int done = 1;
+#pragma omp parallel for shared(l, lnew) reduction(&& : done)
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      int lij = l[i*n+j];
+      for (int k = 0; k < n; ++k) {
+	int ljk = l_copy[j*n+k];
+	int lki = l[i*n+k];
+	if (ljk + lki < lij) {
+	  lij = ljk+lki;
+	  done = 0;
+	}
+      }
+      lnew[i*n+j] = lij;
+    }
+  }
+  free(l_copy);
+  return done;
 }
 
 /**
@@ -201,7 +102,7 @@ static inline void deinfinitize(int n, int* l)
 /**
  *
  * Of course, any loop-free path in a graph with $n$ nodes can
- * at most pass through every node in the graph.  Therefore,
+ * at most pass theough every node in the graph.  Therefore,
  * once $2^s \geq n$, the quantity $l_{ij}^s$ is actually
  * the length of the shortest path of any number of hops.  This means
  * we can compute the shortest path lengths for all pairs of nodes
@@ -220,14 +121,12 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int * restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
-    int count = 0;
-    for (int done = 0; !done; count++) {
+    for (int done = 0; !done; ) {
         done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
-    printf("%d\n", count);
     free(lnew);
     deinfinitize(n, l);
 }
@@ -243,11 +142,11 @@ void shortest_paths(int n, int* restrict l)
  * random number generator in lieu of coin flips.
  */
 
-int* gen_graph(int n, double p, unsigned long int s)
+int* gen_graph(int n, double p)
 {
     int* l = calloc(n*n, sizeof(int));
     struct mt19937p state;
-    sgenrand(s, &state);
+    sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i)
             l[j*n+i] = (genrand(&state) < p);
@@ -264,7 +163,7 @@ int* gen_graph(int n, double p, unsigned long int s)
  * arithmetic, we should get bitwise identical results from run to
  * run, even if we do optimizations that change the associativity of
  * our computations.  The function `fletcher16` computes a simple
- * [simple checksum][wiki-fletcher] over the output of the
+ * [simple checksum][wiki-fletcher].  over the output of the
  * `shortest_paths` routine, which we can then use to quickly tell
  * whether something has gone wrong.  The `write_matrix` routine
  * actually writes out a text representation of the matrix, in case we
@@ -308,7 +207,6 @@ const char* usage =
     "Flags:\n"
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
-    "  - s -- seed to generate matrix entries\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
     "  - o -- file name where output matrix should be stored (none)\n";
 
@@ -316,13 +214,12 @@ int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
     double p = 0.05;           // Edge probability
-    unsigned long int s = 10302011UL;        // Random number generator seed
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:s:o:i:";
+    const char* optstring = "hn:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -331,14 +228,13 @@ int main(int argc, char** argv)
             return -1;
         case 'n': n = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
-        case 's': s = strtoul(optarg, NULL, 10); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
         }
     }
 
     // Graph generation + output
-    int* l = gen_graph(n, p, s);
+    int* l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
 
@@ -354,10 +250,8 @@ int main(int argc, char** argv)
     printf("Check: %X\n", fletcher16(l, n*n));
 
     // Generate output file
-    if (ofname) {
+    if (ofname)
         write_matrix(ofname, n, l);
-    }
-
 
     // Clean up
     free(l);

@@ -1,4 +1,3 @@
-#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +6,7 @@
 #include <getopt.h>
 #include <omp.h>
 #include "mt19937p.h"
+#include <mpi.h>
 
 #define BLOCK_SIZE 64
 
@@ -18,7 +18,7 @@
  * If $l_{ij}^s$ represents the length of the shortest path from
  * $i$ to $j$ that can be attained in at most $2^s$ steps, then
  * $$
- *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}.
+ *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^2 \}.
  * $$
  * That is, the shortest path of at most $2^{s+1}$ hops that connects
  * $i$ to $j$ consists of two segments of length at most $2^s$, one
@@ -83,15 +83,11 @@ int square(int n,               // Number of nodes
     // Copied lnew matrix
     int * CN __attribute__((aligned(64))) =
         (int *) malloc(totalblocks * totalblocksize * sizeof(int));
-        
-    #pragma omp parallel shared(CL, CN, done)
-        {
     
     // Copy over
         int copyoffset = 0;
     //for (int bi = 0; bi < blocks; ++bi) {
         //for (int bj = 0; bj < blocks; ++bj) {
-        #pragma omp for
         for (int bc = 0; bc < blocks * blocks; ++bc) {
             // Compute block position
             int bi = bc / blocks;
@@ -120,7 +116,6 @@ int square(int n,               // Number of nodes
     //memcpy(CN, CL, totalblocks * totalblocksize * sizeof(int));
     
     // Perform square
-        #pragma omp for
         for (int bc = 0; bc < blocks * blocks; ++bc) {
             // Compute block position
             int bi = bc / blocks;
@@ -145,7 +140,6 @@ int square(int n,               // Number of nodes
     copyoffset = 0;
     //for (int bi = 0; bi < blocks; ++bi) {
         //for (int bj = 0; bj < blocks; ++bj) {
-        #pragma omp for
         for (int bc = 0; bc < blocks * blocks; ++bc) {
             // Compute block position
             int bi = bc / blocks;
@@ -165,7 +159,6 @@ int square(int n,               // Number of nodes
             }
         }
     //}
-    }
     
     return done;
 }
@@ -201,7 +194,7 @@ static inline void deinfinitize(int n, int* l)
 /**
  *
  * Of course, any loop-free path in a graph with $n$ nodes can
- * at most pass through every node in the graph.  Therefore,
+ * at most pass theough every node in the graph.  Therefore,
  * once $2^s \geq n$, the quantity $l_{ij}^s$ is actually
  * the length of the shortest path of any number of hops.  This means
  * we can compute the shortest path lengths for all pairs of nodes
@@ -264,7 +257,7 @@ int* gen_graph(int n, double p, unsigned long int s)
  * arithmetic, we should get bitwise identical results from run to
  * run, even if we do optimizations that change the associativity of
  * our computations.  The function `fletcher16` computes a simple
- * [simple checksum][wiki-fletcher] over the output of the
+ * [simple checksum][wiki-fletcher].  over the output of the
  * `shortest_paths` routine, which we can then use to quickly tell
  * whether something has gone wrong.  The `write_matrix` routine
  * actually writes out a text representation of the matrix, in case we

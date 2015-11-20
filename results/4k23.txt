@@ -1,0 +1,36 @@
+3
+== OpenMP with 23 threads
+n:     4095
+p:     0.05
+Time:  5.21761
+Check: 4149
+3
+== OpenMP with 23 threads
+n:     4096
+p:     0.05
+Time:  4.27554
+Check: 6B72
+3
+== OpenMP with 23 threads
+n:     4097
+p:     0.05
+Time:  4.29814
+Check: 14F1
+2
+== OpenMP with 23 threads
+n:     8191
+p:     0.05
+Time:  21.5056
+Check: 890A
+2
+== OpenMP with 23 threads
+n:     8192
+p:     0.05
+Time:  21.8308
+Check: DE4C
+3
+== OpenMP with 23 threads
+n:     8193
+p:     0.05
+Time:  32.5468
+Check: 47A4
