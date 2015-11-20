@@ -1,0 +1,20 @@
+# why .x...WHY?
+*.x
+
+# ignore compiled files too
+*.o
+
+# these are different
+*.optrpt
+
+#
+# thanks:https://github.com/github/gitignore/blob/master/TeX.gitignore
+#
+## Core latex/pdflatex auxiliary files:
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc

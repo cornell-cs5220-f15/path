@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path.x
+exe: path-mpi.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -31,6 +31,24 @@ path-mpi.x: path-mpi.o mt19937p.o
 
 path-mpi.o: path-mpi.c
 	$(MPICC) -c $(MPI_CFLAGS) $<
+
+path-blocked.x: path-blocked.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-blocked.o: path-blocked.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+path-blocked-device.x: path-blocked-device.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-blocked-device.o: path-blocked-device.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+path-blocked-device-naive.x: path-blocked-device-naive.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
+path-blocked-device-naive.o: path-blocked-device-naive.c
+	$(CC) -c $(OMP_CFLAGS) $<
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
@@ -51,4 +69,4 @@ clean:
 	rm -f *.o
 
 realclean: clean
-	rm -f path.x path-mpi.x path.md main.pdf
+	rm -f path.x path-mpi.x path-blocked.x path-blocked-device.x path-blocked-device-naive.x
