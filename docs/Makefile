@@ -1,4 +1,4 @@
-LATEX=pdflatex
+LATEX=pdflatex --shell-escape
 BIBTEX=bibtex
 
 PDFFILES=group003.pdf

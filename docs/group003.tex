@@ -17,11 +17,15 @@
 }
 
 \usepackage{natbib}
-\usepackage[miktex]{gnuplottex}
+% \usepackage[miktex]{gnuplottex}
+\usepackage{gnuplottex}
 \usepackage{graphicx}
 \usepackage{color}
 \usepackage{pdfpages}
+\usepackage{graphicx}
 \usepackage{epstopdf}
+
+\usepackage{pgfplots}
 
 \usepackage{enumerate}
 
@@ -269,7 +273,7 @@ where $p$ is the number if processors. To enable easy comparison, we will use th
 			24 & 4899 \\ \hline
 		\end{tabular}
 	\end{center}
-	\caption{Table of weak scaling parameters for number of threads and the squart root of the problem size ($n$)}
+	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$)}
 	\label{mpi_ws_tab}
 \end{table}
 
@@ -348,7 +352,7 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 \end{figure}
 \noindent A couple of comments can be made about the parallel efficiency shown in Figure~\ref{mpi_ss}. First, there is a stark decrease in scaling efficiency between 8 and 16 threads. This is most likely due to an increase in communication costs, as running the program with 8 threads only requires communication on the same Xeon chip, while 16 threads spans two Xeon chips. For all probabilities presented here, this actually leads to the program completing quicker when run with only 8 processors as opposed to 16. It is interesting to note that this discontinuity in scaling between 8 and 16 processors does not appear for OpenMP (see Figure~\ref{omp_ss}), possibly due to optimized communications inside the OpenMP library itself. A second comment that can be made is that scaling efficiency appears to be independent of the probability parameter. \\
 
-\noindent Typically, weak scaling is used to view the communication costs associated with parallelizing a program since the algorithmic work should remain constant per processor during the study. This should allow us to see if communications become a dominant source of time in our program, requiring us to rethink our MPI parallelization strategy. The parameters for our weak scaling study can be seen in Table~\ref{mpi_ws_tab}, where each parameter configuration was one again run for probabilities of 0.025, 0.05, 0.1, and 0.3. The results of the study are shown in Figure~\ref{mpi_ws}
+\noindent Typically, weak scaling is used to view the communication costs associated with parallelizing a program since the algorithmic work should remain constant per processor during the study. This should allow us to see if communications become a dominant source of time in our program, requiring us to rethink our MPI parallelization strategy. The parameters for our weak scaling study can be seen in Table~\ref{mpi_ws_tab}, where each parameter configuration was one again run for probabilities of 0.025, 0.05, 0.1, and 0.3. The results of the study are shown in Figure~\ref{mpi_ws}.\\
 
 \begin{figure}[h]
 	\begin{center}
@@ -382,39 +386,39 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 \noindent In order to reduce cache misses and increase memory locality, the \texttt{square} function in the pathing algorithm was broken up into blocks in the same manner as used for the general matrix multiply assignment. In order to increase unit striding in memory, blocks moving in the horizontal direction across the matrix (\texttt{i}) are set to be longer than the blocks for vertical movement (\texttt{j}) and the search for shorter paths (\texttt{k}). Additionally, in an effort to take advantage of unit strides in memory, the loop indices were reordered to have horizontal movement (\texttt{i}) be the innermost loop, meaning only unit stride in memory is performed in the inner loop. The new \texttt{square} function appears as
 \begin{lstlisting}
     // Major Blocks
-    for(int J = 0; J < n\_height; ++J) \{
-	    for(int K = 0; K < n\_height; ++K) \{
-		    for(int I = 0; I < n\_width; ++I)\{
+    for(int J = 0; J < n_height; ++J) {
+	    for(int K = 0; K < n_height; ++K) {
+		    for(int I = 0; I < n_width; ++I){
 			    // Calculate ending indices for the set of blocks
-			    int j\_end   = ((J+1)*height\_size < n ? 
-							    height\_size : (n-(J*height\_size)));
-			    int k\_end   = ((K+1)*height\_size < n ?
-							     height\_size : (n-(K*height\_size)));
-			    int i\_end   = ((I+1)*width\_size  < n ?
-							     width\_size  : (n-(I*width\_size)));
-			    int j\_init  = J*height\_size*n;
-			    int kn\_init = K*height\_size*n;
-			    int k\_init  = K*height\_size;
-			    int i\_init  = I*width\_size;
+			    int j_end   = ((J+1)*height_size < n ? 
+							    height_size : (n-(J*height_size)));
+			    int k_end   = ((K+1)*height_size < n ?
+							     height_size : (n-(K*height_size)));
+			    int i_end   = ((I+1)*width_size  < n ?
+							     width_size  : (n-(I*width_size)));
+			    int j_init  = J*height_size*n;
+			    int kn_init = K*height_size*n;
+			    int k_init  = K*height_size;
+			    int i_init  = I*width_size;
     
 			    // Minor Blocks
-			    for (int j = 0; j < j\_end; ++j) \{
-				    int jn = j\_init+j*n;
+			    for (int j = 0; j < j_end; ++j) {
+				    int jn = j_init+j*n;
     
-				    for (int k = 0; k < k\_end; ++k) \{
-					    int kn  = kn\_init+k*n;
-					    int lkj = l[jn+k\_init+k];
+				    for (int k = 0; k < k_end; ++k) {
+					    int kn  = kn_init+k*n;
+					    int lkj = l[jn+k_init+k];
     
-					    for (int i = 0; i < i\_end; ++i) \{
-						    int lij\_ind = jn+i\_init+i;
-						    int lij = lnew[lij\_ind];
-						    int lik = l[kn+i\_init+i];
+					    for (int i = 0; i < i_end; ++i) {
+						    int lij_ind = jn+i_init+i;
+						    int lij = lnew[lij_ind];
+						    int lik = l[kn+i_init+i];
     
-						    if (lik + lkj < lij) \{
+						    if (lik + lkj < lij) {
 							    lij = lik+lkj;
-							    lnew[lij\_ind] = lij;
+							    lnew[lij_ind] = lij;
 							    done = 0;
-						    \}
+						    }
 \end{lstlisting}
 \noindent Rearranging the loop structure in this way reduces the working set, allowing it to fit in the L2 cache, greatly reducing cache misses. Where possible, indices have been precomputed outside of the innermost loop in order to reduce the amount of floating point operations used in index calculation, such as \texttt{jn} and \texttt{kn}. Testing from Group 19's ``matmul'' report (Robert Chiodi's old group) was directly used here in determining the ideal block sizes. One major change, however, was each block size was doubled since in this case, integers are used, which are half the size of the doubles used in assignment one. \\
 
@@ -639,13 +643,29 @@ inout(lnew : length(first_iter*n*n) ...
 			"./benchmarking/blocked_phi/weak/p10weak.txt" u 1:(9.705235004/$2) t 'p = 0.100' w lp, \
 			"./benchmarking/blocked_phi/weak/p30weak.txt" u 1:(10.184929132/$2) t 'p = 0.300' w lp
 		\end{gnuplot}
-		\caption{\Huge Put parameters of study here for weak scaling or make a table and refer to it.}
+		\caption{A weak scaling study for the OpenMP parallelized path algorithm with blocked submatrices computed on the Xeon Phi coprocessors.  See Table ~\ref{phi_ws_tab} for the parameters.}
 		\label{blocked_device_ws}
 	\end{center}
 \end{figure}
-\begin{center}
-	{\Huge PLOT PLOT PLOT}
-\end{center}
+\begin{table}[h]
+	\begin{center}
+		\begin{tabular}{|c| c|}
+			\hline
+			\# of Threads & n \\ \hline
+			4 & 2000 \\ \hline
+			8 & 2828 \\ \hline
+			16 & 4000 \\ \hline
+			24 & 4899 \\ \hline
+			48 & 6928\\ \hline
+			96 & 9797\\ \hline
+			192 & 13856\\ \hline
+			216 & 14696\\ \hline
+			240 & 15492\\ \hline
+		\end{tabular}
+	\end{center}
+	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$).  We start at \texttt{threads}=4 because this is equivalent to using one core on the Phi, as well as the probability that the task will complete with using one thread on the Phi is very small given the roughly two times slower clock rates.}
+	\label{phi_ws_tab}
+\end{table}
 
 \subsubsection{Offloading to the Phi -- A New Perspective}
 
@@ -811,15 +831,35 @@ _mm_free(orig_lnew);
 
 \noindent As a final comparsion, we present the results of the naive Phi computation juxtaposed with the Node computation.
 
-\begin{center}
-	{\Huge PLOT PLOT PLOT}
-\end{center}
+\begin{figure}[h]
+	\begin{center}
+		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
+			#set key at 15.8,41
+			set size 1.0,0.75              
+			unset log                          
+			unset label                          
+			#set xtic auto offset 0,-0.5 font ",10"                     
+			#set ytic 25 font ",10" 
+			#Set Info
+			set xlabel "Number of Threads"
+			#set xlabel offset 0,-0.5
+			set ylabel "Scaling Efficiency"
+			#set ylabel offset -1.25,0
+			#set xr [0.0:16.0]
+			set yr [0.0:1.5]
+			plot "./benchmarking/blocked_phi/strong/p025strong.txt" u 1:(1350.999216079712/$2/$1) t 'p = 0.025' w linespoints, \
+			"./benchmarking/blocked_phi/large_nodep025strong.txt" u 1:(1685.584415912628/$2/$1) t 'p = 0.025' w lp, \
+		\end{gnuplot}
+		\caption{A comparison of the strong scaling for OpenMP parallelized path algorithm with blocked submatrices on the Xeon Phi Coprocessors and the Xeon Nodes. The problem size was $\mathtt{n} = 11111$, and the probability was $p = 0.025$.}
+		\label{blocked_comparison}
+	\end{center}
+\end{figure}
 
 \noindent As you can plainly see, our efforts to offload computation to the Phi have been rather ineffective.  We do not feel that this is due to lack of effort, or even improper offloading methodology.  Rather, it is clear that the level of vectorization supplied by the compiler alone is not sufficient to take full advantage of the Phi's extra-wide vectors.  Given that it has a clock rate of roughly half the Node, in conjunction with our plotted Phi results being wasteful in the amount of memory being transferred back and forth on each iteration, we feel that the plotted results can be explained by two simple factors:
 
 \begin{enumerate}[1.]
 	\item Lack of proper vectorization, and
-	\item Improper / unnecessary data transfer
+	\item Improper / unnecessary data transfer (e.g. why the line is almost flat -- our task is memory bound)
 \end{enumerate}
 
 \noindent The only other explanation we see as reasonable is that our \texttt{matmul-} style blocking incorporated in the Phi code likely does not wield the amount of threads available to us.  That is, were there more time, we would also experiment with doing smaller blocks / sub-blocks to see how the performance changes.
