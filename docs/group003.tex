@@ -667,7 +667,7 @@ inout(lnew : length(first_iter*n*n) ...
 			240 & 15492\\ \hline
 		\end{tabular}
 	\end{center}
-	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$)}
+	\caption{Table of weak scaling parameters for number of threads and the square root of the problem size ($n$).  We start at \texttt{threads}=4 because this is equivalent to using one core on the Phi, as well as the probability that the task will complete with using one thread on the Phi is very small given the roughly two times slower clock rates.}
 	\label{phi_ws_tab}
 \end{table}
 
