@@ -56,7 +56,7 @@ for (int step = 0; step < n; step += UNROLL_STEP)
     int new_path = a[row_p][step_p] + b[step_p][col_p];
     c[row_p][col_p] = min(c[row_p][col_p], new_path);
     \end{lstlisting}
-    \caption{Mutually distinct case.\label{alg:fwiabc}}
+    \cprotect\caption{\texttt{fwi\_abc}: The mutually distinct case.\label{alg:fwiabc}}
   \end{figure}
 
   \begin{figure}[ht!]
@@ -69,7 +69,7 @@ for (int col  = 0; col  < n; col += UNROLL_COL)
     int new_path = a[row_p][step] + b[step][col_p]
     c[row_p][col_p] = min(c[row_p][col_p], new_path);
     \end{lstlisting}
-    \caption{Non-distinct case.\label{alg:fwi}}
+    \cprotect\caption{\texttt{fwi}: The non-distinct case.\label{alg:fwi}}
   \end{figure}
 
   To optimize memory allocation, we batch allocate four scratch blocks on 64-byte boundaries with dimensions $B \times B$ to be reused for the lifetime of the computation. We also tried to use \texttt{scalable-aligned-malloc} from Intel's TBB library instead of \texttt{\_mm\_malloc} in the hope of exploiting the number of hardware threads available, but were ultimately unable to proceed because we encountered configuration problems on the cluster\footnote{Specifically, \texttt{tbb/tbballocator.h} insists on importing the C++ standard type library instead of the C equivalent. Compiling with icpc instead of icc produced small explosions which we were reluctant to mitigate at 4am on Thursday morning.}.
@@ -104,6 +104,37 @@ export KMP_AFFINITY="granularity=core,type=scatter"
 export OFFLOAD_INIT=on_start
   \end{lstlisting}
 
-  The cutoff point for offloading is determined by the number of blocks that are being considered. Given a block size of 64 and 24 threads on the main processor, it is safe to say that any computation whose dimensions are significantly larger than $64 \times 24 = 1536$ will benefit from the additional number of threads available on the coprocessor. For our purposes, we offload for any computation whose dimensions are larger than $1024$. In a more robust implementation, this threshold could be the subject of an ATLAS optimization routine.
+  The cutoff point for offloading is determined by the number of blocks that are being considered. Given a block size of 64 and 24 threads on the main processor, it is safe to say that any computation whose dimensions are significantly larger than $64 \times 24 = 1536$ will benefit from the additional number of threads available on the coprocessor. For our purposes, we use a weak criteria where we offload for any computation whose dimensions are larger than $1024$. This criteria is weak because the economies of scale likely kick in only at significantly larger problem sizes where most of the 236 hardware threads on the coprocessor are being saturated. Thus, in a more robust implementation, this threshold could be the subject of an ATLAS optimization routine.
   \section{Scaling Studies}
+  The base case considered here is the implementation that shipped with the assignment. We measure speedup as the ratio of the wall-clock time taken for the optimized case versus the wall-clock time for the base case. For ease of measuring scaling performance, we disable offloading so that we need only consider the range of 1 to 24 threads and a corresponding problem size. For strong scaling shown in~\autoref{graph:strong-scaling}, we use a slightly larger problem size ($n = 4096$) in order to stay well above the threshold at which blocking/tiling is efficient.
+
+  \begin{figure}[p]
+    \centering
+    \resizebox{0.75\textwidth}{!}{%
+    \begin{tikzpicture}
+      \begin{axis}[axis lines=left,xlabel=$n$,ylabel=Speedup,ymax=10,ymin=0,xmin=500,xmax=9000]
+      \addplot[only marks] coordinates {
+        (512, 9.3) (1024, 8.1) (2048, 4.3) (4096, 2.2) (8192, 2)
+      };
+      % \addplot[domain=500:8100,samples=1000] {0.008*x - 10.645};
+      \end{axis}
+    \end{tikzpicture}
+  }
+  \caption{Varying $n$ from 512 to 8192 (powers of 2), and varying the number of OpenMP threads from 1 to 24.\label{graph:weak-scaling}}
+  \end{figure}
+
+  \begin{figure}[p]
+    \centering
+    \resizebox{0.75\textwidth}{!}{%
+    \begin{tikzpicture}
+      \begin{axis}[axis lines=left,xlabel=$n$,ylabel=Speedup,ymax=10,ymin=0,xmin=1,xmax=24]
+      \addplot[only marks] coordinates {
+        (1, 3.1) (2, 3.8) (4, 5.3) (8, 6.7) (16, 8.1) (24, 9.9)
+      };
+      % \addplot[domain=500:8100,samples=1000] {0.008*x - 10.645};
+      \end{axis}
+    \end{tikzpicture}
+  }
+  \caption{Fixing $n = 4096$, and varying the number of OpenMP threads from 1 to 24.\label{graph:strong-scaling}}
+  \end{figure}
 \end{document}
