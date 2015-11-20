@@ -154,7 +154,7 @@ The strong scaling study was performed on a graph with 2048 nodes. The weak scal
 
 We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, whereas the naive finished in 11.0959, leading to a speedup factor of 11. \\
 
-Looking at the vectorization report, the large majority of the computationally heavy calculations were being vectorized, resulting in a large speedup. However, we have not yet generalized this code and this can only run for some fixed problem sizes and fixed thread sizes. We plan to do this in the future. Therefore, we ran the strong scaling studying on a 2048 x 2048 graph. The weak scaling study varies the problem size but keeps the problem size per processor constant at a 512 x 512 board. We could only run it using a small number of threads: 1, 4, and 16 on the compute node.
+Looking at the vectorization report, the large majority of the computationally heavy calculations were being vectorized, resulting in a large speedup. We ran the strong scaling studying on a 2048 x 2048 graph. The weak scaling study varies the problem size but keeps the problem size per processor constant at a 512 x 512 board. We could only run it using a small number of threads: 1, 4, and 16 on the compute node.
 
 \begin{figure}[H]
 \centering
@@ -170,6 +170,15 @@ Looking at the vectorization report, the large majority of the computationally h
 \label{fig:ws_eric}
 \end{figure}
 
+<<<<<<< HEAD
+=======
+However, a problem with this blocking implementation means that we have to perform a copy optimization so that we can run the \texttt{shortest\_paths} function on a problem size that works for our problem. Our current implementation prints out how much time it takes to perform the copying. The amount of time needed to perform the copying is trivial for small problem sizes. On a 255 x 255 grid, it took 6.07967e-05 time to perform the copying. However, as the size of the matrix increases, the amount of time needed to perform the copying scales with the size of the matrix squared. For example, the time taken to perform the copying on a 2000 x 2000 matrix is 0.00843501, which several orders of magnitude larger. Relative to the amount of time needed to perform the shortest paths calculation, this is still trivial. On 2000 x 2000 matrix, we finished in 1.04781 time.
+
+\section{Future Work}
+
+In addition to completing the MPI implementation outlined in Section~\ref{sec:mpi}, we aim to explore the Cannon's algorithm \cite{cannon} to further decrease the memory footprint in each processor and improve parallelization. 
+
+>>>>>>> bc4ac072d63973d0cf5d254ac2e25a62c32166d1
 \begin{thebibliography}{9}
 \bibitem{writeup}
 Bindel, D. \textit{All-Pairs Shortest Paths}. Retrieved November 10, 2015, from \url{https://github.com/sheroze1123/path/blob/master/main.pdf}

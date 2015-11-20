@@ -9,16 +9,17 @@ import sys
 rc('font',**{'family':'serif','serif':['Palatino']})
 rc('text', usetex=True)
 
-threads, timings = np.loadtxt('strong_scaling.csv', delimiter=',', usecols=(0,1), unpack=True)
+procs, timings = np.loadtxt('strong_scaling_mpi.csv', delimiter=',', usecols=(0,1), unpack=True)
 
 serial_time = timings[0];
-timings = np.divide(serial_time, timings)
+speedups = np.divide(serial_time, timings)
 
-plt.plot(threads, timings)
+plt.plot(procs, speedups)
 plt.xlim([1,26])
-plt.xlabel("Number of OMP threads")
-plt.ylabel("Speedup over the serial implementation")
-plt.savefig('strong_scaling.png', dpi=300)
+plt.xlabel("Number of processors")
+plt.ylabel("Speedup over a single processor")
+plt.title("Strong scaling study for MPI implementation")
+plt.savefig('strong_scaling_mpi.png', dpi=200)
 plt.clf()
 plt.cla()
 
