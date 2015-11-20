@@ -18,7 +18,7 @@ include Makefile.in.$(PLATFORM)
 
 # === Executables
 
-exe: path.x
+exe: path.x path-mpi-node.x path-mpi-device.x path-mpi-omp.x
 
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
@@ -26,11 +26,23 @@ path.x: path.o mt19937p.o
 path.o: path.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
-path-mpi.x: path-mpi.o mt19937p.o
+path-mpi-node.x: path-mpi-node.o mt19937p.o
 	$(MPICC) $(MPI_CFLAGS) $^ -o $@
 
-path-mpi.o: path-mpi.c
-	$(MPICC) -c $(MPI_CFLAGS) $<
+path-mpi-node.o: path-mpi.c
+	$(MPICC) -c $(MPI_CFLAGS) -D_PARALLEL_NODE -o $@ $<
+
+path-mpi-device.x: path-mpi-device.o mt19937p.o
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
+
+path-mpi-device.o: path-mpi.c
+	$(MPICC) -c $(MPI_CFLAGS) -D_PARALLEL_DEVICE -o $@ $<
+
+path-mpi-omp.x: path-mpi-omp.o mt19937p.o
+	$(MPICC) $(MPI_CFLAGS) $^ -o $@
+
+path-mpi-omp.o: path-mpi-omp.c
+	$(MPICC) -c $(MPI_CFLAGS) -D_PARALLEL_NODE -o $@ $<
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<
@@ -49,6 +61,11 @@ path.md: path.c
 
 clean:
 	rm -f *.o
+	rm -f path.o*
+	rm -f path-mpi-node.o*
+	rm -f path-mpi-device.o*
+	rm -f path-mpi-omp.o*
+	rm -f *.x
 
 realclean: clean
-	rm -f path.x path-mpi.x path.md main.pdf
+	rm -f path.x path-mpi-node.x path-mpi-device.x path-mpi-omp.x path.md main.pdf

@@ -1,0 +1,42 @@
+%=========================================================================
+% fig-parallel-node-results.tex
+%=========================================================================
+
+\begin{figure}[h]
+
+  \begin{minipage}[t]{0.48\tw}
+  \begin{subfigure}{\tw}
+
+  \centering
+  \includegraphics[width=1.0\tw]{fig-parallel-node-strong-results.py.pdf}
+  \caption{\textbf{Strong Scaling Study}}
+  \label{fig-parallel-node-strong-results}
+
+  \end{subfigure}
+  \end{minipage}%
+  \hfill%
+  \begin{minipage}[t]{0.48\tw}
+  \begin{subfigure}{\tw}
+
+  \centering
+  \includegraphics[width=1.0\tw]{fig-parallel-node-weak-results.py.pdf}
+  \caption{\textbf{Weak Scaling Study}}
+  \label{fig-parallel-node-weak-results}
+
+  \end{subfigure}
+  \end{minipage}%
+
+  \caption{\textbf{Performance Results of Parallel Implementation of
+      Floyd-Warshall Algorithm Running on Compute Nodes --} Performance
+    of the parallel implementation of the Floyd-Warshall algorithm
+    running on the Totient compute nodes compared against the provided
+    serial implementation. For the strong scaling study, a dataset with
+    2000 nodes is used, and absolute execution time is shown for both the
+    auto-vectorized and manually vectorized code. For the weak scaling
+    study, the dataset is increased at the same rate as the number of
+    ranks, and all speedups are normalized to the serial
+    implementation using manually vectorized code. }
+
+  \label{fig-parallel-node-results}
+
+\end{figure}
