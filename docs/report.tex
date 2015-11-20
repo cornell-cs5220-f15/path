@@ -146,9 +146,9 @@ experiments, but much better in weak scaling experiments for modest number of pr
 \end{figure}
 
 \section*{Tuning}
-    We chose to focus on tuning the OpenMP version of the code.
+    We chose to focus on tuning the OpenMP version of the code.\newline
 
-    Since this problem is closely related to the matrix multiplication, we used the same tricks as we did in tuning matrix multiplication, which are copy optimization and blocking. Using copy optimization, we store the transpose of the shortest path matrix to increase the possibility of cache hits. Implementing it will give us 3x to 4x speed up. Similarly, by using blocking, we can better parallellize independent jobs and increase the possibility of cache hits. Combining these two methods together, we achive the speed up seen in Figure~\ref{su}. As you can see, the speedup can be up to 10x.
+    Since this problem is closely related to the matrix multiplication, we used the same tricks as we did in tuning matrix multiplication, which are copy optimization and blocking. Using copy optimization, we store the transpose of the shortest path matrix to increase the possibility of cache hits. Implementing it will give us 3x to 4x speed up. Similarly, by using blocking, we can better parallellize independent jobs and increase the possibility of cache hits. Combining these two methods together, we achive the speed up seen in Figure~\ref{su}. As you can see, the speedup can be up to 10x. We found the optimal block size to be about 120.\newline
 
     \begin{figure}
     \caption{speed up for the tuned code}
@@ -157,5 +157,13 @@ experiments, but much better in weak scaling experiments for modest number of pr
     \end{figure}
 
 	The benchmark is the original code using OpenMP with 24 threads.
+    
+    \begin{figure}[ht!]
+    \centering
+    \caption{Running VTune Amplifier on optimzed code shows improved memory access}
+    \includegraphics{profileBlocked.jpg}
+    \end{figure}
+    
+    
 
 \end{document}
