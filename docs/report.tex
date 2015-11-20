@@ -104,7 +104,8 @@ Thus the total time for a single iteration
 in seconds can be modeled as
 \begin{align*}
 t_{total} &= t_{serial} + t_{comm} \\
-&= O\left(\left(\frac{n}{p}\right)^3\right) + \frac{0.28 + 0.097(4n^2)}{10^6}
+&= O\left(\left(\frac{n}{p}\right)^3\right) 
+    + p^2 \frac{0.28 + 0.097(\frac{4n^2}{1000 p})}{10^6}
 \end{align*}
 
 We estimated the correct value of $t_{serial}$ by comparing against serial timing 
@@ -115,6 +116,10 @@ As seen in the plot, we should expect to get roughly linear speedup up until aro
 40 processors, after which communication costs would start to overtake the gains from
 paralellization.
 
+Unfortunately, as can be seen in the following section,
+the actual results do not match the predicted.  We started seeing the speedup
+dropping off when the number of processors was much lower
+
 \begin{figure}
 \caption{Predicted MPI Speedup}
 \label{mpi-predicted-speedup}
@@ -123,7 +128,10 @@ paralellization.
 
 \subsection*{Scaling Study}
 
-
+We performed both strong and weak scaling studies for the MPI version of the algorithm.
+The results for $n=2016$, averaged over 10 independent trials, can be seen in the Figures
+below.  Compared with OpenMP, the MPI version performs relatively poorly in strong scaling 
+experiments, but much better in weak scaling experiments for modest number of processors (4-8).
 
 \begin{figure}
 \caption{MPI Strong Scaling}
