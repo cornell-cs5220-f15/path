@@ -677,4 +677,101 @@ if(copy_back)
     memcpy(l, lnew, n*n * sizeof(int));
 \end{lstlisting}
 
+\noindent At this point we must discuss the prior versions of this code.  Originally we had decided it would be preferrable to copy less data, and do everything in-house on the Phi
+
+\begin{lstlisting}
+DEF_ALIGN(BYTE_ALIGN)
+int * restrict orig_lnew = (int * restrict)_mm_malloc(n*n * sizeof(int),
+	                                                        BYTE_ALIGN);
+USE_ALIGN(orig_lnew, BYTE_ALIGN);
+
+// initial conditions
+memcpy(orig_lnew, orig_l, n*n * sizeof(int));
+
+// keep track of who is done and who is not (manual reduction)
+int *even_done = (int *)alloca(n_threads*sizeof(int));
+int *odd_done  = (int *)alloca(n_threads*sizeof(int));
+
+int copy_back = 0;
+
+// avoid re-spawning threads for every iteration
+#pragma omp parallel           \
+        num_threads(n_threads) \
+        shared(orig_l, orig_lnew, even_done, odd_done)
+{
+    // buffered variables
+    int *l, *lnew, *done;
+
+    // while(!done)
+    for(size_t step = 0; /* true */ ; ++step) {
+        
+        // setup double buffers
+        int even = step % 2;
+        if(even) {
+            done = even_done;
+            l    = orig_l;
+            lnew = orig_lnew;
+        }
+        else {
+            done = odd_done;
+            l    = orig_lnew;
+            lnew = orig_l;
+        }
+
+        // assume the best
+        int idx = omp_get_thread_num();
+        done[idx] = 1;
+
+        // Major Blocks
+        #pragma omp for
+        ... same blocking code ...
+    	}// end omp for
+
+        #pragma omp barrier
+
+        // if any thread is not finished, then all threads continue
+        int finished = 1;
+        for(int i = 0; i < n_threads; ++i)
+            finished = finished && done[i];
+
+        if(finished) break;
+
+    }
+
+    // not strictly necessary
+    #pragma omp single nowait
+    copy_back = lnew == orig_lnew;
+}// end omp parallel
+
+if(copy_back)
+    memcpy(orig_l, orig_lnew, n*n * sizeof(int));
+
+_mm_free(orig_lnew);
+\end{lstlisting}
+
+\noindent In theory, this implementation should be greatly improved because we avoid the need to spawn a new thread pool every time.  Threads can independently perform their tasks, and sync up at the end with a manual reduction to determine if they need to continue.  In practice, though, this implementation was almost twice as slow.\\
+
+\noindent After the preliminary results, we decided that the likely cause was the creation of \texttt{orig\_lnew} on the device.  So we put this initialization back into the host code and did the same trick with \texttt{copy\_back} mentioned previously.  This gave an increase, but not anything substantial.\\
+
+\noindent The next thought was that the manual reduction was the problem, and indeed after reverting back to the thread spawn for every iteration we saw an almost 200\% increase in speed in comparison to the manual reduction.\\
+
+\noindent Somewhat shockingly, though, the implementation that lets the Phi just keep spinning until it is done without the need of the Node to drive it performs almost twice as slow as the naive implementation presented above.  As such, we decide not to include any strong or weak scaling studies of the above code.  We are uncertain as to the cause of this, and are rather perplexed by the slowness of the above implementation.
+
+\subsection{Phi vs Node Comparison}
+
+\noindent As a final comparsion, we present the results of the naive Phi computation juxtaposed with the Node computation.
+
+\begin{center}
+	{\Huge PLOT PLOT PLOT}
+\end{center}
+
+\noindent As you can plainly see, our efforts to offload computation to the Phi have been rather ineffective.  We do not feel that this is due to lack of effort, or even improper offloading methodology.  Rather, it is clear that the level of vectorization supplied by the compiler alone is not sufficient to take full advantage of the Phi's extra-wide vectors.  Given that it has a clock rate of roughly half the Node, in conjunction with our plotted Phi results being wasteful in the amount of memory being transferred back and forth on each iteration, we feel that the plotted results can be explained by two simple factors:
+
+\begin{enumerate}[1.]
+	\item Lack of proper vectorization, and
+	\item Improper / unnecessary data transfer
+\end{enumerate}
+
+\noindent The only other explanation we see as reasonable is that our \texttt{matmul-} style blocking incorporated in the Phi code likely does not wield the amount of threads available to us.  That is, were there more time, we would also experiment with doing smaller blocks / sub-blocks to see how the performance changes.
+
 \end{document}
