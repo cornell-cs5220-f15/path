@@ -1,0 +1,5 @@
+== MPI with 13 threads
+n:     2000
+p:     0.05
+Time:  5.92486
+Check: BA3D

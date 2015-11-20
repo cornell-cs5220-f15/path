@@ -4,9 +4,14 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include <omp.h>
+#include <time.h>
+#include <mpi.h>
 #include "mt19937p.h"
-#define n_threads 24
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -39,37 +44,28 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
+int square_stripe(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
+           int* restrict lnew,  // Partial distance at step s+1
+           int myid,            // The index of the processor
+           int ncolumns)           // Number of columns to compute
 {
-
-    //Copying the l matrix for better cache hits in the inner most loop
-    int* restrict ltrans = malloc(n*n*sizeof(int));
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            ltrans[i*n + j] = l[j*n + i];
-        }
-    }
-
     int done = 1;
-	//omp_set_num_threads(n_threads);
-    //#pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
+    int end = min(n, (myid + 1) * ncolumns);
+    for (int j = myid * ncolumns; j < end; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = l[j*n+i];
             for (int k = 0; k < n; ++k) {
-                int lik = ltrans[i*n + k];
+                int lik = l[k*n+i];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
                     done = 0;
                 }
             }
-            lnew[j*n+i] = lij;
+            lnew[(j-myid*ncolumns)*n+i] = lij;
         }
     }
-    free(ltrans);
     return done;
 }
 
@@ -115,27 +111,49 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+/*void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    /*for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;*/
+    // infinitize(n, l);
+    for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    int flag = 1;
-    //memcpy(lnew, l, n*n * sizeof(int));
+    memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = flag ? square(n, l, lnew) : square(n, lnew, l);
-        flag = !flag;
-        //memcpy(l, lnew, n*n * sizeof(int));
-    }
-     if(!flag) {
+        done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);
     deinfinitize(n, l);
+}*/
+
+void shortest_paths_mpi(int n, int* restrict l, int myid, int nproc)
+{
+    int done = 0, done_part;
+    int ncolumns = n / nproc + (n % nproc? 1 : 0 );
+    // Generate l_{ij}^0 from adjacency matrix representation
+    if (myid == 0)
+    {
+    infinitize(n, l);
+    /*for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;*/
+    }
+
+    // Repeated squaring until nothing changes
+    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    while (!done) {
+        MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
+        done_part = square_stripe(n, l, lnew, myid, ncolumns);
+        MPI_Gather(lnew, ncolumns*n, MPI_INT, l, ncolumns*n, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&done_part, &done, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&done, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    }
+
+    free(lnew);
+    if (myid == 0)
+        deinfinitize(n, l);
 }
 
 /**
@@ -226,9 +244,14 @@ int main(int argc, char** argv)
 
     // Option processing
     extern char* optarg;
-	//printf("%s\n",optarg);
     const char* optstring = "hn:d:p:o:i:";
     int c;
+    int* l;
+    double t0, t1;
+    int nproc, myid;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
         case 'h':
@@ -241,17 +264,25 @@ int main(int argc, char** argv)
         }
     }
 
+    l = calloc(n*n, sizeof(int));
+    if (myid == 0)
+    {
     // Graph generation + output
-    int* l = gen_graph(n, p);
+    l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
 
     // Time the shortest paths code
-    double t0 = omp_get_wtime();
-    shortest_paths(n, l);
-    double t1 = omp_get_wtime();
+    t0 = MPI_Wtime();
+    }
 
-    printf("== OpenMP with %d threads\n", n_threads);
+    shortest_paths_mpi(n, l, myid, nproc);
+
+    if (myid == 0)
+    {
+    t1 = MPI_Wtime();
+
+    printf("== MPI with %d threads\n", nproc);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
@@ -263,5 +294,8 @@ int main(int argc, char** argv)
 
     // Clean up
     free(l);
+    }
+
+    MPI_Finalize();
     return 0;
 }

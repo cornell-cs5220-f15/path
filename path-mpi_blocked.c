@@ -4,9 +4,26 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include <omp.h>
+#include <time.h>
+#include <mpi.h>
 #include "mt19937p.h"
-#define n_threads 24
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE ((int) 32)
+#endif
+#ifndef ALIGNED_SIZE
+#define ALIGNED_SIZE ((int) 64)
+#endif
+
+int square_dgemm(const int M, const int N, const int *A, const int *B, int *C);
+void copy_optimize(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp);
+void copy_back(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp);
+int do_block(const int* restrict A_block, const int* restrict B_block, int* C_block);
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -39,39 +56,128 @@
  * identical, and false otherwise.
  */
 
-int square(int n,               // Number of nodes
+int square_stripe(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
-           int* restrict lnew)  // Partial distance at step s+1
+           int* restrict lnew,  // Partial distance at step s+1
+           int myid,            // The index of the processor
+           int ncolumns)           // Number of columns to compute
 {
-
-    //Copying the l matrix for better cache hits in the inner most loop
-    int* restrict ltrans = malloc(n*n*sizeof(int));
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            ltrans[i*n + j] = l[j*n + i];
-        }
-    }
-
     int done = 1;
-	//omp_set_num_threads(n_threads);
-    //#pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = l[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = ltrans[i*n + k];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
+    int end = min(n, (myid + 1) * ncolumns);
+    int lij, lik, lkj;
+
+    int* restrict lst = (int*) calloc(n*ncolumns, sizeof(int));
+    memcpy(lst, l+n*myid*ncolumns,n*ncolumns*sizeof(int));
+    done = square_dgemm(n, ncolumns, l, lst, lnew);
+
+  return done;
+}
+
+int square_dgemm(const int M, const int N, const int *A, const int *B, int *C)
+{
+    int done = 1, done_part;
+    const int m_blocks = M / BLOCK_SIZE + (M%BLOCK_SIZE? 1 : 0);
+    const int n_blocks = N / BLOCK_SIZE + (N%BLOCK_SIZE? 1 : 0);
+    const int Mc = BLOCK_SIZE * m_blocks;
+    const int Nc = BLOCK_SIZE * n_blocks;
+    int* A_cp = (int*) _mm_malloc(Mc*Mc*sizeof(int), ALIGNED_SIZE);
+    int* B_cp = (int*) _mm_malloc(Mc*Nc*sizeof(int), ALIGNED_SIZE);
+    int* C_cp = (int*) _mm_malloc(Mc*Nc*sizeof(int), ALIGNED_SIZE);
+    copy_optimize(M, m_blocks, M, m_blocks, A, A_cp);
+    copy_optimize(M, m_blocks, N, n_blocks, B, B_cp);
+    memcpy(C_cp, B_cp, Mc*Nc*sizeof(int));
+    int *A_block, *B_block, *C_block;
+    int bi, bj, bk;
+    for (bi = 0; bi < m_blocks; ++bi) {
+        for (bj = 0; bj < n_blocks; ++bj) {
+            for (bk = 0; bk < m_blocks; ++bk) {
+                A_block = A_cp + BLOCK_SIZE * BLOCK_SIZE * (bi * m_blocks + bk);
+                B_block = B_cp + BLOCK_SIZE * BLOCK_SIZE * (bk * n_blocks + bj);
+                C_block = C_cp + BLOCK_SIZE * BLOCK_SIZE * (bi * n_blocks + bj);
+                done_part = do_block(A_block, B_block, C_block);
+                done = min(done, done_part);
             }
-            lnew[j*n+i] = lij;
         }
     }
-    free(ltrans);
+    copy_back(M, m_blocks, N, n_blocks, C_cp, C);
+    _mm_free(A_cp);
+    _mm_free(B_cp);
+    _mm_free(C_cp);
     return done;
 }
+
+void copy_optimize(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp )
+{
+    int Mc = BLOCK_SIZE * m_blocks;
+    int Nc = BLOCK_SIZE * n_blocks;
+    int i, j, I, J, ii, jj, id;
+    memset(cp, 0x3f3f3f3f, Mc * Nc * sizeof( int));
+    for (j = 0; j < N; ++j)
+    {
+        J = j / BLOCK_SIZE;
+        jj = j % BLOCK_SIZE;
+        for (i = 0; i < M; ++i)
+        {
+            I = i / BLOCK_SIZE;
+            ii = i % BLOCK_SIZE;
+            id = (I * n_blocks + J) * BLOCK_SIZE * BLOCK_SIZE + ii * BLOCK_SIZE + jj;
+            cp[id] = *(A++);
+        }
+    }
+    return;
+}
+
+void copy_back(const int M, const int m_blocks, const int N, const int n_blocks, int* A, int* cp)
+{
+    int i, j, I, J, ii, jj, id;
+    for (j = 0; j < N; ++j)
+    {
+        J = j / BLOCK_SIZE;
+        jj = j % BLOCK_SIZE;
+        for (i = 0; i < M; ++i)
+        {
+            I = i / BLOCK_SIZE;
+            ii = i % BLOCK_SIZE;
+            id = (I * n_blocks + J) * BLOCK_SIZE * BLOCK_SIZE + ii * BLOCK_SIZE + jj;
+            *(cp++) = A[id];
+        }
+    }
+}
+
+int do_block(const int* restrict A_block, const int* restrict B_block, int* C_block)
+{
+    int i, j, k;
+    int *Ci, *Bk;
+    int Aik, Bkj;
+    int done = 1;
+    __assume_aligned( A_block, ALIGNED_SIZE );
+    __assume_aligned( B_block, ALIGNED_SIZE );
+    __assume_aligned( C_block, ALIGNED_SIZE );
+
+    for (i = 0; i < BLOCK_SIZE; ++i)
+    {
+        Ci = C_block + i * BLOCK_SIZE;
+        __assume_aligned(Ci, ALIGNED_SIZE);
+        for (k = 0; k < BLOCK_SIZE; ++k)
+        {
+            Aik = A_block[i * BLOCK_SIZE + k];
+            Bk = B_block + k * BLOCK_SIZE;
+            __assume_aligned(Bk, ALIGNED_SIZE);
+            for (j = 0; j < BLOCK_SIZE; ++j)
+            {
+                //#pragma vector always
+                Bkj = Bk[j];
+                if (Aik + Bkj < Ci[j])
+                {
+                    done = 0;
+                    Ci[j] = Aik + Bkj;
+                }
+            }
+        }
+    }
+    return done;
+}
+
 
 /**
  *
@@ -115,27 +221,50 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+/*void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
-    infinitize(n, l);
-    /*for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;*/
+    // infinitize(n, l);
+    for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    int flag = 1;
-    //memcpy(lnew, l, n*n * sizeof(int));
+    memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = flag ? square(n, l, lnew) : square(n, lnew, l);
-        flag = !flag;
-        //memcpy(l, lnew, n*n * sizeof(int));
-    }
-     if(!flag) {
+        done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);
     deinfinitize(n, l);
+}*/
+
+void shortest_paths_mpi(int n, int* restrict l, int myid, int nproc)
+{
+    int count = 0;
+    int done = 0, done_part;
+    int ncolumns = n / nproc + (n % nproc? 1 : 0 );
+    // Generate l_{ij}^0 from adjacency matrix representation
+    if (myid == 0)
+    {
+    infinitize(n, l);
+    /*for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;*/
+    }
+
+    // Repeated squaring until nothing changes
+    int* restrict lnew = (int*) calloc(n*ncolumns, sizeof(int));
+    while (!done) {
+        MPI_Bcast(l, n*n, MPI_INT, 0, MPI_COMM_WORLD);
+        done_part = square_stripe(n, l, lnew, myid, ncolumns);
+        MPI_Gather(lnew, ncolumns*n, MPI_INT, l, ncolumns*n, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Reduce(&done_part, &done, 1, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&done, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    }
+
+    free(lnew);
+    if (myid == 0)
+        deinfinitize(n, l);
 }
 
 /**
@@ -226,9 +355,14 @@ int main(int argc, char** argv)
 
     // Option processing
     extern char* optarg;
-	//printf("%s\n",optarg);
     const char* optstring = "hn:d:p:o:i:";
     int c;
+    int* l;
+    double t0, t1;
+    int nproc, myid;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
         case 'h':
@@ -241,17 +375,25 @@ int main(int argc, char** argv)
         }
     }
 
+    l = calloc(n*n, sizeof(int));
+    if (myid == 0)
+    {
     // Graph generation + output
-    int* l = gen_graph(n, p);
+    l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
 
     // Time the shortest paths code
-    double t0 = omp_get_wtime();
-    shortest_paths(n, l);
-    double t1 = omp_get_wtime();
+    t0 = MPI_Wtime();
+    }
 
-    printf("== OpenMP with %d threads\n", n_threads);
+    shortest_paths_mpi(n, l, myid, nproc);
+
+    if (myid == 0)
+    {
+    t1 = MPI_Wtime();
+
+    printf("== MPI with %d threads with blocked graph\n", nproc);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
@@ -263,5 +405,8 @@ int main(int argc, char** argv)
 
     // Clean up
     free(l);
+    }
+
+    MPI_Finalize();
     return 0;
 }

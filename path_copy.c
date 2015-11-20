@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <omp.h>
 #include "mt19937p.h"
-#define n_threads 24
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -43,23 +43,13 @@ int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
-
-    //Copying the l matrix for better cache hits in the inner most loop
-    int* restrict ltrans = malloc(n*n*sizeof(int));
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            ltrans[i*n + j] = l[j*n + i];
-        }
-    }
-
     int done = 1;
-	//omp_set_num_threads(n_threads);
-    //#pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
-            int lij = l[j*n+i];
+            int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) {
-                int lik = ltrans[i*n + k];
+                int lik = l[k*n+i];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
@@ -69,7 +59,6 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
-    free(ltrans);
     return done;
 }
 
@@ -90,7 +79,7 @@ int square(int n,               // Number of nodes
 static inline void infinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
-        if (l[i] == 0 && (i % (n + 1)) != 0)
+        if (l[i] == 0)
             l[i] = n+1;
 }
 
@@ -119,19 +108,14 @@ void shortest_paths(int n, int* restrict l)
 {
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
-    /*for (int i = 0; i < n*n; i += n+1)
-        l[i] = 0;*/
+    for (int i = 0; i < n*n; i += n+1)
+        l[i] = 0;
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
-    int flag = 1;
-    //memcpy(lnew, l, n*n * sizeof(int));
+    memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = flag ? square(n, l, lnew) : square(n, lnew, l);
-        flag = !flag;
-        //memcpy(l, lnew, n*n * sizeof(int));
-    }
-     if(!flag) {
+        done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
     }
     free(lnew);
@@ -226,7 +210,6 @@ int main(int argc, char** argv)
 
     // Option processing
     extern char* optarg;
-	//printf("%s\n",optarg);
     const char* optstring = "hn:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
@@ -251,7 +234,7 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", n_threads);
+    printf("== OpenMP with %d threads\n", omp_get_max_threads());
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
