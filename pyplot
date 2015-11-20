@@ -1,0 +1,29 @@
+#!/usr/local/anaconda/bin/python
+
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+
+with open(sys.argv[1]) as f:
+    reading = f.read()
+
+ori_data = reading.split('\n')
+
+data = ori_data[2:-1]
+
+x = [row.split()[0] for row in data]
+y = [row.split()[1] for row in data]
+
+fig = plt.figure()
+
+ax1 = fig.add_subplot(111)
+
+ax1.set_title(ori_data[0])    
+ax1.set_xlabel(ori_data[1].split()[0])
+ax1.set_ylabel(ori_data[1].split()[1])
+
+ax1.plot(x, y, marker='o', linestyle='--', color='r', label=sys.argv[2])
+
+leg = ax1.legend()
+
+plt.show()

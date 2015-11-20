@@ -23,7 +23,13 @@ exe: path.x
 path.x: path.o mt19937p.o
 	$(CC) $(OMP_CFLAGS) $^ -o $@
 
+path.bk.x: path.bk.o mt19937p.o
+	$(CC) $(OMP_CFLAGS) $^ -o $@
+
 path.o: path.c
+	$(CC) -c $(OMP_CFLAGS) $<
+
+path.bk.o: path.bk.c
 	$(CC) -c $(OMP_CFLAGS) $<
 
 path-mpi.x: path-mpi.o mt19937p.o
