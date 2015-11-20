@@ -7,6 +7,7 @@ path.o*
 path-mpi.o*
 path-mpi_strong.o*
 path-mpi_weak.o*
+path-mpi-ampl.o*
 
 # Created by https://www.gitignore.io/api/osx
 
