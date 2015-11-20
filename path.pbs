@@ -8,4 +8,4 @@
 module load cs5220
 cd $PBS_O_WORKDIR
 # ./path.x -n 600 -i adj_mat_o -o out_mat_o
-./path.x -n 6000
+./path.x -n 1000
