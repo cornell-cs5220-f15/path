@@ -1,0 +1,12 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N weakScaling-omp
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+for blockroot in {1..4}; do
+	./path.x -t $((blockroot * blockroot)) -n $((blockroot * 1024))
+done

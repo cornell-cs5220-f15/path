@@ -7,6 +7,6 @@
 
 module load cs5220
 cd $PBS_O_WORKDIR
-for nval in {200..2600..200}; do
-	mpirun -np 1 ./path-mpi.x -n $nval
+for nval in {4096..8192..512}; do
+	mpirun -np 16 ./path-mpi.x -n $nval
 done
