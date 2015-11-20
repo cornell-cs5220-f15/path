@@ -1,0 +1,12 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N strongscaling-block-mpi
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+for procroot in {1..4}; do
+	mpirun -np $((procroot * procroot)) ./pathBlock-mpi.x -n 3072
+done

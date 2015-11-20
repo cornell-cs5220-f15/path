@@ -7,60 +7,87 @@
 #include <omp.h>
 #include "mt19937p.h"
 
-//ldoc on
-/**
- * # The basic recurrence
- *
- * At the heart of the method is the following basic recurrence.
- * If $l_{ij}^s$ represents the length of the shortest path from
- * $i$ to $j$ that can be attained in at most $2^s$ steps, then
- * $$
- *   l_{ij}^{s+1} = \min_k \{ l_{ik}^s + l_{kj}^s \}.
- * $$
- * That is, the shortest path of at most $2^{s+1}$ hops that connects
- * $i$ to $j$ consists of two segments of length at most $2^s$, one
- * from $i$ to $k$ and one from $k$ to $j$.  Compare this with the
- * following formula to compute the entries of the square of a
- * matrix $A$:
- * $$
- *   a_{ij}^2 = \sum_k a_{ik} a_{kj}.
- * $$
- * These two formulas are identical, save for the niggling detail that
- * the latter has addition and multiplication where the former has min
- * and addition.  But the basic pattern is the same, and all the
- * tricks we learned when discussing matrix multiplication apply -- or
- * at least, they apply in principle.  I'm actually going to be lazy
- * in the implementation of `square`, which computes one step of
- * this basic recurrence.  I'm not trying to do any clever blocking.
- * You may choose to be more clever in your assignment, but it is not
- * required.
- *
- * The return value for `square` is true if `l` and `lnew` are
- * identical, and false otherwise.
- */
+#ifndef SMALL_BLOCK_SIZE
+#define SMALL_BLOCK_SIZE ((int) 128)
+#endif
+#ifndef BYTE_ALIGNMENT
+#define BYTE_ALIGNMENT ((int) 64)
+#endif
+
+
+int basic_square(const int *restrict l1, const int *restrict l2, int *restrict l3){
+  int done=1;
+  for (int j = 0; j < SMALL_BLOCK_SIZE; ++j) {
+    for (int i = 0; i < SMALL_BLOCK_SIZE; ++i) {
+      int lij = l3[j*SMALL_BLOCK_SIZE+i];
+      for (int k = 0; k < SMALL_BLOCK_SIZE; ++k) {
+        int lik = l1[k*SMALL_BLOCK_SIZE+i];
+        int lkj = l2[j*SMALL_BLOCK_SIZE+k];
+        if (lik + lkj < lij) {
+          lij = lik+lkj;
+          done = 0;
+        }
+      }
+      l3[j*SMALL_BLOCK_SIZE+i] = lij;
+    }
+  }
+  return done;
+}
+
+
+int do_block(const int n, 
+             const int *restrict l, int *restrict lnew, 
+             const int *restrict l1, const int *restrict l2, int *restrict l3,
+             int i, int j, int k){
+  for(int kk=0; kk<SMALL_BLOCK_SIZE; ++kk){
+    memcpy((void *) (l1 + (kk * SMALL_BLOCK_SIZE)), (const void *) (l + i + (k + kk)*n), SMALL_BLOCK_SIZE * sizeof(int));
+  }
+  for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
+    memcpy((void *) (l2 + (jj * SMALL_BLOCK_SIZE)), (const void *) (l + k + (j + jj)*n), SMALL_BLOCK_SIZE * sizeof(int));
+    memcpy((void *) (l3 + (jj * SMALL_BLOCK_SIZE)), (const void *) (lnew + i + (j + jj)*n), SMALL_BLOCK_SIZE * sizeof(int));
+  }
+  
+  int done = basic_square(l1, l2, l3);
+  
+  if(!done)
+    for(int jj=0; jj<SMALL_BLOCK_SIZE; ++jj){
+      memcpy((void *) (lnew + i + (j + jj)*n), (const void *) (l3 + (jj * SMALL_BLOCK_SIZE)), SMALL_BLOCK_SIZE * sizeof(int));
+    }
+    
+  return done;
+}
+
+
 
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
-    int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
+  int done = 1;
+  const int *l1 = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
+  const int *l2 = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
+  int *l3 = (int *) _mm_malloc(SMALL_BLOCK_SIZE * SMALL_BLOCK_SIZE * sizeof(int), BYTE_ALIGNMENT);
+  const int n_small_blocks = n / SMALL_BLOCK_SIZE;
+  
+  //#pragma omp parallel for shared(l, lnew) reduction(&& : done)
+  for (int bj = 0; bj < n_small_blocks; ++bj){
+    const int j = bj * SMALL_BLOCK_SIZE;
+    for (int bi = 0; bi < n_small_blocks; ++bi){
+      const int i = bi * SMALL_BLOCK_SIZE;
+        for (int bk = 0; bk < n_small_blocks; ++bk){
+          const int k = bk * SMALL_BLOCK_SIZE;
+          if(!do_block(n, l, lnew, l1, l2, l3, i, j, k)) done = 0;
         }
     }
-    return done;
+  }
+  
+  _mm_free((void *) l1);
+  _mm_free((void *) l2);
+  _mm_free((void *) l3);   
+  
+  return done;        
 }
+
 
 /**
  *
@@ -196,7 +223,6 @@ void write_matrix(const char* fname, int n, int* a)
 const char* usage =
     "path.x -- Parallel all-pairs shortest path on a random graph\n"
     "Flags:\n"
-	"  - t -- number of threads to use (all)\n"
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
@@ -208,18 +234,16 @@ int main(int argc, char** argv)
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
-	int nthreads = 0;
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "ht:n:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
         case 'h':
             fprintf(stderr, "%s", usage);
             return -1;
-		case 't': nthreads = atoi(optarg); break; 
         case 'n': n = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
@@ -232,10 +256,6 @@ int main(int argc, char** argv)
     if (ifname)
         write_matrix(ifname,  n, l);
 
-	// Set the number of threads
-	if(nthreads > 0) {
-		omp_set_num_threads(nthreads);
-	}
     // Time the shortest paths code
     double t0 = omp_get_wtime();
     shortest_paths(n, l);
