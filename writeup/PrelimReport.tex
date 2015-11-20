@@ -82,6 +82,16 @@ This blocking strategy worked well and we got up to 12x speed up.
   \label{tunedPerformance}
 \end{figure}
 
+\section{Compiler Flags}
+Given the similarity of the problem to Matrix Multiplication, we reused many compiler flags from the previous assignment. These flags focus on vectorizing multiplications and fast loop unrolling, both of which are ideal for this algorithm. In addition to the flags provided, we added the following:
+
+\texttt{-no-prec-div -ipo -unroll-aggressive}
+
+Comparison of results:
+
+%\includegraphics[width=0.7\linewidth]{tunedPerformance.png}
+
+
 \section{MPI Implementation}
 For our MPI implementation, we divide the workload for multiple compute nodes as follows. Each node is assigned a region of the matrix in the form of a column set to optimize, and all the nodes have the same copy of the whole matrix. The nodes independently find the best values for the elements within their assigned region based on its view of the matrix. Here thread-level parallelization are utilized to find the optimal values for multiple elements in the assigned region simultaneously. The finished regions from each node is then broadcasted to all other nodes. There is therefore a barrier at these points, where all nodes wait to receive updates from all other nodes before continuing to do the next iteration. 
 
