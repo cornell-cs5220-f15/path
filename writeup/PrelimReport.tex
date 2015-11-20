@@ -85,7 +85,7 @@ This blocking strategy worked well and we got up to 12x speed up.
 \section{MPI Implementation}
 For our MPI implementation, we divide the workload for multiple compute nodes as follows. Each node is assigned a region of the matrix in the form of a column set to optimize, and all the nodes have the same copy of the whole matrix. The nodes independently find the best values for the elements within their assigned region based on its view of the matrix. Here thread-level parallelization are utilized to find the optimal values for multiple elements in the assigned region simultaneously. The finished regions from each node is then broadcasted to all other nodes. There is therefore a barrier at these points, where all nodes wait to receive updates from all other nodes before continuing to do the next iteration. 
 
-% include plot
+\includegraphics[width=0.7\linewidth]{mpi-plot.PNG}
 
 For working with MPI, we wanted to get a working version running quickly and so completed a simpler implementation that distributed the updates as columns to start. We believe that dividing the matrix into square blocks and using Cannon's Algorithm would have higher performance, though this implementation introduces many additional challenges. It has benefits because each node no longer has to store the entire matrix in memory, and so it would be superior for very large matrices that cannot fit entirely in memory. A downside is that broadcasts no longer are global, so while blocking is decreased,  a complex topology arises and each node no longer broadcasts, but sends a smaller packet to a subset of other nodes. In addition, Cannon's Algorithm requires square grids with is another downside of this method.
 
