@@ -1,0 +1,8 @@
+amplxe: Collection started. To stop the collection, either press CTRL-C or enter from another console window: amplxe-cl -r /home/sn575/path/r000hs -command stop.
+== OpenMP with 24 threads
+n:     2000
+p:     0.05
+Time:  2.88601
+Check: E16C
+amplxe: Collection stopped.
+amplxe: Using result path `/home/sn575/path/r000hs'
