@@ -390,39 +390,39 @@ In order to understand the performance of the MPI-parallelized shortest paths al
 \noindent In order to reduce cache misses and increase memory locality, the \texttt{square} function in the pathing algorithm was broken up into blocks in the same manner as used for the general matrix multiply assignment. In order to increase unit striding in memory, blocks moving in the horizontal direction across the matrix (\texttt{i}) are set to be longer than the blocks for vertical movement (\texttt{j}) and the search for shorter paths (\texttt{k}). Additionally, in an effort to take advantage of unit strides in memory, the loop indices were reordered to have horizontal movement (\texttt{i}) be the innermost loop, meaning only unit stride in memory is performed in the inner loop. The new \texttt{square} function appears as
 \begin{lstlisting}
     // Major Blocks
-    for(int J = 0; J < n\_height; ++J) \{
-	    for(int K = 0; K < n\_height; ++K) \{
-		    for(int I = 0; I < n\_width; ++I)\{
+    for(int J = 0; J < n_height; ++J) {
+	    for(int K = 0; K < n_height; ++K) {
+		    for(int I = 0; I < n_width; ++I){
 			    // Calculate ending indices for the set of blocks
-			    int j\_end   = ((J+1)*height\_size < n ? 
-							    height\_size : (n-(J*height\_size)));
-			    int k\_end   = ((K+1)*height\_size < n ?
-							     height\_size : (n-(K*height\_size)));
-			    int i\_end   = ((I+1)*width\_size  < n ?
-							     width\_size  : (n-(I*width\_size)));
-			    int j\_init  = J*height\_size*n;
-			    int kn\_init = K*height\_size*n;
-			    int k\_init  = K*height\_size;
-			    int i\_init  = I*width\_size;
+			    int j_end   = ((J+1)*height_size < n ? 
+							    height_size : (n-(J*height_size)));
+			    int k_end   = ((K+1)*height_size < n ?
+							     height_size : (n-(K*height_size)));
+			    int i_end   = ((I+1)*width_size  < n ?
+							     width_size  : (n-(I*width_size)));
+			    int j_init  = J*height_size*n;
+			    int kn_init = K*height_size*n;
+			    int k_init  = K*height_size;
+			    int i_init  = I*width_size;
     
 			    // Minor Blocks
-			    for (int j = 0; j < j\_end; ++j) \{
-				    int jn = j\_init+j*n;
+			    for (int j = 0; j < j_end; ++j) {
+				    int jn = j_init+j*n;
     
-				    for (int k = 0; k < k\_end; ++k) \{
-					    int kn  = kn\_init+k*n;
-					    int lkj = l[jn+k\_init+k];
+				    for (int k = 0; k < k_end; ++k) {
+					    int kn  = kn_init+k*n;
+					    int lkj = l[jn+k_init+k];
     
-					    for (int i = 0; i < i\_end; ++i) \{
-						    int lij\_ind = jn+i\_init+i;
-						    int lij = lnew[lij\_ind];
-						    int lik = l[kn+i\_init+i];
+					    for (int i = 0; i < i_end; ++i) {
+						    int lij_ind = jn+i_init+i;
+						    int lij = lnew[lij_ind];
+						    int lik = l[kn+i_init+i];
     
-						    if (lik + lkj < lij) \{
+						    if (lik + lkj < lij) {
 							    lij = lik+lkj;
-							    lnew[lij\_ind] = lij;
+							    lnew[lij_ind] = lij;
 							    done = 0;
-						    \}
+						    }
 \end{lstlisting}
 \noindent Rearranging the loop structure in this way reduces the working set, allowing it to fit in the L2 cache, greatly reducing cache misses. Where possible, indices have been precomputed outside of the innermost loop in order to reduce the amount of floating point operations used in index calculation, such as \texttt{jn} and \texttt{kn}. Testing from Group 19's ``matmul'' report (Robert Chiodi's old group) was directly used here in determining the ideal block sizes. One major change, however, was each block size was doubled since in this case, integers are used, which are half the size of the doubles used in assignment one. \\
 
