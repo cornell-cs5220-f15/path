@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 \usepackage{amsmath, amssymb, amsthm, graphicx, enumerate, listings}
 \usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
 
 \lstset{
 	    language=bash,
@@ -87,26 +88,66 @@ for the next step.  Each processor also keeps a local ``done'' flag that will
 	or not, we call \emph{MPI\_Allreduce} with a logical AND operator on the local
 	done flags.
 
-	\subsection*{Scaling Study}
 
-	We plan to include a scaling study of the MPI implementation.  However, at this time the 
-	code is performing very poorly, so we will wait until it has been tuned further to show 
-	the results.
+\subsection*{Predicting Speedup}
+
+We considered a simple alpha-beta model to predict the speedup of our MPI implementation.
+This models the communication time as
+\[ t_{comm} = \alpha + \beta * M \] 
+where $\alpha$ is latency, $\beta$ is inverse bandwidth, and $M$ is the message size.
+On the totient cluster on a single node, the time per kilobyte to communicate
+was previously estimated
+\footnote{\url{http://cornell-cs5220-f15.github.io/slides/2015-10-08-model.html}} to be
+\[ 0.28 + 0.097 \times kB \quad \mu s \]
+
+Thus the total time for a single iteration
+in seconds can be modeled as
+\begin{align*}
+t_{total} &= t_{serial} + t_{comm} \\
+&= O\left(\left(\frac{n}{p}\right)^3\right) + \frac{0.28 + 0.097(4n^2)}{10^6}
+\end{align*}
+
+We estimated the correct value of $t_{serial}$ by comparing against serial timing 
+experiments, and we estimate the number of iterations to be $\log n$.
+A plot of estimated speedup for $n=2016$ can be seen in Figure~\ref{mpi-predicted-speedup}.
+
+As seen in the plot, we should expect to get roughly linear speedup up until around 
+40 processors, after which communication costs would start to overtake the gains from
+paralellization.
+
+\begin{figure}
+\caption{Predicted MPI Speedup}
+\label{mpi-predicted-speedup}
+\includegraphics{../results/predicted_speedup.png}
+\end{figure}
+
+\subsection*{Scaling Study}
 
 
-	\section{Tuning}
-	Since this problem is closely related to the matrix multiplication, we used the same trick as we did in the matrix multiplication, which are copy optimization and blocking. Using copy optimization, we store the transpose of the matrix and it increases the possibility of cache hit. Implementing it will give us 3x to 4x speed up. Similarly, by using blocking, we can better parallel independent jobs and increase the possibility of catch hit. Combining these two methods together, we can get the epeed up plot in Figure~\ref{su}. As you can see, the speedup can be up to 10x.
-	\begin{figure}
-	\caption{speed up for the tuning code}
-	\label{su}
-	\includegraphics[height=0.4\textwidth, width=\textwidth]{speed_up.png}
-	\end{figure}
 
+\begin{figure}
+\caption{MPI Strong Scaling}
+\label{mpi-strong-scaling}
+\includegraphics{../results/mpi_strong.png}
+\end{figure}
 
+\begin{figure}
+\caption{MPI Weak Scaling}
+\label{mpi-weak-scaling}
+\includegraphics{../results/mpi_weak.png}
+\end{figure}
+
+\section*{Tuning}
+    We chose to focus on tuning the OpenMP version of the code.
+
+    Since this problem is closely related to the matrix multiplication, we used the same tricks as we did in tuning matrix multiplication, which are copy optimization and blocking. Using copy optimization, we store the transpose of the shortest path matrix to increase the possibility of cache hits. Implementing it will give us 3x to 4x speed up. Similarly, by using blocking, we can better parallellize independent jobs and increase the possibility of cache hits. Combining these two methods together, we achive the speed up seen in Figure~\ref{su}. As you can see, the speedup can be up to 10x.
+
+    \begin{figure}
+    \caption{speed up for the tuned code}
+    \label{su}
+    \includegraphics[height=0.4\textwidth, width=\textwidth]{speed_up.png}
+    \end{figure}
 
 	The benchmark is the original code using OpenMP with 24 threads.
-	\section*{Future Work}
 
-	For the final report, we plan to focus on tuning our paralell implementation.
-
-	\end{document}
+\end{document}
