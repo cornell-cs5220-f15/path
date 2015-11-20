@@ -590,10 +590,16 @@ inout(l    : length(first_iter*n*n) ...
 inout(lnew : length(first_iter*n*n) ...
 \end{lstlisting}
 
-\noindent This can be done because \texttt{first\_iter} will be \texttt{1} on the first iteration, and \texttt{0} for all other iterations.  The only extra piece of data that would be needed is a flag (say as a parameter to \texttt{square}) to indicate whethere this was an even or an odd iteration.  This will enable the usage of \texttt{l} and \texttt{lnew} on the Phi since they have already been allocated, but indicates to the dispatcher that no data needs to be copied.\\
+\noindent This can be done because \texttt{first\_iter} will be \texttt{1} on the first iteration, and \texttt{0} for all other iterations.  The only extra piece of data that would be needed is a flag (say as a parameter to \texttt{square}) to indicate whether this was an even or an odd iteration.  This will enable the usage of \texttt{l} and \texttt{lnew} on the Phi since they have already been allocated, but indicates to the dispatcher that no data needs to be copied.  Outside of the loop, though, we would need to call \texttt{square} again to ask for the data to be transferred back, as well as free the memory.  This could be achieved using another flag e.g. \texttt{int teardown}, and just check inside square if this bit is set.  If it is, we would have two options:
+
+\begin{enumerate}[i)]
+	\item Copy \texttt{orig\_lnew} back into \texttt{orig\_l} if necessary and return (avoiding the need to copy both back), or
+	\item Simply return immediately, let both be copied back, and let the Node decide if \texttt{lnew} needs to be copied back into \texttt{l} as is currently done.
+\end{enumerate}
 
 \noindent We present now a strong and weak scaling study demonstrating the results of this approach:
 
+\newpage
 
 \begin{figure}[h]
 	\begin{center}
@@ -616,7 +622,7 @@ inout(lnew : length(first_iter*n*n) ...
 			"./benchmarking/blocked_phi/strong/p10strong.txt" u 1:(1807.047016/$2/$1*4) t 'p = 0.100' w lp, \
 			"./benchmarking/blocked_phi/strong/p30strong.txt" u 1:(1767.469844/$2/$1*4) t 'p = 0.300' w lp
 		\end{gnuplot}
-		\caption{Strong scaling for OpenMP parallelized path algorithm with blocked submatrices computed on the Xeon Phi coprocessors. The problem size was $\mathtt{n} = 11111$.}
+		\caption{Strong scaling for OpenMP parallelized path algorithm with blocked submatrices computed on the Xeon Phi coprocessors. The problem size was $\mathtt{n} = 11111$. We start at \texttt{threads}=4 because this is equivalent to using one core on the Phi, as well as the probability that the task will complete with using one thread on the Phi is very small given the roughly two times slower clock rates.}
 		\label{blocked_device_ss}
 	\end{center}
 \end{figure}
@@ -669,8 +675,8 @@ inout(lnew : length(first_iter*n*n) ...
 
 \subsubsection{Offloading to the Phi -- A New Perspective}
 
-\noindent At this point, we decided that a more optimal implementation would be to avoid the Node driving the Phi computation altogether, and just use a single \texttt{offload target(mic)} statement that will not terminate until the results are in.  The major difference being to basically take the \texttt{for(int done=0; !done;)} loop and put it in \texttt{square}.  At this point the purpose of the method has changed enough that it warrants a renaming, with additional parameters:
-
+\noindent At this point, we decided that a more optimal implementation would be to avoid the Node driving the Phi computation altogether, and just use a single \texttt{offload target(mic)} statement that will not terminate until the results are in.  The major difference being to basically take the \texttt{for(int done=0; !done;)} loop and put it in \texttt{square}.  At this point the purpose of the method has changed enough that it warrants a renaming (to \texttt{solve}), with additional parameters.
+\newpage
 \begin{lstlisting}
 TARGET_MIC
 void solve(int n,                    // Number of nodes
@@ -829,33 +835,25 @@ _mm_free(orig_lnew);
 
 \subsection{Phi vs Node Comparison}
 
-\noindent As a final comparsion, we present the results of the naive Phi computation juxtaposed with the Node computation.
 
 \begin{figure}[h]
 	\begin{center}
 		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
-			#set key at 15.8,41
 			set size 1.0,0.75              
 			unset log                          
 			unset label                          
-			#set xtic auto offset 0,-0.5 font ",10"                     
-			#set ytic 25 font ",10" 
 			#Set Info
 			set xlabel "Number of Threads"
-			#set xlabel offset 0,-0.5
-			set ylabel "Scaling Efficiency"
-			#set ylabel offset -1.25,0
-			#set xr [0.0:16.0]
-			set yr [0.0:1.5]
-			plot "./benchmarking/blocked_phi/strong/p025strong.txt" u 1:(1350.999216079712/$2/$1) t 'p = 0.025' w linespoints, \
-			"./benchmarking/blocked_phi/large_nodep025strong.txt" u 1:(1685.584415912628/$2/$1) t 'p = 0.025' w lp, \
+			set ylabel "Time in Seconds"
+			set yr [0.0:1700]
+			plot "./benchmarking/blocked_phi/strong/p025strong.txt" u 1:2 t 'p = 0.025' w linespoints, \
+			"./benchmarking/blocked_phi/large_nodep025strong.txt" u 1:2 t 'p = 0.025' w lp, \
 		\end{gnuplot}
 		\caption{A comparison of the strong scaling for OpenMP parallelized path algorithm with blocked submatrices on the Xeon Phi Coprocessors and the Xeon Nodes. The problem size was $\mathtt{n} = 11111$, and the probability was $p = 0.025$.}
 		\label{blocked_comparison}
 	\end{center}
 \end{figure}
-
-\noindent As you can plainly see, our efforts to offload computation to the Phi have been rather ineffective.  We do not feel that this is due to lack of effort, or even improper offloading methodology.  Rather, it is clear that the level of vectorization supplied by the compiler alone is not sufficient to take full advantage of the Phi's extra-wide vectors.  Given that it has a clock rate of roughly half the Node, in conjunction with our plotted Phi results being wasteful in the amount of memory being transferred back and forth on each iteration, we feel that the plotted results can be explained by two simple factors:
+\noindent As a final comparison, we present the results of the naive Phi computation juxtaposed with the Node computation in Figure~\ref{blocked_comparison}. As you can plainly see, our efforts to offload computation to the Phi have been rather ineffective.  We do not feel that this is due to lack of effort, or even improper offloading methodology.  Rather, it is clear that the level of vectorization supplied by the compiler alone is not sufficient to take full advantage of the Phi's extra-wide vectors. Given that it has a clock rate of roughly half the Node, in conjunction with our plotted Phi results being wasteful in the amount of memory being transferred back and forth on each iteration, we feel that the plotted results can be explained by two simple factors:
 
 \begin{enumerate}[1.]
 	\item Lack of proper vectorization, and
@@ -863,5 +861,8 @@ _mm_free(orig_lnew);
 \end{enumerate}
 
 \noindent The only other explanation we see as reasonable is that our \texttt{matmul-} style blocking incorporated in the Phi code likely does not wield the amount of threads available to us.  That is, were there more time, we would also experiment with doing smaller blocks / sub-blocks to see how the performance changes.
+
+\subsection{Conclusion}
+Over the course of this project, we have implemented an MPI parallelization scheme, as well as tuned the initial OpenMP code. After seeing the superior performance of OpenMP due to its use of shared memory, we focused our efforts on tuning the OpenMP version of the code. This was mainly done through the implementation of blocking in the \texttt{square} function, which increased cache locality and sped the code up by an order of magnitude for the moderate case of $n = 4000$. We then focused on offloading the computation to the Xeon Phi co-processors, however were not able to effectively use them due to large amount of memory transfers, which have a significant amount of time associated with them. While our improvements did not have a significant impact on strong or weak scaling, parallelization alongside tuning has led to significant speed up of the shortest path algorithm and a substantial increase in performance.
 
 \end{document}
