@@ -169,7 +169,7 @@ Looking at the vectorization report, the large majority of the computationally h
 \end{figure}
 
 \paragraph{Offloading of Tuned Approach II}
-We then took our most tuned OpenMP approach, and ran it on the Xeon Phi coprocessors. Since the coprocessors have many more cores than the nodes, we hoped this would give us more data for scaling studies, and would be able to run the same problem faster overall given the higher theoretical peak flop rate. Our scaling study results follow:
+We then took our most tuned OpenMP approach, and ran it on the Xeon Phi coprocessors. Since the coprocessors have many more cores than the nodes, we hoped this would give us more data for scaling studies, and would be able to run the same problem faster overall given the higher theoretical peak flop rate. The weak study was done with a constant workload of a 200 x 200 graph per processor, while the strong scaling study was done with a 2000 x 2000 graph.The results can be found in the following figures:
 
 \begin{figure}[H]
 \centering
