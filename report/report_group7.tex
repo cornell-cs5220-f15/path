@@ -44,7 +44,7 @@ The Floyd-Warshall algorithm computes the pair-wise shortest path lengths given 
 
 Since the Floyd-Warshall algorithm is structured very similarly to matrix multiplication, we decided to try taking some of the tuning methods used in the first project on matrix multiplication, and applying them to the Floyd-Warshall algorithm. \\
 
-The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon.
+The first of these methods uses a blocking scheme, so that updating the shortest path lengths is done through repeated calls to a small kernel. Since the size of this small kernel is known at compile-time, the compiler is able to optimize this small kernel extremely efficiently. Currently our implementation of blocking only works when the number of vertices is divisible by the block size, but we plan to correct this soon. 
 
 The second method changes the loop ordering, so that in the innermost loop, memory is being accessed with unit stride, which increases performance.
 
@@ -79,19 +79,18 @@ Therefore, we do an \texttt{MPI\_Allgather} operation which gathers the $i^{th}$
 \label{fig:row_col}
 \end{figure}
 
-The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether any update was made across all processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached.
+The \texttt{MPI\_Allgather} is then repeated until all square blocks have completed a step in the Floyd-Warshall algorithm. Each processor individually checks whether an update was made to their sequence of columns. To complete the iteration, we perform a \texttt{MPI\_Allreduce} operation to check whether \textit{any} update was made across \textit{all} processors. If an update was made, we continue the iteration. Otherwise, all processors terminate and the solution is reached. \\
+
+The MPI implementation can be found in \texttt{path-mpi.c}. 
 
 \subsubsection{Advantages}
 
-The MPI approach improves upon a serial implementation of the algorithm due to its ability to compute updates to multiple regions of the graph in parallel.
+The MPI approach improves upon a serial implementation of the algorithm due to its ability to compute updates to multiple regions of the graph in parallel. \\
  
-The MPI approach makes each processor be responsible of a contiguous sequence of columns in the graph. To update a a square block in this sequence of columns, the processor needs to recreate only the corresponding sequence of rows. Therefore, if the width of the sequence of columns is $d$ and the side length of the graph is $n$, each processor only needs to hold $2nd$ information in memory instead of $n^2$. On larger graphs, this decrease in memory footprint will prevent thrashing since the space scales as $O(n)$ instead of $O(n^2)$ and will show improvements in performance over the OpenMP version.
+The MPI approach makes each processor be responsible of a contiguous sequence of columns in the graph. To update a a square block in this sequence of columns, the processor needs to recreate only the corresponding sequence of rows. Therefore, if the width of the sequence of columns is $d$ and the side length of the graph is $n$, each processor only needs to hold $2nd$ information in memory instead of $n^2$. On larger graphs, this decrease in memory footprint will prevent thrashing since the space scales as $O(n)$ instead of $O(n^2)$ and will show improvements in performance over the OpenMP version. 
 
 \subsubsection{Disadvantages}
 On smaller graphs, the communication and synchronization overhead  of MPI may cause a decrease in performance.
-
-\subsubsection{Implementation}
-The MPI implementation can be found in \texttt{path-mpi.c}. We are still in the process of ironing out bugs in the implementation and hope to have a complete solution by the final report. Furthermore, if time permits, we aim to explore the Cannon's algorithm to improve upon the current MPI scheme. \cite{cannon}
 
 \section{Analysis}
 
@@ -136,6 +135,8 @@ The output from the second version is shown here. Note that this was run with 16
 
 \subsubsection{Scaling Study} \label{sec:speedup}
 
+\paragraph{Tuned approach I}
+
 Although the scaling studies for the tuned parallel implementation times show similar speedup and efficiency patterns as the original solution, the overall time taken to achieve the solution is lower than the original OpenMP solution. 
 \begin{figure}[H]
 \centering
@@ -151,11 +152,13 @@ Although the scaling studies for the tuned parallel implementation times show si
 \label{fig:ws_elliot}
 \end{figure}
 
-The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. 
+The strong scaling study was performed on a graph with 2048 nodes. The weak scaling varies the number of threads but keeps the problem size per processor be 512 nodes. \\
 
-We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, wheras the naive finished in 11.0959, which means we had roughly \textbf{11 times speedup}! 
+\paragraph{Tuned approach II}
 
-Looking at the vectorization report, the large majority of the computationally heavy calculations were being vectorized, resulting in a large speedup. However, we have not yet generalized this code and this can only run for some fixed problem sizes and fixed thread sizes. We plan to do this in the future. Therefore, we ran the strong scaling studying on a 2048 x 2048 graph. The weak scaling study varies the problem size but keeps the problem size per processor constant at a 512 x 512 board. We could only run it using a small number of threads: 1, 4, and 16 on the compute node.
+We then attempted to explore a different means of parallelization in which threads were assigned to much larger blocks based on their thread id, which could be obtained using the \texttt{omp\_get\_thread\_num()} function. We obtained a significant speedup! For a boardsize of 2048 x 2048, our tuned implementation finished in 1.03249 seconds using 16 threads, whereas the naive finished in 11.0959, leading to a speedup factor of 11. \\
+
+Looking at the vectorization report, the large majority of the computationally heavy calculations were being vectorized, resulting in a large speedup. We ran the strong scaling studying on a 2048 x 2048 graph. The weak scaling study varies the problem size but keeps the problem size per processor constant at a 512 x 512 board. We could only run it using a small number of threads: 1, 4, and 16 on the compute node.
 
 \begin{figure}[H]
 \centering
@@ -171,16 +174,35 @@ Looking at the vectorization report, the large majority of the computationally h
 \label{fig:ws_eric}
 \end{figure}
 
-\section{Future Work}
+\subsection{MPI Implementation}
 
-In addition to completing the MPI implementation outlined in Section~\ref{sec:mpi}, we aim to explore the Cannon's algorithm \cite{cannon} to further decrease the memory footprint in each processor and improve parallelization. 
+\subsubsection{Scaling Study}
+
+The strong scaling study for the MPI implementation was done on a graph with 1000 nodes. The speedup plot (figure~\ref{fig:ss_mpi}) shows good speedup over the original SMP code but seems to plateau with increasing number of threads. We believe that at higher number of processors, the amount of communication between processors to carry out one iteration of updating overwhelms the benefits of parallelism. Note that the speedup plots do not include time to initially split up the work. The reasoning behind the decision to exclude the time taken to spread out the work was that applications could be coded so that each processor initializes its own thread independently. \texttt{path\_mpi.c} we had to distribute the work to have the same hash as the OpenMP version. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/strong_scaling_mpi.png}
+\caption{Strong scaling study of the MPI implementation}
+\label{fig:ss_mpi}
+\end{figure}
+
+The weak scaling study in figure~\ref{fig:ws_mpi} shows an exponential decrease in efficiency as we increase the number of processors. This is understandable due to the increased communication required by the \texttt{MPI\_Allgather} operations and \texttt{MPI\_Allreduce} operations as the number of processes increase. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{./scaling_studies/weak_scaling_mpi.png}
+\caption{Weak scaling study of the MPI implementation}
+\label{fig:ws_mpi}
+\end{figure}
+
 
 \begin{thebibliography}{9}
 \bibitem{writeup}
 Bindel, D. \textit{All-Pairs Shortest Paths}. Retrieved November 10, 2015, from \url{https://github.com/sheroze1123/path/blob/master/main.pdf}
 
 \bibitem{cannon}
-Hyuk-Jae Lee, James P. Robertson, and José A. B. Fortes. 1997. \textit{Generalized Cannon's algorithm for parallel matrix multiplication}. In Proceedings of the 11th international conference on Supercomputing (ICS '97). ACM, New York, NY, USA, 44-51. DOI=http://dx.doi.org/10.1145/263580.263591
+Hyuk-Jae Lee, James P. Robertson, and Josï¿½ A. B. Fortes. 1997. \textit{Generalized Cannon's algorithm for parallel matrix multiplication}. In Proceedings of the 11th international conference on Supercomputing (ICS '97). ACM, New York, NY, USA, 44-51. DOI=http://dx.doi.org/10.1145/263580.263591
 
 \end{thebibliography}
 

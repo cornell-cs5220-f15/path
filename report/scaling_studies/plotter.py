@@ -14,7 +14,7 @@ threads, timings = np.loadtxt('strong_scaling.csv', delimiter=',', usecols=(0,1)
 serial_time = timings[0];
 timings = np.divide(serial_time, timings)
 
-plt.plot(threads, timings)
+plt.plot(threads, timings,'k')
 plt.xlim([1,26])
 plt.xlabel("Number of OMP threads")
 plt.ylabel("Speedup over the serial implementation")
@@ -26,10 +26,7 @@ threads, timings = np.loadtxt('weak_scaling.csv', delimiter=',', usecols=(0,1), 
 serial_time = timings[0];
 timings = np.divide(serial_time, timings)
 
-serial_time = timings[0];
-timings = np.divide(serial_time, timings)
-
-plt.plot(threads, timings)
+plt.plot(threads, timings,'k')
 plt.xlim([1,20])
 plt.xlabel("Number of OMP threads")
 plt.ylabel("Efficiency")

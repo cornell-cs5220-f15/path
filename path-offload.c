@@ -38,11 +38,11 @@
  * identical, and false otherwise.
  */
 
-#define NUM_THREADS 16
-#define SQRT_THREADS 4
+#define NUM_THREADS 64
+#define SQRT_THREADS 8
 #define BLOCK_SIZE 64
 
-int square(int n,               // Number of nodes
+int __attribute__((target(mic))) square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
@@ -122,14 +122,14 @@ int square(int n,               // Number of nodes
  * conventions.
  */
 
-static inline void infinitize(int n, int* l)
+static inline void __attribute__((target(mic))) infinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
 }
 
-static inline void deinfinitize(int n, int* l)
+static inline void __attribute__((target(mic))) deinfinitize(int n, int* l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
@@ -150,8 +150,9 @@ static inline void deinfinitize(int n, int* l)
  * same (as indicated by the return value of the `square` routine).
  */
 
-void shortest_paths(int n, int* restrict l)
+void __attribute__((target(mic))) shortest_paths(int n, int* restrict l)
 {
+    omp_set_num_threads(NUM_THREADS);
     // Generate l_{ij}^0 from adjacency matrix representation
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
@@ -270,12 +271,13 @@ int main(int argc, char** argv)
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
+    int mic = 0;
 
-    omp_set_num_threads(NUM_THREADS);
+    // omp_set_num_threads(NUM_THREADS);
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:m:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -286,6 +288,7 @@ int main(int argc, char** argv)
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
+        case 'm': mic = atoi(optarg); break;
         }
     }
 
@@ -300,10 +303,18 @@ int main(int argc, char** argv)
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
-    shortest_paths(copySize, lCopy);
-    int i, j;
+    if(mic) {
+        #pragma offload target(mic) inout( lCopy : length(copySize*copySize)) \
+        in(copySize)
+        {
+            shortest_paths(copySize, lCopy);
+        }
+    } else {
+        shortest_paths(copySize, lCopy);
+    }
     double t1 = omp_get_wtime();
     double t0_copy = omp_get_wtime();
+    int i, j;
     if(copySize != n) {
         for (j = 0; j < n; ++j) {
             for (i = 0; i < n; ++i) {
@@ -316,7 +327,7 @@ int main(int argc, char** argv)
     }
     double t1_copy = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    printf("== OpenMP with %d threads\n", NUM_THREADS);
     printf("n:         %d\n", n);
     printf("p:         %g\n", p);
     printf("Time:      %g\n", t1-t0);
