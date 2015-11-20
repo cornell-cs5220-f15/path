@@ -1,0 +1,245 @@
+== OpenMP with 2 threads
+n:     200
+p:     0.05
+Time:  0.00274777
+Check: A866
+== OpenMP with 2 threads
+n:     400
+p:     0.05
+Time:  0.0149119
+Check: 1778
+== OpenMP with 2 threads
+n:     600
+p:     0.05
+Time:  0.0429361
+Check: B64
+== OpenMP with 2 threads
+n:     800
+p:     0.05
+Time:  0.0914228
+Check: D1
+== OpenMP with 2 threads
+n:     1000
+p:     0.05
+Time:  0.186085
+Check: 15C4
+== OpenMP with 2 threads
+n:     1200
+p:     0.05
+Time:  0.357108
+Check: 149
+== OpenMP with 2 threads
+n:     1400
+p:     0.05
+Time:  1.26779
+Check: 42E6
+== OpenMP with 2 threads
+n:     1600
+p:     0.05
+Time:  2.58155
+Check: 9893
+== OpenMP with 2 threads
+n:     1800
+p:     0.05
+Time:  5.86635
+Check: D6C4
+== OpenMP with 2 threads
+n:     2000
+p:     0.05
+Time:  0.454561
+Check: E196
+== OpenMP with 2 threads
+n:     2200
+p:     0.05
+Time:  0.633261
+Check: DC46
+== OpenMP with 2 threads
+n:     2400
+p:     0.05
+Time:  0.750924
+Check: 69E1
+== OpenMP with 2 threads
+n:     2800
+p:     0.05
+Time:  1.20199
+Check: CD37
+== OpenMP with 2 threads
+n:     3000
+p:     0.05
+Time:  1.44053
+Check: D21E
+== OpenMP with 2 threads
+n:     3200
+p:     0.05
+Time:  1.71726
+Check: 4B
+== OpenMP with 2 threads
+n:     3400
+p:     0.05
+Time:  2.11988
+Check: 5555
+== OpenMP with 2 threads
+n:     3600
+p:     0.05
+Time:  2.67506
+Check: D2
+== OpenMP with 2 threads
+n:     3800
+p:     0.05
+Time:  2.95203
+Check: 785A
+== OpenMP with 2 threads
+n:     4000
+p:     0.05
+Time:  3.39627
+Check: A082
+== OpenMP with 2 threads
+n:     4200
+p:     0.05
+Time:  3.89729
+Check: E1E1
+== OpenMP with 2 threads
+n:     4400
+p:     0.05
+Time:  4.73389
+Check: 4B0F
+== OpenMP with 2 threads
+n:     4600
+p:     0.05
+Time:  5.2308
+Check: AFA0
+== OpenMP with 2 threads
+n:     4800
+p:     0.05
+Time:  5.90052
+Check: C32D
+== OpenMP with 2 threads
+n:     5000
+p:     0.05
+Time:  6.60932
+Check: 3C4B
+== OpenMP with 2 threads
+n:     5200
+p:     0.05
+Time:  7.30958
+Check: EB91
+== OpenMP with 2 threads
+n:     5400
+p:     0.05
+Time:  8.34531
+Check: E196
+== OpenMP with 2 threads
+n:     5600
+p:     0.05
+Time:  10.088
+Check: 87F0
+== OpenMP with 2 threads
+n:     5800
+p:     0.05
+Time:  10.3784
+Check: BE37
+== OpenMP with 2 threads
+n:     6000
+p:     0.05
+Time:  11.0521
+Check: 0
+== OpenMP with 2 threads
+n:     6200
+p:     0.05
+Time:  12.0389
+Check: 78E1
+== OpenMP with 2 threads
+n:     6400
+p:     0.05
+Time:  13.2071
+Check: 2873
+== OpenMP with 2 threads
+n:     6600
+p:     0.05
+Time:  16.8683
+Check: 4B
+== OpenMP with 2 threads
+n:     6800
+p:     0.05
+Time:  16.0462
+Check: 0
+== OpenMP with 2 threads
+n:     7000
+p:     0.05
+Time:  17.9038
+Check: 5528
+== OpenMP with 2 threads
+n:     7200
+p:     0.05
+Time:  18.7655
+Check: 785A
+== OpenMP with 2 threads
+n:     7400
+p:     0.05
+Time:  21.2401
+Check: 4B2D
+== OpenMP with 2 threads
+n:     7600
+p:     0.05
+Time:  21.835
+Check: 3737
+== OpenMP with 2 threads
+n:     7800
+p:     0.05
+Time:  23.5295
+Check: 4B0F
+== OpenMP with 2 threads
+n:     8000
+p:     0.05
+Time:  28.5302
+Check: 5A4B
+== OpenMP with 2 threads
+n:     8200
+p:     0.05
+Time:  31.2214
+Check: 1982
+== OpenMP with 2 threads
+n:     8400
+p:     0.05
+Time:  33.7609
+Check: 3C4B
+== OpenMP with 2 threads
+n:     8600
+p:     0.05
+Time:  27.3823
+Check: 963C
+== OpenMP with 2 threads
+n:     8800
+p:     0.05
+Time:  29.1407
+Check: 37EB
+== OpenMP with 2 threads
+n:     9000
+p:     0.05
+Time:  31.2876
+Check: 87F0
+== OpenMP with 2 threads
+n:     9200
+p:     0.05
+Time:  37.2971
+Check: 69E1
+== OpenMP with 2 threads
+n:     9400
+p:     0.05
+Time:  35.4068
+Check: 5555
+== OpenMP with 2 threads
+n:     9600
+p:     0.05
+Time:  37.4311
+Check: 78E1
+== OpenMP with 2 threads
+n:     9800
+p:     0.05
+Time:  40.2739
+Check: D21E
+== OpenMP with 2 threads
+n:     10000
+p:     0.05
+Time:  42.6042
+Check: 55A0

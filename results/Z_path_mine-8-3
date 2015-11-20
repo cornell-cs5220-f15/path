@@ -1,0 +1,245 @@
+== OpenMP with 8 threads
+n:     200
+p:     0.05
+Time:  0.00655389
+Check: A866
+== OpenMP with 8 threads
+n:     400
+p:     0.05
+Time:  0.00765705
+Check: 1778
+== OpenMP with 8 threads
+n:     600
+p:     0.05
+Time:  0.0545661
+Check: B64
+== OpenMP with 8 threads
+n:     800
+p:     0.05
+Time:  0.141961
+Check: D1
+== OpenMP with 8 threads
+n:     1000
+p:     0.05
+Time:  0.119668
+Check: 15C4
+== OpenMP with 8 threads
+n:     1200
+p:     0.05
+Time:  0.267889
+Check: 149
+== OpenMP with 8 threads
+n:     1400
+p:     0.05
+Time:  0.268396
+Check: 42E6
+== OpenMP with 8 threads
+n:     1600
+p:     0.05
+Time:  0.217951
+Check: 9893
+== OpenMP with 8 threads
+n:     1800
+p:     0.05
+Time:  0.553871
+Check: D6C4
+== OpenMP with 8 threads
+n:     2000
+p:     0.05
+Time:  0.184424
+Check: E196
+== OpenMP with 8 threads
+n:     2200
+p:     0.05
+Time:  0.291632
+Check: DC46
+== OpenMP with 8 threads
+n:     2400
+p:     0.05
+Time:  0.769757
+Check: 69E1
+== OpenMP with 8 threads
+n:     2800
+p:     0.05
+Time:  1.05979
+Check: CD37
+== OpenMP with 8 threads
+n:     3000
+p:     0.05
+Time:  1.27185
+Check: D21E
+== OpenMP with 8 threads
+n:     3200
+p:     0.05
+Time:  1.14211
+Check: 4B
+== OpenMP with 8 threads
+n:     3400
+p:     0.05
+Time:  1.1786
+Check: 5555
+== OpenMP with 8 threads
+n:     3600
+p:     0.05
+Time:  1.2062
+Check: D2
+== OpenMP with 8 threads
+n:     3800
+p:     0.05
+Time:  1.44868
+Check: 785A
+== OpenMP with 8 threads
+n:     4000
+p:     0.05
+Time:  2.49395
+Check: A082
+== OpenMP with 8 threads
+n:     4200
+p:     0.05
+Time:  2.17467
+Check: E1E1
+== OpenMP with 8 threads
+n:     4400
+p:     0.05
+Time:  1.66637
+Check: 4B0F
+== OpenMP with 8 threads
+n:     4600
+p:     0.05
+Time:  3.46656
+Check: AFA0
+== OpenMP with 8 threads
+n:     4800
+p:     0.05
+Time:  3.16413
+Check: C32D
+== OpenMP with 8 threads
+n:     5000
+p:     0.05
+Time:  3.45711
+Check: 3C4B
+== OpenMP with 8 threads
+n:     5200
+p:     0.05
+Time:  6.06066
+Check: EB91
+== OpenMP with 8 threads
+n:     5400
+p:     0.05
+Time:  4.15959
+Check: E196
+== OpenMP with 8 threads
+n:     5600
+p:     0.05
+Time:  7.52836
+Check: 87F0
+== OpenMP with 8 threads
+n:     5800
+p:     0.05
+Time:  4.15964
+Check: BE37
+== OpenMP with 8 threads
+n:     6000
+p:     0.05
+Time:  6.36062
+Check: 0
+== OpenMP with 8 threads
+n:     6200
+p:     0.05
+Time:  5.99809
+Check: 78E1
+== OpenMP with 8 threads
+n:     6400
+p:     0.05
+Time:  6.34047
+Check: 2873
+== OpenMP with 8 threads
+n:     6600
+p:     0.05
+Time:  8.87509
+Check: 4B
+== OpenMP with 8 threads
+n:     6800
+p:     0.05
+Time:  7.23377
+Check: 0
+== OpenMP with 8 threads
+n:     7000
+p:     0.05
+Time:  9.0785
+Check: 5528
+== OpenMP with 8 threads
+n:     7200
+p:     0.05
+Time:  9.8819
+Check: 785A
+== OpenMP with 8 threads
+n:     7400
+p:     0.05
+Time:  15.0126
+Check: 4B2D
+== OpenMP with 8 threads
+n:     7600
+p:     0.05
+Time:  14.7206
+Check: 3737
+== OpenMP with 8 threads
+n:     7800
+p:     0.05
+Time:  10.6863
+Check: 4B0F
+== OpenMP with 8 threads
+n:     8000
+p:     0.05
+Time:  16.303
+Check: 5A4B
+== OpenMP with 8 threads
+n:     8200
+p:     0.05
+Time:  15.7148
+Check: 1982
+== OpenMP with 8 threads
+n:     8400
+p:     0.05
+Time:  9.62803
+Check: 3C4B
+== OpenMP with 8 threads
+n:     8600
+p:     0.05
+Time:  9.97318
+Check: 963C
+== OpenMP with 8 threads
+n:     8800
+p:     0.05
+Time:  10.843
+Check: 37EB
+== OpenMP with 8 threads
+n:     9000
+p:     0.05
+Time:  11.5188
+Check: 87F0
+== OpenMP with 8 threads
+n:     9200
+p:     0.05
+Time:  12.2792
+Check: 69E1
+== OpenMP with 8 threads
+n:     9400
+p:     0.05
+Time:  12.6461
+Check: 5555
+== OpenMP with 8 threads
+n:     9600
+p:     0.05
+Time:  13.2164
+Check: 78E1
+== OpenMP with 8 threads
+n:     9800
+p:     0.05
+Time:  14.5166
+Check: D21E
+== OpenMP with 8 threads
+n:     10000
+p:     0.05
+Time:  15.7882
+Check: 55A0

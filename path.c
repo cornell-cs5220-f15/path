@@ -2,11 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <getopt.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <omp.h>
 #include "mt19937p.h"
 
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE ((int) 64)
+#endif
 //ldoc on
 /**
  * # The basic recurrence
@@ -39,17 +43,168 @@
  * identical, and false otherwise.
  */
 
+/* 
+ * Credit to Scott_wu. The blocking code is adopted from Scott_wu's matrix
+ * multiplication work and modified for this assignment. The kernel function
+ * comes from Scott_wu's work on the same project
+ */
+int basic_square(const int* restrict l, const int* restrict l_transpose,
+                       int* restrict lnew, int done){
+    // Kernel routine to compute small problem that fits into memory
+    
+    __assume_aligned(l, 64);
+    __assume_aligned(l_transpose, 64);
+    __assume_aligned(lnew, 64);
+
+    int oi, oj, ok;
+    int ta, tb, tc;
+    int temp; 
+    for (int j = 0; j < BLOCK_SIZE; ++j) {
+        oj = j * BLOCK_SIZE;
+        #pragma vector aligned
+        for (int k = 0; k < BLOCK_SIZE; ++k) {
+            ok = k * BLOCK_SIZE;
+            tb = l_transpose[oj+k];
+            #pragma vector aligned
+            for (int i = 0; i < BLOCK_SIZE; ++i) {
+                //if (l[ok+i] + tb < lnew[oj+i]) {
+                //    lnew[oj+i] = l[ok+i] + tb;
+                //    done = 0;
+                //}
+                temp = l[ok+i] + tb;
+                lnew[oj+i] = (lnew[oj+i] < temp)?temp:lnew[oj+i];
+                done = (lnew[oj+i] < temp)?0:done;
+            }
+        }
+    }
+   return done;
+}
+
+int square_block(int n,               // Number of nodes
+           int* restrict l,     // Partial distance at step s
+           int* restrict lnew)  // Partial distance at step s+1
+{
+    int* restrict l_transpose __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
+
+    for( int i = 0; i < n; i++)
+      for( int j = 0; j < n; j++){
+        l_transpose[j*n+i] = l[i*n+j];
+      }
+
+    int done = 1;
+    int M    = n; // Change the variable to M so it is consistent
+    // Number of blocks total
+    const int n_blocks = n / BLOCK_SIZE + (M % BLOCK_SIZE? 1 : 0);
+    const int n_size = n_blocks * BLOCK_SIZE;
+    const int n_area = BLOCK_SIZE * BLOCK_SIZE;
+    const int n_mem = n_size * n_size * sizeof(int);
+    // Copied A matrix
+    int * restrict L __attribute__((aligned(64)))= (int *) _mm_malloc(n_mem*sizeof(int),64);
+    memset(L, 0, n_mem);
+    // Copied B matrix
+    int * restrict Lt __attribute__((aligned(64)))= (int *) _mm_malloc(n_mem*sizeof(int),64);
+    memset(Lt, 0, n_mem);
+    // Copied C matrix
+    int * restrict Ln __attribute__((aligned(64)))= (int *) _mm_malloc(n_mem*sizeof(int),64);
+    memset(Ln, 0, n_mem);
+
+    // Initialize matrices
+    int bi, bj, bk, i, j, k;
+    int copyoffset;
+    int offset, offsetL, offsetLt;
+
+    for (bi = 0; bi < n_blocks; ++bi) {
+        for (bj = 0; bj < n_blocks; ++bj) {
+            int oi = bi * BLOCK_SIZE;
+            int oj = bj * BLOCK_SIZE;
+            copyoffset = (bi + bj * n_blocks) * BLOCK_SIZE * BLOCK_SIZE;
+            for (j = 0; j < BLOCK_SIZE; ++j) {
+                for (i = 0; i < BLOCK_SIZE; ++i) {
+                    offsetL  = (oi + j) + (oj + i) * M;
+                    offsetLt = (oi + i) + (oj + j) * M;
+                    // Check bounds
+                    if (oi + j < M && oj + i < M) {
+                         L[copyoffset] = l[offsetL];
+                        Lt[copyoffset] = l_transpose[offsetLt];
+                    }
+                    if (oi + i < M && oj + j < M) {
+                         L[copyoffset] = l[offsetLt];
+                        Lt[copyoffset] = l_transpose[offsetLt];
+                    }
+                    Ln[copyoffset] = 0;
+                    copyoffset++;
+                }
+            }
+        }
+    }
+
+#pragma omp parallel shared(L, Lt, Ln, done)
+{
+    #pragma omp for
+    for (bi = 0; bi < n_blocks; ++bi) {
+        for (bj = 0; bj < n_blocks; ++bj) {
+            // #pragma vector aligned learned from kenlimmj's code
+            #pragma vector aligned
+            for (bk = 0; bk < n_blocks; ++bk) {
+                int td = basic_square(
+                     L + (bi + bk * n_blocks) * n_area,
+                    Lt + (bk + bj * n_blocks) * n_area,
+                    Ln + (bi + bj * n_blocks) * n_area,
+                    done);
+                if (done == 1 && td == 0){
+                    #pragma omp critical
+                    done = 0;
+                }
+            }
+        }
+    }
+}
+
+     // Copy results back
+     for (bi = 0; bi < n_blocks; ++bi) {
+         for (bj = 0; bj < n_blocks; ++bj) {
+            int oi = bi * BLOCK_SIZE;
+            int oj = bj * BLOCK_SIZE;
+            copyoffset = (bi + bj * n_blocks) * n_area;
+            for (j = 0; j < BLOCK_SIZE; ++j) {
+                 for (i = 0; i < BLOCK_SIZE; ++i) {
+                    offset = (oi + i) + (oj + j) * M;
+                    // Check bounds
+                    if (oi + i < M && oj + j < M) {
+                          lnew[offset] = Ln[copyoffset];
+                    }
+                    copyoffset++;
+                  }
+            }
+        }
+     }
+    _mm_free(l_transpose);
+    return done;
+}
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
 {
+    // Make a copy of transposed matrix to speed up vectorization
+    int* restrict l_transpose __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
+    for( int i = 0; i < n; i++){
+      for( int j = 0; j < n; j++){
+        l_transpose[j*n+i] = l[i*n+j];
+      }
+    }
+
+    
+    __assume_aligned(l, 64);
+    __assume_aligned(l_transpose, 64);
+    __assume_aligned(lnew, 64);
+
     int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
+    #pragma omp parallel for shared(l, lnew, l_transpose) reduction(&& : done)
     for (int j = 0; j < n; ++j) {
         for (int i = 0; i < n; ++i) {
             int lij = lnew[j*n+i];
             for (int k = 0; k < n; ++k) {
-                int lik = l[k*n+i];
+                int lik = l_transpose[i*n+k];
                 int lkj = l[j*n+k];
                 if (lik + lkj < lij) {
                     lij = lik+lkj;
@@ -59,6 +214,7 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
+    _mm_free(l_transpose);
     return done;
 }
 
@@ -76,14 +232,14 @@ int square(int n,               // Number of nodes
  * conventions.
  */
 
-static inline void infinitize(int n, int* l)
+static inline void infinitize(int n, int* restrict l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == 0)
             l[i] = n+1;
 }
 
-static inline void deinfinitize(int n, int* l)
+static inline void deinfinitize(int n, int* restrict l)
 {
     for (int i = 0; i < n*n; ++i)
         if (l[i] == n+1)
@@ -112,13 +268,17 @@ void shortest_paths(int n, int* restrict l)
         l[i] = 0;
 
     // Repeated squaring until nothing changes
-    int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    //int* restrict lnew = (int*) calloc(n*n, sizeof(int));
+    int* restrict lnew __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square(n, l, lnew);
-        memcpy(l, lnew, n*n * sizeof(int));
+        //done = square(n, l, lnew);
+        //memcpy(l, lnew, n*n * sizeof(int));
+        if ( n < 1801) done = square(n, lnew, l);
+        else done = square_block(n, lnew, l);
     }
-    free(lnew);
+    //free(lnew);
+    _mm_free(lnew);
     deinfinitize(n, l);
 }
 
@@ -133,9 +293,10 @@ void shortest_paths(int n, int* restrict l)
  * random number generator in lieu of coin flips.
  */
 
-int* gen_graph(int n, double p)
+int* restrict gen_graph(int n, double p)
 {
-    int* l = calloc(n*n, sizeof(int));
+    //int* l = calloc(n*n, sizeof(int));
+    int* l __attribute__((aligned(64)))= (int*) _mm_malloc(n*n*sizeof(int),64);
     struct mt19937p state;
     sgenrand(10302011UL, &state);
     for (int j = 0; j < n; ++j) {
@@ -199,7 +360,8 @@ const char* usage =
     "  - n -- number of nodes (200)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
-    "  - o -- file name where output matrix should be stored (none)\n";
+    "  - o -- file name where output matrix should be stored (none)\n"
+    "  - t -- set number of threads (max threads)\n";
 
 int main(int argc, char** argv)
 {
@@ -207,10 +369,11 @@ int main(int argc, char** argv)
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
+    int num_threads_used = omp_get_max_threads();
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:t:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -221,20 +384,25 @@ int main(int argc, char** argv)
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
+        case 't': num_threads_used = atoi(optarg); break;
         }
     }
-
+    
     // Graph generation + output
-    int* l = gen_graph(n, p);
+    int* restrict l = gen_graph(n, p);
     if (ifname)
         write_matrix(ifname,  n, l);
+
+    if (num_threads_used <= omp_get_max_threads()){
+      omp_set_num_threads(num_threads_used);
+    }
 
     // Time the shortest paths code
     double t0 = omp_get_wtime();
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
+    printf("== OpenMP with %d threads\n", num_threads_used);
     printf("n:     %d\n", n);
     printf("p:     %g\n", p);
     printf("Time:  %g\n", t1-t0);
@@ -245,6 +413,7 @@ int main(int argc, char** argv)
         write_matrix(ofname, n, l);
 
     // Clean up
-    free(l);
+    //free(l);
+    _mm_free(l);
     return 0;
 }

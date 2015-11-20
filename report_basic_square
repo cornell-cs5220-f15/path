@@ -1,0 +1,25 @@
+int basic_square(const int* restrict l, const int* restrict l_transpose,        0.179s             0s         0.179s           0s              0s             0s          0
+                    int* restrict lnew, int done){
+    // Kernel routine to compute small problem that fits into memory
+    __assume_aligned(l, 64);                                                                                                                                                    
+    __assume_aligned(l_transpose, 64);                                                                                                                                         
+    __assume_aligned(lnew, 64);                                                                                                                                               
+    int oi, oj, ok;                                                                                                                                                          
+    int ta, tb, tc;                                                                                                                                                         
+    int temp;                                                                                                                                                              
+        for (int j = 0; j < BLOCK_SIZE; ++j) {                                                                                                                                
+        oj = j * BLOCK_SIZE;                                                                                                                                                 
+        #pragma vector aligned                                                                                                                                              
+        for (int k = 0; k < BLOCK_SIZE; ++k) {                                  0.130s             0s         0.130s           0s              0s             0s          0
+            ok = k * BLOCK_SIZE;                                                                                                                                              
+            tb = l_transpose[oj+k];                                                                                                                                          
+            #pragma vector aligned                                                                                                                                          
+            for (int i = 0; i < BLOCK_SIZE; ++i) {                                                                                                                         
+                temp = l[ok+i] + tb;                                            0.190s             0s         0.190s           0s              0s             0s          0   
+                lnew[oj+i] = (lnew[oj+i] < temp)?temp:lnew[oj+i];               0.140s             0s         0.140s           0s              0s             0s          0  
+                done = (lnew[oj+i] < temp)?0:done;                              0.200s             0s         0.200s           0s              0s             0s          0 
+            }
+        }
+    }
+    return done;
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                         
