@@ -680,7 +680,7 @@ inout(lnew : length(first_iter*n*n) ...
 \subsubsection{Offloading to the Phi -- A New Perspective}
 
 \noindent At this point, we decided that a more optimal implementation would be to avoid the Node driving the Phi computation altogether, and just use a single \texttt{offload target(mic)} statement that will not terminate until the results are in.  The major difference being to basically take the \texttt{for(int done=0; !done;)} loop and put it in \texttt{square}.  At this point the purpose of the method has changed enough that it warrants a renaming, with additional parameters:
-
+\newpage
 \begin{lstlisting}
 TARGET_MIC
 void solve(int n,                    // Number of nodes
