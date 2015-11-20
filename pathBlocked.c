@@ -7,6 +7,8 @@
 #include <omp.h>
 #include "mt19937p.h"
 
+static int BLOCK_SIZE =200;
+
 //ldoc on
 /**
  * # The basic recurrence
@@ -39,6 +41,8 @@
  * identical, and false otherwise.
  */
 
+
+
 int square(int n,               // Number of nodes
            int* restrict l,     // Partial distance at step s
            int* restrict lnew)  // Partial distance at step s+1
@@ -59,6 +63,60 @@ int square(int n,               // Number of nodes
             lnew[j*n+i] = lij;
         }
     }
+    return done;
+}
+
+//similar to basic dgemm from matmul project
+int square_rectangular(const int lda, const int M, const int N, const int K,
+                       const int * A, const int * B, int * C)
+{
+    int i, j, k;
+    int done = 1;
+    for (i = 0; i < M; ++i) {
+        for (j = 0; j < N; ++j) {
+            int cij = C[j*lda+i];
+            for (k = 0; k < K; ++k) {
+                int aik = A[i*lda+k];
+                int bkj = B[j*lda+k];
+                if (aik + bkj < cij) {
+                    cij = aik + bkj;
+                    done = 0;
+                }
+            }
+            C[j*lda+i] = cij;
+        }
+    }
+    return done;
+}
+
+int do_block(const int lda,
+              const int *A, const int *B, int *C,
+              const int i, const int j, const int k)
+{
+    const int M = (i+BLOCK_SIZE > lda? lda-i : BLOCK_SIZE);
+    const int N = (j+BLOCK_SIZE > lda? lda-j : BLOCK_SIZE);
+    const int K = (k+BLOCK_SIZE > lda? lda-k : BLOCK_SIZE);
+    return square_rectangular(lda, M, N, K,
+                A + k + i*lda, B + k + j*lda, C + i + j*lda);
+}
+
+int square_with_blocks(const int M, const int *A, const int *B, int *C)
+{
+    // int BLOCK_SIZE = ceil(M/floor(sqrt(omp_get_max_threads())));
+    const int n_blocks = M / BLOCK_SIZE + (M%BLOCK_SIZE? 1 : 0);
+    int done = 1;
+    #pragma omp parallel for collapse(2) shared(A, B, C) reduction(&& : done)
+    for (int bi = 0; bi < n_blocks; ++bi) {
+        for (int bj = 0; bj < n_blocks; ++bj) {
+            const int i = bi * BLOCK_SIZE;
+            const int j = bj * BLOCK_SIZE;
+            for (int bk = 0; bk < n_blocks; ++bk) {
+                const int k = bk * BLOCK_SIZE;
+                done = do_block(M, A, B, C, i, j, k);
+            }
+        }
+    }
+
     return done;
 }
 
@@ -135,7 +193,7 @@ void shortest_paths(int n, int* restrict l)
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
-    //generate the transposed copy
+    // generate the transposed copy
     int * restrict lT = malloc(n*n * sizeof(int));
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
@@ -146,12 +204,18 @@ void shortest_paths(int n, int* restrict l)
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
+    // memcpy(lT, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square_with_transpose(n, l, lnew, lT);
+        done = square_with_blocks(n, lT, l, lnew);
+        // done = square_with_transpose(n, l, lnew, lT);
+        // done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
-        for (size_t i = 0; i < n; i++) {
-            for (size_t j = 0; j < n; j++) {
-                lT[i*n+j] = l[j*n+i];
+        // memcpy(lT, lnew, n*n * sizeof(int));
+        if(!done){
+            for (size_t i = 0; i < n; i++) {
+                for (size_t j = 0; j < n; j++) {
+                    lT[i*n+j] = l[j*n+i];
+                }
             }
         }
     }

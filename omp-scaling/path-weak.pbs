@@ -1,0 +1,19 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+#Floor function for bc taken from http://phodd.net/gnu-bc/code/funcs.bc
+FLOOR="define floor(x) {auto os,xx;os=scale;scale=0;xx=x/1;if(xx>x).=xx--;scale=os;return(xx)};floor("
+N="1000*"
+A="sqrt("
+B=")"
+for T in `seq 1 32`;
+do
+	C=`echo $FLOOR$N$A$T$B$B | bc -l`
+	./path.x -n $C -t $T
+done
