@@ -13,11 +13,94 @@
   Kenneth Lim (\href{mailto:kl545@cornell.edu}{kl545}), Batu Inal (\href{mailto:bi49@cornell.edu}{bi49}), Wensi Wu (\href{mailto:ww382@cornell.edu}{ww382}) \hfill Project 3 Final Report\hspace{-3ex}
   \end{framed}
   \section{Domain Decomposition}
-  We implement a tiled version of the Floyd-Warshall algorithm that builds on the blocking concept investigated by-and-large in the mid-term report. At each step, the algorithm traverses the diagonal of the adjacency matrix, first expanding computation outwards in the four cardinal directions, and then into four quadrants. This decomposition subdivides the loop structure of the naive Floyd-Warshall implementation, giving us additional opportunities for vectorization and parallelism.
+  We implement a tiled version of the Floyd-Warshall algorithm\footnote{Described by Han et.~al in \emph{Program Generation for the All Pairs Shortest Path Problem}} that builds on the blocking concept investigated by-and-large in the mid-term report. At each step, the algorithm traverses the diagonal of the adjacency matrix, first expanding computation outwards in the four cardinal directions, and then into the four quadrants demarcated by the previous expansion. \autoref{alg:fwt} provides an overview of the computation process, where the notation $c_{ij}$ represents a matrix block whose top left corner starts at $i, j$ in the parent matrix $c$. In this case, $c$ is the input matrix. \texttt{fwi} and \texttt{fwi\_abc} are min-plus matrix multiplication kernels to be later defined.
 
-  The size $B$ of each block is chosen to be such that a triplet of such blocks fits within the L3 cache, i.e.$3B^2 = \textrm{L_3}$. This works out to a value of 64. Within each block, we employ a secondary level of partioning using with a ``block'' size of 16 when iterating through the loop. This ensures that the operands of the inner loop fit within the L2 cache.
+  \begin{figure}[ht!]
+    \begin{lstlisting}
+for (int k = 0; k < num_blocks; ++k) {
+  // Phase 1: Diagonal Block
+    fwi(BLOCK_SIZE, c_kk, c_kk, c_kk);
 
+  // Phase 2: Left and Right
+  for (int j = 0; j < num_blocks; ++j) {
+    if (j != k) {
+      fwi(BLOCK_SIZE, c_kk, c_kj, c_kj);
+    }
+  }
 
+  // Phase 3: Up and Down
+  for (int i = 0; i < num_blocks; ++i) {
+    if (i != k) {
+      fwi(BLOCK_SIZE, c_ik, c_kk, c_ik);
+    }
+  }
+
+  // Phase 4: Quadrants
+  for (int i = 0; i < num_blocks; ++i) {
+    for (int j = 0; j < num_blocks; ++j) {
+      if (i != k && j != k) {
+        fwi_abc(BLOCK_SIZE, c_ik, c_kj, c_ij);
+      }
+    }
+  }
+}
+    \end{lstlisting}
+    \caption{Overall evaluation schema for Tiled FW-APSP.\label{alg:fwt}}
+  \end{figure}
+
+  Since the main arithmetic operation is min-plus matrix multiplication (MPMM) on three operands, the size $B$ of each block is chosen to be such that a triplet of such blocks fits within the L3 cache, i.e.$3B^2 = \textrm{L_3}$. This works out to a familiar value of $B = 64$. Within each block, we employ a secondary level of partioning using a ``block'' size of 16 when iterating through the loop. This is implemented as a loop-unrolling factor, but has the effect of ensuring that the operands of the inner loops fit within the L2 cache.
+
+  There are two cases for the MPMM operation: either all three operands are mutually distinct, or they are not. This dichotomy is important because the former case allows us to change the canonical $kij$ loop (where $k$ is the path exploration step) to a $jik$ loop, which exhibits much better stride and data locality. The latter, unfortunately, still remains unchanged. \autoref{alg:fwiabc} shows the mutually distinct case, in which \texttt{step} is the innermost loop, whereas~\autoref{alg:fwi} shows the non-distinct case, in which \texttt{step} \emph{has} to be the outermost loop.
+
+  \begin{figure}[ht!]
+    \begin{lstlisting}
+for (int row = 0; row < n; row += UNROLL_ROW) {
+  for (int col = 0; col < n; col += UNROLL_COL) {
+    for (int step = 0; step < n; step += UNROLL_STEP) {
+      for (int step_p = step; step_p < step + UNROLL_STEP; ++step_p) {
+        for (int row_p = row; row_p < row + UNROLL_ROW; ++row_p) {
+          for (int col_p = col; col_p < col + UNROLL_COL; ++col_p) {
+            c[row_p][col_p] = min(c[row_p][col_p], a[row_p][step_p] + b[step_p][col_p]);
+          }
+        }
+      }
+    }
+  }
+}
+    \end{lstlisting}
+    \caption{Mutually distinct case.\label{alg:fwiabc}}
+  \end{figure}
+
+  \begin{figure}[ht!]
+    \begin{lstlisting}
+for (int step = 0; step < n; ++step) {
+  for (int row = 0; row < n; row += UNROLL_ROW) {
+    for (int col = 0; col < n; col += UNROLL_COL) {
+      for (int row_p = row; row_p < row + UNROLL_ROW; ++row_p) {
+        for (int col_p = col; col_p < col + UNROLL_COL; ++col_p) {
+          c[row_p][col_p] = min(c[row_p][col_p], a[row_p][step] + b[step][col_p]);
+        }
+      }
+    }
+  }
+}
+    \end{lstlisting}
+    \caption{Non-distinct case.\label{alg:fwiabc}}
+  \end{figure}
+
+  To optimize memory allocation, we batch allocate four scratch blocks on 64-byte boundaries with dimensions $B \times B$ to be reused for the lifetime of the computation. We also tried to use \texttt{scalable-aligned-malloc} from Intel's TBB library instead of \texttt{\_mm\_malloc} in the hope of exploiting the number of hardware threads available, but were ultimately unable to proceed because we encountered configuration problems on the cluster.
+  \section{Vectorization}
+  We rewrote the codebase to utilize Intel's Cilk Array Notation when performing array operations. In exchange for a certain amount of memory locality (across the minor axis) that is lost because entries on the minor axis in the 2-dimensional array are not necessarily adjacent to each other in memory, we obviate the need to add dependency-relaxation annotations to for-loops. This is particularly useful when copying data to-and-from blocks because we can use the full width of intrinsic functions rather than doing an elementwise copy. \autoref{alg:cilpcopy} shows the code we use to extract a block from the input matrix.
+
+  \begin{figure}[ht!]
+    \begin{lstlisting}
+      block[0:BLOCK_SIZE][0:BLOCK_SIZE] = c[i_start:i_end][j_start:j_end];
+    \end{lstlisting}
+    \caption{Using Cilk array notation to copy from the parent matrix $c$ to a block.\label{alg:cilkcopy}}
+  \end{figure}
+
+  The loop-unrolling structure of \texttt{fwi} and \texttt{fwi\_abc} could also be substitued with explicit 8-way AVX instructions. Han et.~al describe a schema for MPMM that uses the same number of operations as the un-vectorized version---a broadcast and an addition, followed by a minimum comparison. While we implemented this version and found that there were tangible speed improvements at small input sizes, we were not in time to properly benchmark the performance to determine if our observations were consistent, or the result of spurious events. Our final submission leaves this job to the compiler, which still produces a decent output.
   \section{Parallelism and Offloading}
+  We experimented with parallelism using MPI, and OpenMP\@.
   \section{Scaling Studies}
 \end{document}
