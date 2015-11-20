@@ -1,0 +1,13 @@
+#!/bin/sh -l
+
+#PBS -l nodes=1:ppn=24
+#PBS -l walltime=0:30:00
+#PBS -N path
+#PBS -j oe
+
+module load cs5220
+cd $PBS_O_WORKDIR
+amplxe-cl -collect hotspots -result-dir rhs -quiet ./path.x -n 2000
+amplxe-cl -collect concurrency -result-dir rcc -quiet ./path.x -n 2000
+
+mpirun -n 24 ./path-mpi.x -n 2000

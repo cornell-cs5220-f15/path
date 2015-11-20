@@ -1,0 +1,27 @@
+#!/bin/sh -l
+# The default values for p_prob is 0.05.
+# To run this: qsub -v prob=probability path-omp_weak-.pbs
+
+p_prob=${prob:-0.05}
+
+rm weak_omp_${p_prob}*
+
+n_nodes=(1000 1414 2000 2449 2828 3464 4243 4899)
+cont=0
+
+for n_threads in 1 2 4 6 8 12 18 24
+do
+
+	module load cs5220
+	cd $PBS_O_WORKDIR
+
+	#PBS -l nodes=1:ppn=24
+	#PBS -l walltime=0:30:00
+	#PBS -N path
+	#PBS -j oe
+
+	export OMP_NUM_THREADS=${n_threads}
+	./path.x -n ${n_nodes[cont]} -p ${p_prob} >> weak_omp_${p_prob}.txt
+	
+	let cont=$cont+1
+done

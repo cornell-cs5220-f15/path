@@ -1,0 +1,45 @@
+== OpenMP with 1 threads
+n:     2000
+p:     0.05
+Time:  17.4686
+Check: 0
+== OpenMP with 2 threads
+n:     2000
+p:     0.05
+Time:  8.31
+Check: 0
+== OpenMP with 3 threads
+n:     2000
+p:     0.05
+Time:  5.7348
+Check: 0
+== OpenMP with 5 threads
+n:     2000
+p:     0.05
+Time:  3.51892
+Check: 0
+== OpenMP with 8 threads
+n:     2000
+p:     0.05
+Time:  2.32667
+Check: 0
+== OpenMP with 10 threads
+n:     2000
+p:     0.05
+Time:  1.83821
+Check: 0
+== OpenMP with 15 threads
+n:     2000
+p:     0.05
+Time:  2.42612
+Check: 0
+== OpenMP with 20 threads
+n:     2000
+p:     0.05
+Time:  1.79566
+Check: 0
+== OpenMP with 24 threads
+n:     2000
+p:     0.05
+Time:  2.19245
+Check: 0

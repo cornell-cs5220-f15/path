@@ -1,0 +1,40 @@
+== OpenMP with 1 threads
+n:     1000
+p:     0.05
+Time:  2.49723
+Check: CC6A
+== OpenMP with 2 threads
+n:     1414
+p:     0.05
+Time:  3.44572
+Check: 5843
+== OpenMP with 4 threads
+n:     2000
+p:     0.05
+Time:  6.8335
+Check: E16C
+== OpenMP with 6 threads
+n:     2449
+p:     0.05
+Time:  15.0919
+Check: 4103
+== OpenMP with 8 threads
+n:     2828
+p:     0.05
+Time:  15.4096
+Check: 4825
+== OpenMP with 12 threads
+n:     3464
+p:     0.05
+Time:  23.6789
+Check: AFEB
+== OpenMP with 18 threads
+n:     4243
+p:     0.05
+Time:  51.4677
+Check: 71ED
+== OpenMP with 24 threads
+n:     4899
+p:     0.05
+Time:  75.9082
+Check: 2322
