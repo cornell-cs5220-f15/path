@@ -62,31 +62,6 @@ int square(int n,               // Number of nodes
     return done;
 }
 
-int square_with_transpose
-          (int n,               // Number of nodes
-           int* restrict l,     // Partial distance at step s
-           int* restrict lnew,  // Partial distance at step s+1
-           int* restrict lT)    // Partial distance at step s (transposed)
-{
-    int done = 1;
-    #pragma omp parallel for shared(l, lnew) reduction(&& : done)
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            int lij = lnew[j*n+i];
-            for (int k = 0; k < n; ++k) {
-                int lik = lT[i*n+k];
-                int lkj = l[j*n+k];
-                if (lik + lkj < lij) {
-                    lij = lik+lkj;
-                    done = 0;
-                }
-            }
-            lnew[j*n+i] = lij;
-        }
-    }
-    return done;
-}
-
 /**
  *
  * The value $l_{ij}^0$ is almost the same as the $(i,j)$ entry of
@@ -96,7 +71,7 @@ int square_with_transpose
  * to be "infinite".  It turns out that it is adequate to make
  * $l_{ij}^0$ longer than the longest possible shortest path; if
  * edges are unweighted, $n+1$ is a fine proxy for "infinite."
- * The functions `infinitize` and `deinfinitize` convert back
+ * The functions `infinitize` and `deinfinitize` convert back 
  * and forth between the zero-for-no-edge and $n+1$-for-no-edge
  * conventions.
  */
@@ -135,28 +110,15 @@ void shortest_paths(int n, int* restrict l)
     infinitize(n, l);
     for (int i = 0; i < n*n; i += n+1)
         l[i] = 0;
-    //generate the transposed copy
-    int * restrict lT = malloc(n*n * sizeof(int));
-    for (size_t i = 0; i < n; i++) {
-        for (size_t j = 0; j < n; j++) {
-            lT[i*n+j] = l[j*n+i];
-        }
-    }
 
     // Repeated squaring until nothing changes
     int* restrict lnew = (int*) calloc(n*n, sizeof(int));
     memcpy(lnew, l, n*n * sizeof(int));
     for (int done = 0; !done; ) {
-        done = square_with_transpose(n, l, lnew, lT);
+        done = square(n, l, lnew);
         memcpy(l, lnew, n*n * sizeof(int));
-        for (size_t i = 0; i < n; i++) {
-            for (size_t j = 0; j < n; j++) {
-                lT[i*n+j] = l[j*n+i];
-            }
-        }
     }
     free(lnew);
-    free(lT);
     deinfinitize(n, l);
 }
 
@@ -220,7 +182,7 @@ void write_matrix(const char* fname, int n, int* a)
         exit(-1);
     }
     for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j)
+        for (int j = 0; j < n; ++j) 
             fprintf(fp, "%d ", a[j*n+i]);
         fprintf(fp, "\n");
     }
@@ -235,6 +197,7 @@ const char* usage =
     "path.x -- Parallel all-pairs shortest path on a random graph\n"
     "Flags:\n"
     "  - n -- number of nodes (200)\n"
+    "  - t -- number of threads (4)\n"
     "  - p -- probability of including edges (0.05)\n"
     "  - i -- file name where adjacency matrix should be stored (none)\n"
     "  - o -- file name where output matrix should be stored (none)\n";
@@ -242,13 +205,14 @@ const char* usage =
 int main(int argc, char** argv)
 {
     int n    = 200;            // Number of nodes
+    int t    = 4;              // Number of threads
     double p = 0.05;           // Edge probability
     const char* ifname = NULL; // Adjacency matrix file name
     const char* ofname = NULL; // Distance matrix file name
 
     // Option processing
     extern char* optarg;
-    const char* optstring = "hn:d:p:o:i:";
+    const char* optstring = "hn:d:p:o:i:t:";
     int c;
     while ((c = getopt(argc, argv, optstring)) != -1) {
         switch (c) {
@@ -256,11 +220,15 @@ int main(int argc, char** argv)
             fprintf(stderr, "%s", usage);
             return -1;
         case 'n': n = atoi(optarg); break;
+        case 't': t = atoi(optarg); break;
         case 'p': p = atof(optarg); break;
         case 'o': ofname = optarg;  break;
         case 'i': ifname = optarg;  break;
         }
     }
+
+    omp_set_dynamic(0);
+    omp_set_num_threads(t);
 
     // Graph generation + output
     int* l = gen_graph(n, p);
@@ -272,11 +240,7 @@ int main(int argc, char** argv)
     shortest_paths(n, l);
     double t1 = omp_get_wtime();
 
-    printf("== OpenMP with %d threads\n", omp_get_max_threads());
-    printf("n:     %d\n", n);
-    printf("p:     %g\n", p);
-    printf("Time:  %g\n", t1-t0);
-    printf("Check: %X\n", fletcher16(l, n*n));
+    printf("%d,%d,%g,%g,%X\n", t, n, t1-t0, p, fletcher16(l, n*n));
 
     // Generate output file
     if (ofname)

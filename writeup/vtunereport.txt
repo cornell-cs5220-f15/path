@@ -1,0 +1,7 @@
+Function             & CPU Time &  CPU Time:Idle & CPU Time:Poor & CPU Time:Ideal \\ \hline
+square               &  30.320s &             0s &        0.121s &        30.199s \\
+gen_graph            &   0.052s &         0.010s &        0.042s &             0s \\
+fletcher16           &   0.030s &             0s &        0.030s &             0s \\
+__intel_ssse3_memcpy &   0.020s &             0s &        0.020s &             0s \\
+genrand              &   0.019s &         0.010s &        0.009s &             0s \\
+infinitize           &   0.009s &             0s &        0.009s &             0s \\ \hline
