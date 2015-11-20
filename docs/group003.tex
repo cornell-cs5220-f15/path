@@ -835,19 +835,37 @@ _mm_free(orig_lnew);
 
 \noindent As a final comparsion, we present the results of the naive Phi computation juxtaposed with the Node computation.
 
-\begin{center}
-	{\Huge PLOT PLOT PLOT}
-\end{center}
+\begin{figure}[h]
+	\begin{center}
+		\begin{gnuplot}[terminal=cairolatex, terminaloptions= color] 
+			#set key at 15.8,41
+			set size 1.0,0.75              
+			unset log                          
+			unset label                          
+			#set xtic auto offset 0,-0.5 font ",10"                     
+			#set ytic 25 font ",10" 
+			#Set Info
+			set xlabel "Number of Threads"
+			#set xlabel offset 0,-0.5
+			set ylabel "Scaling Efficiency"
+			#set ylabel offset -1.25,0
+			#set xr [0.0:16.0]
+			set yr [0.0:1.5]
+			plot "./benchmarking/blocked_phi/strong/p025strong.txt" u 1:(1350.999216079712/$2/$1) t 'p = 0.025' w linespoints, \
+			"./benchmarking/blocked_phi/large_nodep025strong.txt" u 1:(1685.584415912628/$2/$1) t 'p = 0.025' w lp, \
+		\end{gnuplot}
+		\caption{A comparison of the strong scaling for OpenMP parallelized path algorithm with blocked submatrices on the Xeon Phi Coprocessors and the Xeon Nodes. The problem size was $\mathtt{n} = 11111$, and the probability was $p = 0.025$.}
+		\label{blocked_comparison}
+	\end{center}
+\end{figure}
 
 \noindent As you can plainly see, our efforts to offload computation to the Phi have been rather ineffective.  We do not feel that this is due to lack of effort, or even improper offloading methodology.  Rather, it is clear that the level of vectorization supplied by the compiler alone is not sufficient to take full advantage of the Phi's extra-wide vectors.  Given that it has a clock rate of roughly half the Node, in conjunction with our plotted Phi results being wasteful in the amount of memory being transferred back and forth on each iteration, we feel that the plotted results can be explained by two simple factors:
 
 \begin{enumerate}[1.]
 	\item Lack of proper vectorization, and
-	\item Improper / unnecessary data transfer
+	\item Improper / unnecessary data transfer (e.g. why the line is almost flat -- our task is memory bound)
 \end{enumerate}
 
 \noindent The only other explanation we see as reasonable is that our \texttt{matmul-} style blocking incorporated in the Phi code likely does not wield the amount of threads available to us.  That is, were there more time, we would also experiment with doing smaller blocks / sub-blocks to see how the performance changes.
-
-Hi thereb
 
 \end{document}
