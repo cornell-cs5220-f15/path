@@ -21,11 +21,15 @@
 \date{\textbf{September 2015}}
 
 \usepackage{natbib}
-\usepackage[miktex]{gnuplottex}
+% \usepackage[miktex]{gnuplottex}
+\usepackage{gnuplottex}
 \usepackage{graphicx}
 \usepackage{color}
 \usepackage{pdfpages}
+\usepackage{graphicx}
 \usepackage{epstopdf}
+
+\usepackage{pgfplots}
 
 \usepackage{enumerate}
 
@@ -827,5 +831,7 @@ _mm_free(orig_lnew);
 \end{enumerate}
 
 \noindent The only other explanation we see as reasonable is that our \texttt{matmul-} style blocking incorporated in the Phi code likely does not wield the amount of threads available to us.  That is, were there more time, we would also experiment with doing smaller blocks / sub-blocks to see how the performance changes.
+
+Hi thereb
 
 \end{document}
