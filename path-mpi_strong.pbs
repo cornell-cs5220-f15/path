@@ -1,0 +1,22 @@
+#!/bin/sh -l
+# The default values for n_process and p_prob are 24 and 0.05 respectively.
+# To run this: qsub -v process=number_of process,prob=probability path-mpi.pbs
+
+n_nodes=${nodes:-2000}
+p_prob=${prob:-0.05}
+
+rm strong_mpi_${n_nodes}_${p_prob}*
+
+for n_process in 1 2 3 5 8 10 15 20 24
+do
+
+	module load cs5220
+	cd $PBS_O_WORKDIR
+
+	#PBS -l nodes=1:ppn=24
+	#PBS -l walltime=0:30:00
+	#PBS -N path
+	#PBS -j oe
+
+	mpirun -n ${n_process} ./path-mpi.x -n ${n_nodes} >> strong_mpi_${p_prob}_${n_nodes}.txt
+done

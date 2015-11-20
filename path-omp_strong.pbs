@@ -1,0 +1,24 @@
+#!/bin/sh -l
+# The default values for n_nodes and p_prob are 2000 and 0.05 respectively.
+# To run this: qsub -v nodes=number_of_nodes,prob=probability path.pbs
+
+n_nodes=${nodes:-2000}
+p_prob=${prob:-0.05}
+
+rm strong_omp_${n_nodes}_${p_prob}*
+
+for n_threads in 1 2 3 5 8 10 15 20 24
+do
+
+	module load cs5220
+	cd $PBS_O_WORKDIR
+
+	#PBS -l nodes=1:ppn=24
+	#PBS -l walltime=0:30:00
+	#PBS -N path
+	#PBS -j oe
+
+	
+	export OMP_NUM_THREADS=${n_threads}
+	./path.x -n ${n_nodes} -p ${p_prob} >> strong_omp_${p_prob}_${n_nodes}.txt
+done
