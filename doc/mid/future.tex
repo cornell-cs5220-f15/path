@@ -1,0 +1,20 @@
+\section{Summary}
+\label{sec:summary}
+
+In this project, we did the following:
+
+\begin{enumerate}
+\item Profiled to find the hotspots, look into the vectorization report.
+\item Optimized our code based on our finding, get a factor of more than 10.
+\item Successfully parallel our code through MPI, board-cast algorithm, get the right answer.
+\item Use non-blocking communication to speed up the MPI code.
+\item Build up a mode to analysis the performance of our MPI code in terms of strong scaling and MPI
+	  efficiency.
+\end{enumerate}
+
+From our result, we learned:
+
+\begin{enumerate}
+\item Non-blocking communication can help speed up the program, but it might not be that ideal.
+\item When the size of a job is not large enough, the efficiency of MPI calculation maybe influenced.
+\end{enumerate}

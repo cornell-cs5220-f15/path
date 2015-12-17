@@ -1,0 +1,338 @@
+mpicc -std=c99 -g -O3 -no-prec-div -xcore-avx2 -ipo -qopt-report=5 -qopt-report-phase=vec  -openmp path.o mt19937p.o -o path.x
+icc: remark #10397: optimization reports are generated in *.optrpt files in the output location
+ipo: warning #11021: unresolved orte_standalone_operation
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_register_synonym
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_install_dirs
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_finalize
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_handle_reset
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_register
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_output_stream_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_info_close_components
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_rml
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hwloc_topology
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_list_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_local_arch
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_info_register_framework_params
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_grpcomm
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_getpagesize
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_group_get
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_convertor_prepare_for_send
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_handle_stop
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_get_count
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_component_close
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_object_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_framework_components_close
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_name_wildcard
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_list_sort
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_get
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_handle_write_value
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_select
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_condition_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_mem_hooks_support_level
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_create_desc
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_process_info
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_atomic_lifo_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_pointer_array_test_and_set_item
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_group_get_count
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_rml_send_callback
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_contain_basic_datatypes
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_component_list_item_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_convertor_pack
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_argv_join
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_output
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_framework_close
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_bitmap_set_max_size
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_mem_hooks_unregister_release
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_get_element_count
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_session_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_mutex_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_get_value_uint64
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_commit
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_output_close
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_grpcomm_base
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_dump_data_flags
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_backtrace_buffer
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_free_list_item_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress_unregister
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_pointer_array_set_item
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_handle_alloc
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_in_parallel_debugger
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_pointer_array_init
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_show_help
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_argv_append_nosize
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_add
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_set_value_uint64
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_convertor_create
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_output_set_verbosity
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_mem_hooks_register_release
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_strerror
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_set_value
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_rml_recv_callback
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_argv_count
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_pointer_array_add
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_predefined_elem_desc
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_get_value
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress_register
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_info_register_project_frameworks
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_thread_get_self
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_remove_value_uint32
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_errmgr
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_ess
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_crs_base_state_str
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_finalize
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_argv_free
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_free_list_grow
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_dump
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_component_to_string
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_state_base_framework
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_bitmap_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress_set_yield_when_idle
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_convertor_prepare_for_recv
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_session_dir_finalize
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_handle_start
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_rml_recv_cb_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress_set_event_flag
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_proc_state_to_str
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_group_get_stamp
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_output_open
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress_event_users_decrement
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_component_repository_release
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hwloc_base_get_relative_locality
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_thread_self_compare
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_init
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_convertor_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hwloc_base_get_topology
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_grpcomm_collective_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_strncpy
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_bitmap_clear_bit
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_bitmap_find_and_set_first_unset_bit
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_memory_linux_malloc_init_hook
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_session_dir_cleanup
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_odls
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_cr_reg_coord_callback
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_get_first_key_uint32
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_copy_content_same_ddt
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_resize
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_bitmap_init
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_free_list_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_info_out
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_get_value_uint32
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_convertor_raw
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_get_count
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_pointer_array_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_info_make_version_str
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_components_close
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_get_next_key_uint32
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_framework_components_open
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_info_show_opal_version
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_list_item_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_state
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_hash_table_set_value_uint32
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress_event_users_increment
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_find_by_name
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_group_find_by_name
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_handle_read_value
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_info_close_components
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_clone
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_cr_output
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_buffer_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_dss
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_free_list_init
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_pvar_handle_free
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_find
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_init_util
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_init
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_component_var_register
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_info_show_orte_version
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_get
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_output_get_verbosity
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_grpcomm_base_store_modex
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_output_verbose
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_convertor_unpack
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_var_find_by_name
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_util_compare_name_fields
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_argv_split
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_t_class
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_dump_data_desc
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_backtrace_print
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_info_register_framework_params
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_db
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_argv_append
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_set_element_count
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_datatype_init
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved orte_util_print_name_args
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_progress_set_event_poll_rate
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_class_initialize
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_finalize_util
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved opal_cache_line_size
+        Referenced in /usr/local/lib/libmpi.so
+ipo: warning #11021: unresolved mca_base_framework_open
+        Referenced in /usr/local/lib/libmpi.so

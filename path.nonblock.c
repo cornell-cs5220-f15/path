@@ -7,9 +7,9 @@
 #include <mpi.h>
 #include <omp.h>
 #include "mt19937p.h"
-#define mpi_ddt MPI_INT
+#define mpi_ddt MPI_CHAR 
 
-typedef int  ddt;
+typedef char ddt;
 long ddt_upper_range = (1 << (8 * sizeof(ddt) - 2)) - 1;
 
 
@@ -77,20 +77,74 @@ static inline void deinfinitize(int n, ddt* l)
 //      Justin: Boardcast algorithm is used here 
 // ==================================================================================
 
-int shortest_paths(int nsplit, int nblock, int my_id, ddt* cpd_graph, MPI_Comm col_comm, MPI_Comm row_comm)
+int shortest_paths(int nsplit, int nblock, int my_id, ddt* cpd_graph, MPI_Comm col_comm, MPI_Comm row_comm, int col_id, int row_id)
 {
     int done = 1;
+
+    ddt* send = malloc(nblock*nblock * sizeof(ddt));
+    memcpy(send, cpd_graph, nblock*nblock*sizeof(ddt));
 
     ddt* colblocks = malloc(nsplit * nblock * nblock * sizeof(ddt));
     ddt* rowblocks = malloc(nsplit * nblock * nblock * sizeof(ddt));
 
-    MPI_Allgather(cpd_graph, nblock*nblock, mpi_ddt, colblocks, nblock*nblock, mpi_ddt, col_comm);
-    MPI_Allgather(cpd_graph, nblock*nblock, mpi_ddt, rowblocks, nblock*nblock, mpi_ddt, row_comm);
+    MPI_Request* colReq = malloc(nsplit * sizeof(MPI_Request));
+    MPI_Request* rowReq = malloc(nsplit * sizeof(MPI_Request));
 
+    MPI_Status status;
+
+//    MPI_Allgather(cpd_graph, nblock*nblock, mpi_ddt, colblocks, nblock*nblock, mpi_ddt, col_comm);
+//    MPI_Allgather(cpd_graph, nblock*nblock, mpi_ddt, rowblocks, nblock*nblock, mpi_ddt, row_comm);
+
+    if (col_id == 0)
+    {
+        MPI_Ibcast(send, nblock*nblock, mpi_ddt, 0, col_comm, &colReq[0]);
+    }
+    else
+    {
+        MPI_Ibcast(colblocks, nblock*nblock, mpi_ddt, 0, col_comm, &colReq[0]);
+    }
+    
+    if (row_id == 0)
+    {
+        MPI_Ibcast(send, nblock*nblock, mpi_ddt, 0, row_comm, &rowReq[0]);
+    }
+    else
+    {
+        MPI_Ibcast(rowblocks, nblock*nblock, mpi_ddt, 0, row_comm, &rowReq[0]);
+    }
+
+    
     for (int i = 0; i < nsplit; i++)
     {
+        if (col_id == i+1)
+        {
+            MPI_Ibcast(send, nblock*nblock, mpi_ddt, i+1, col_comm, &colReq[i+1]);
+        }
+        else if (i+1 < nsplit)
+        {
+            MPI_Ibcast(colblocks + (i+1) * nblock*nblock, nblock*nblock, mpi_ddt, i+1, col_comm, &colReq[i+1]);
+        }
+        
+        if (row_id == i+1)
+        {
+            MPI_Ibcast(send, nblock*nblock, mpi_ddt, i+1, row_comm, &rowReq[i+1]);
+        }
+        else if (i+1 < nsplit)
+        {
+            MPI_Ibcast(rowblocks + (i+1) * nblock*nblock, nblock*nblock, mpi_ddt, i+1, row_comm, &rowReq[i+1]);
+        }
+
+        MPI_Wait(&colReq[i], &status);
+        MPI_Wait(&rowReq[i], &status);
+
         done = done && square(nblock, colblocks + i * nblock * nblock, rowblocks + i * nblock * nblock, cpd_graph); 
     }
+
+    free(send);
+    free(colblocks);
+    free(rowblocks);
+    free(colReq);
+    free(rowReq);
 
     return done;
 }
@@ -297,7 +351,6 @@ int main(int argc, char** argv)
 
     // Initial graph received
     
-  
     int my_col = my_id / nsplit;
     int my_row = my_id % nsplit;
     MPI_Comm col_comm;
@@ -305,13 +358,18 @@ int main(int argc, char** argv)
     MPI_Comm_split(MPI_COMM_WORLD, my_col, my_id, &col_comm); 
     MPI_Comm_split(MPI_COMM_WORLD, my_row, my_id, &row_comm); 
 
+    int col_id;
+    int row_id;
+    MPI_Comm_rank(col_comm, &col_id);
+    MPI_Comm_rank(row_comm, &row_id);
+    
     // Time the shortest paths code
     double t0 = MPI_Wtime();
 
     int global_done = 0;
     while(!global_done)
     {
-        int done = shortest_paths(nsplit, nblock, my_id, cpd_graph, col_comm, row_comm);
+        int done = shortest_paths(nsplit, nblock, my_id, cpd_graph, col_comm, row_comm, col_id, row_id);
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Allreduce(&done, &global_done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
     }
